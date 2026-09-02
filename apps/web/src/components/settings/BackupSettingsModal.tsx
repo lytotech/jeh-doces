@@ -1,0 +1,184 @@
+import React, { useState } from 'react';
+import { useApp } from '../../context/AppContext';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
+import { TextInput } from '../ui/Input';
+import { exportAllDataJSON, importAllDataJSON } from '../../services/storage';
+import {
+  Download,
+  Upload,
+  RotateCcw,
+  Store,
+  QrCode,
+  Phone,
+  ShieldCheck,
+} from 'lucide-react';
+
+interface BackupSettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const { settings, updateSettingsAction, resetAllDataAction, showToast } = useApp();
+
+  const [storeName, setStoreName] = useState(settings.storeName);
+  const [storePhone, setStorePhone] = useState(settings.storePhone);
+  const [pixKey, setPixKey] = useState(settings.pixKey);
+  const [pixKeyType, setPixKeyType] = useState(settings.pixKeyType);
+  const [defaultMargin, setDefaultMargin] = useState(settings.defaultProfitMargin.toString());
+
+  const handleSaveSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSettingsAction({
+      storeName: storeName.trim() || 'Jeh Doces',
+      storePhone: storePhone.trim(),
+      pixKey: pixKey.trim(),
+      pixKeyType: pixKeyType.trim(),
+      defaultProfitMargin: parseFloat(defaultMargin) || 100,
+    });
+    onClose();
+  };
+
+  const handleExport = () => {
+    const jsonStr = exportAllDataJSON();
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `jeh_doces_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Backup exportado com sucesso!');
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content && importAllDataJSON(content)) {
+        window.location.reload();
+      } else {
+        showToast('Falha ao importar arquivo. Verifique o formato JSON.', 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleReset = () => {
+    if (confirm('Deseja restaurar os dados de demonstração iniciais? Todas as alterações manuais serão resetadas.')) {
+      resetAllDataAction();
+      onClose();
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Configurações & Backup"
+      subtitle="Personalize sua loja e faça cópias de segurança"
+      maxWidth="md"
+    >
+      <div className="space-y-6">
+        {/* Form Configurações */}
+        <form onSubmit={handleSaveSettings} className="space-y-3.5">
+          <h4 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+            <Store className="w-3.5 h-3.5" /> Dados da Confeitaria
+          </h4>
+
+          <TextInput
+            label="Nome do Negócio"
+            value={storeName}
+            onChange={(e) => setStoreName(e.target.value)}
+            placeholder="Ex: Jeh Doces"
+            required
+          />
+
+          <TextInput
+            label="WhatsApp da Loja"
+            value={storePhone}
+            onChange={(e) => setStorePhone(e.target.value)}
+            placeholder="(11) 99999-9999"
+          />
+
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="block text-xs font-medium text-[#7A6453] mb-1">Tipo Chave</label>
+              <select
+                className="w-full px-2 py-3 bg-[#FCFAF8] border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-xs font-semibold text-[#302116]"
+                value={pixKeyType}
+                onChange={(e) => setPixKeyType(e.target.value)}
+              >
+                <option value="E-mail">E-mail</option>
+                <option value="Telefone">Telefone</option>
+                <option value="CPF">CPF</option>
+                <option value="CNPJ">CNPJ</option>
+                <option value="Aleatória">Aleatória</option>
+              </select>
+            </div>
+            <div className="col-span-2">
+              <TextInput
+                label="Chave Pix para Pagamentos"
+                value={pixKey}
+                onChange={(e) => setPixKey(e.target.value)}
+                placeholder="suachave@email.com"
+              />
+            </div>
+          </div>
+
+          <Button type="submit" fullWidth size="md">
+            Salvar Configurações
+          </Button>
+        </form>
+
+        {/* Seção Backup e Restauração */}
+        <div className="pt-4 border-t border-[#E5DACD] space-y-3">
+          <h4 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5" /> Backup & Sincronização
+          </h4>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleExport}
+              className="flex items-center gap-1.5"
+            >
+              <Download className="w-4 h-4" /> Baixar Backup JSON
+            </Button>
+
+            <label className="inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 text-xs px-3 py-1.5 gap-1.5 border border-[#D7BC9B] bg-white text-[#7A4B1D] hover:bg-[#FAF5EE] cursor-pointer text-center">
+              <Upload className="w-4 h-4" /> Restaurar Backup
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+              />
+            </label>
+          </div>
+
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            fullWidth
+            onClick={handleReset}
+            className="mt-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Restaurar Dados de Demonstração
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};

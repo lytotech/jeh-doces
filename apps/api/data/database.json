@@ -1,0 +1,487 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-09-02T00:50:49.220Z",
+  "ingredients": [
+    {
+      "id": "ing-1",
+      "name": "chocolate em pó",
+      "isComposite": false,
+      "unit": "g",
+      "packageQuantity": 500,
+      "paidPrice": 50,
+      "unitCost": 0.1,
+      "priceHistory": [
+        {
+          "id": "ph-1",
+          "date": "2026-06-10T14:30:00.000Z",
+          "paidPrice": 42,
+          "packageQuantity": 500,
+          "unitCost": 0.084,
+          "notes": "Preço promocional distribuidor"
+        },
+        {
+          "id": "ph-2",
+          "date": "2026-07-20T10:15:00.000Z",
+          "paidPrice": 46.5,
+          "packageQuantity": 500,
+          "unitCost": 0.093,
+          "notes": "Reajuste fabricante"
+        },
+        {
+          "id": "ph-3",
+          "date": "2026-08-15T09:00:00.000Z",
+          "paidPrice": 50,
+          "packageQuantity": 500,
+          "unitCost": 0.1,
+          "notes": "Última compra supermercado"
+        }
+      ],
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-08-15T09:00:00.000Z"
+    },
+    {
+      "id": "ing-2",
+      "name": "leite condensado",
+      "isComposite": false,
+      "unit": "g",
+      "packageQuantity": 395,
+      "paidPrice": 7.9,
+      "unitCost": 0.02,
+      "priceHistory": [
+        {
+          "id": "ph-4",
+          "date": "2026-08-01T10:00:00.000Z",
+          "paidPrice": 7.9,
+          "packageQuantity": 395,
+          "unitCost": 0.02
+        }
+      ],
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "ing-3",
+      "name": "creme de leite",
+      "isComposite": false,
+      "unit": "g",
+      "packageQuantity": 200,
+      "paidPrice": 4,
+      "unitCost": 0.02,
+      "priceHistory": [
+        {
+          "id": "ph-5",
+          "date": "2026-08-01T10:00:00.000Z",
+          "paidPrice": 4,
+          "packageQuantity": 200,
+          "unitCost": 0.02
+        }
+      ],
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "ing-4",
+      "name": "polpa de maracujá",
+      "isComposite": false,
+      "unit": "g",
+      "packageQuantity": 500,
+      "paidPrice": 15,
+      "unitCost": 0.03,
+      "priceHistory": [
+        {
+          "id": "ph-6",
+          "date": "2026-08-10T11:00:00.000Z",
+          "paidPrice": 15,
+          "packageQuantity": 500,
+          "unitCost": 0.03
+        }
+      ],
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-08-10T11:00:00.000Z"
+    },
+    {
+      "id": "ing-5",
+      "name": "coco ralado fino",
+      "isComposite": false,
+      "unit": "g",
+      "packageQuantity": 100,
+      "paidPrice": 6,
+      "unitCost": 0.06,
+      "priceHistory": [
+        {
+          "id": "ph-7",
+          "date": "2026-08-10T11:00:00.000Z",
+          "paidPrice": 6,
+          "packageQuantity": 100,
+          "unitCost": 0.06
+        }
+      ],
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-08-10T11:00:00.000Z"
+    },
+    {
+      "id": "ing-6",
+      "name": "manteiga sem sal",
+      "isComposite": false,
+      "unit": "g",
+      "packageQuantity": 200,
+      "paidPrice": 12,
+      "unitCost": 0.06,
+      "priceHistory": [],
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
+      "id": "ing-7",
+      "name": "recheio brigadeiro base",
+      "isComposite": true,
+      "unit": "g",
+      "packageQuantity": 600,
+      "paidPrice": 15.9,
+      "unitCost": 0.0265,
+      "yieldQuantity": 600,
+      "subIngredients": [
+        {
+          "id": "sub-1",
+          "ingredientId": "ing-2",
+          "quantity": 395
+        },
+        {
+          "id": "sub-2",
+          "ingredientId": "ing-3",
+          "quantity": 150
+        },
+        {
+          "id": "sub-3",
+          "ingredientId": "ing-1",
+          "quantity": 40
+        },
+        {
+          "id": "sub-4",
+          "ingredientId": "ing-6",
+          "quantity": 15
+        }
+      ],
+      "priceHistory": [],
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-08-10T10:00:00.000Z"
+    }
+  ],
+  "materials": [
+    {
+      "id": "mat-1",
+      "name": "Caixa transporte",
+      "unit": "un",
+      "baseQuantity": 10,
+      "totalCost": 50,
+      "unitCost": 5,
+      "trackStock": true,
+      "stockQuantity": 10,
+      "minStockAlert": 3,
+      "createdAt": "2026-07-01T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    },
+    {
+      "id": "mat-2",
+      "name": "embalagem barrinha",
+      "unit": "un",
+      "baseQuantity": 100,
+      "totalCost": 9,
+      "unitCost": 0.09,
+      "trackStock": true,
+      "stockQuantity": 80,
+      "minStockAlert": 20,
+      "createdAt": "2026-07-01T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    },
+    {
+      "id": "mat-3",
+      "name": "etiqueta validade",
+      "unit": "un",
+      "baseQuantity": 100,
+      "totalCost": 4,
+      "unitCost": 0.04,
+      "trackStock": true,
+      "stockQuantity": 146,
+      "minStockAlert": 30,
+      "createdAt": "2026-07-01T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    },
+    {
+      "id": "mat-4",
+      "name": "sacola",
+      "unit": "un",
+      "baseQuantity": 50,
+      "totalCost": 30,
+      "unitCost": 0.6,
+      "trackStock": true,
+      "stockQuantity": 41,
+      "minStockAlert": 10,
+      "createdAt": "2026-07-01T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    },
+    {
+      "id": "mat-5",
+      "name": "Fita de cetim dourada",
+      "unit": "m",
+      "baseQuantity": 50,
+      "totalCost": 25,
+      "unitCost": 0.5,
+      "trackStock": true,
+      "stockQuantity": 32,
+      "minStockAlert": 10,
+      "createdAt": "2026-07-01T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-1",
+      "name": "Barrinha maracujá",
+      "category": "Barrinhas Recheadas",
+      "description": "Casquinha de chocolate nobre com recheio cremoso de maracujá",
+      "icon": "🍫",
+      "salePrice": 12.5,
+      "calculatedCost": 4.65,
+      "profitMargin": 168.8,
+      "ingredients": [
+        {
+          "ingredientId": "ing-1",
+          "quantity": 25
+        },
+        {
+          "ingredientId": "ing-2",
+          "quantity": 60
+        },
+        {
+          "ingredientId": "ing-3",
+          "quantity": 20
+        },
+        {
+          "ingredientId": "ing-4",
+          "quantity": 18
+        }
+      ],
+      "materials": [
+        {
+          "materialId": "mat-2",
+          "quantity": 1
+        },
+        {
+          "materialId": "mat-3",
+          "quantity": 1
+        }
+      ],
+      "createdAt": "2026-07-10T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    },
+    {
+      "id": "prod-2",
+      "name": "Barrinha prestígio",
+      "category": "Barrinhas Recheadas",
+      "description": "Casquinha de chocolate nobre com recheio tradicional de beijinho de coco",
+      "icon": "🍪",
+      "salePrice": 12.5,
+      "calculatedCost": 4.5,
+      "profitMargin": 177.7,
+      "ingredients": [
+        {
+          "ingredientId": "ing-1",
+          "quantity": 25
+        },
+        {
+          "ingredientId": "ing-2",
+          "quantity": 60
+        },
+        {
+          "ingredientId": "ing-3",
+          "quantity": 20
+        },
+        {
+          "ingredientId": "ing-5",
+          "quantity": 15
+        }
+      ],
+      "materials": [
+        {
+          "materialId": "mat-2",
+          "quantity": 1
+        },
+        {
+          "materialId": "mat-3",
+          "quantity": 1
+        }
+      ],
+      "createdAt": "2026-07-10T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    },
+    {
+      "id": "prod-3",
+      "name": "Bolo Vulcão Ninho & Nutella",
+      "category": "Bolos Caseiros",
+      "description": "Bolo fofinho com cobertura farta de brigadeiro de leite ninho e nutella pura",
+      "icon": "🎂",
+      "salePrice": 68,
+      "calculatedCost": 26.5,
+      "profitMargin": 156.6,
+      "ingredients": [
+        {
+          "ingredientId": "ing-2",
+          "quantity": 200
+        },
+        {
+          "ingredientId": "ing-3",
+          "quantity": 100
+        },
+        {
+          "ingredientId": "ing-6",
+          "quantity": 40
+        }
+      ],
+      "materials": [
+        {
+          "materialId": "mat-1",
+          "quantity": 1
+        }
+      ],
+      "createdAt": "2026-07-10T00:00:00.000Z",
+      "updatedAt": "2026-08-15T00:00:00.000Z"
+    }
+  ],
+  "orders": [
+    {
+      "id": "ord-1",
+      "orderNumber": "#1001",
+      "clientName": "Diego banco",
+      "clientPhone": "(11) 98765-4321",
+      "clientAddress": "Av. Paulista, 1000 - Bela Vista",
+      "deliveryDate": "2026-08-25T08:00",
+      "status": "confirmado",
+      "items": [
+        {
+          "id": "item-1",
+          "productId": "prod-1",
+          "productName": "Barrinha maracujá",
+          "quantity": 1,
+          "unitPrice": 12.5,
+          "totalPrice": 12.5,
+          "unitCost": 4.65,
+          "totalCost": 4.65
+        },
+        {
+          "id": "item-2",
+          "productId": "prod-2",
+          "productName": "Barrinha prestígio",
+          "quantity": 1,
+          "unitPrice": 12.5,
+          "totalPrice": 12.5,
+          "unitCost": 4.5,
+          "totalCost": 4.5
+        }
+      ],
+      "materials": [
+        {
+          "id": "ord-mat-1",
+          "materialId": "mat-2",
+          "materialName": "embalagem barrinha",
+          "quantity": 2,
+          "unitCost": 0.09,
+          "totalCost": 0.18
+        },
+        {
+          "id": "ord-mat-2",
+          "materialId": "mat-3",
+          "materialName": "etiqueta validade",
+          "quantity": 2,
+          "unitCost": 0.04,
+          "totalCost": 0.08
+        },
+        {
+          "id": "ord-mat-3",
+          "materialId": "mat-4",
+          "materialName": "sacola",
+          "quantity": 1,
+          "unitCost": 0.6,
+          "totalCost": 0.6
+        }
+      ],
+      "subtotal": 25,
+      "discount": 0,
+      "totalCharged": 25,
+      "estimatedCost": 10.05,
+      "estimatedProfit": 14.95,
+      "profitMarginPercent": 59.8,
+      "payments": [],
+      "notes": "Entregar na portaria às 08:00 em ponto.",
+      "stockDecremented": true,
+      "createdAt": "2026-08-20T10:00:00.000Z",
+      "updatedAt": "2026-09-02T00:50:49.220Z"
+    },
+    {
+      "id": "ord-2",
+      "orderNumber": "#1002",
+      "clientName": "Camila Ferreira",
+      "clientPhone": "(11) 97654-3210",
+      "clientAddress": "Rua das Flores, 45 - Apto 82",
+      "deliveryDate": "2026-09-02T15:30",
+      "status": "confirmado",
+      "items": [
+        {
+          "id": "item-3",
+          "productId": "prod-3",
+          "productName": "Bolo Vulcão Ninho & Nutella",
+          "quantity": 1,
+          "unitPrice": 68,
+          "totalPrice": 68,
+          "unitCost": 26.5,
+          "totalCost": 26.5
+        }
+      ],
+      "materials": [
+        {
+          "id": "ord-mat-4",
+          "materialId": "mat-1",
+          "materialName": "Caixa transporte",
+          "quantity": 1,
+          "unitCost": 5,
+          "totalCost": 5
+        },
+        {
+          "id": "ord-mat-5",
+          "materialId": "mat-4",
+          "materialName": "sacola",
+          "quantity": 1,
+          "unitCost": 0.6,
+          "totalCost": 0.6
+        }
+      ],
+      "subtotal": 68,
+      "discount": 0,
+      "totalCharged": 68,
+      "estimatedCost": 32.1,
+      "estimatedProfit": 35.9,
+      "profitMarginPercent": 52.8,
+      "payments": [
+        {
+          "id": "pay-1",
+          "amount": 34,
+          "method": "pix",
+          "paidAt": "2026-09-01T14:20:00.000Z",
+          "notes": "Sinal 50% via Pix"
+        }
+      ],
+      "notes": "Escrever \"Parabéns Lê!\" no cartãozinho.",
+      "stockDecremented": true,
+      "createdAt": "2026-09-01T09:30:00.000Z",
+      "updatedAt": "2026-09-01T14:20:00.000Z"
+    }
+  ],
+  "settings": {
+    "storeName": "Jeh Doces",
+    "storePhone": "(11) 99876-5432",
+    "pixKey": "jehdoces@exemplo.com.br",
+    "pixKeyType": "E-mail",
+    "defaultProfitMargin": 100,
+    "currencySymbol": "R$"
+  }
+}

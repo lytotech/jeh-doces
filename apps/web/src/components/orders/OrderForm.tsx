@@ -1,0 +1,508 @@
+import React, { useState, useMemo } from 'react';
+import {
+  Order,
+  OrderProductItem,
+  OrderMaterialItem,
+  OrderStatus,
+} from '../../types';
+import { useApp } from '../../context/AppContext';
+import { AppHeader } from '../layout/AppHeader';
+import { TextInput } from '../ui/Input';
+import { Button } from '../ui/Button';
+import { TagBadge } from '../ui/Badge';
+import {
+  formatCurrency,
+  formatDecimal,
+  ORDER_STATUS_MAP,
+} from '../../services/costEngine';
+import {
+  Plus,
+  Trash2,
+  Cookie,
+  Package,
+  Calendar,
+  User,
+  Phone,
+  MapPin,
+  FileText,
+} from 'lucide-react';
+
+interface OrderFormProps {
+  order?: Order | null;
+  onBack: () => void;
+  onSaved: (orderId: string) => void;
+}
+
+export const OrderForm: React.FC<OrderFormProps> = ({
+  order,
+  onBack,
+  onSaved,
+}) => {
+  const { products, materials, saveOrderAction, deleteOrderAction } = useApp();
+
+  const isEditing = !!order?.id;
+
+  const [clientName, setClientName] = useState(order?.clientName || '');
+  const [clientPhone, setClientPhone] = useState(order?.clientPhone || '');
+  const [clientAddress, setClientAddress] = useState(order?.clientAddress || '');
+  const [deliveryDate, setDeliveryDate] = useState(
+    order?.deliveryDate
+      ? order.deliveryDate.slice(0, 16)
+      : new Date(Date.now() + 86400000).toISOString().slice(0, 16)
+  );
+  const [status, setStatus] = useState<OrderStatus>(order?.status || 'orcamento');
+  const [discount, setDiscount] = useState(order ? order.discount.toString() : '0');
+  const [notes, setNotes] = useState(order?.notes || '');
+
+  const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
+  const [orderMaterials, setOrderMaterials] = useState<OrderMaterialItem[]>(
+    order?.materials || []
+  );
+
+  // Add Product Item
+  const handleAddProduct = () => {
+    if (products.length === 0) return;
+    const p = products[0];
+    const newItem: OrderProductItem = {
+      id: `item-${Date.now()}`,
+      productId: p.id,
+      productName: p.name,
+      quantity: 1,
+      unitPrice: p.salePrice,
+      totalPrice: p.salePrice,
+      unitCost: p.calculatedCost,
+      totalCost: p.calculatedCost,
+    };
+    setItems([...items, newItem]);
+
+    // Automatically add default materials of this product to order materials if not present
+    if (p.materials && p.materials.length > 0) {
+      const addedMaterials: OrderMaterialItem[] = [...orderMaterials];
+      p.materials.forEach((pMat) => {
+        const mat = materials.find((m) => m.id === pMat.materialId);
+        if (mat) {
+          const existingIdx = addedMaterials.findIndex((m) => m.materialId === mat.id);
+          if (existingIdx >= 0) {
+            addedMaterials[existingIdx].quantity += pMat.quantity;
+            addedMaterials[existingIdx].totalCost =
+              addedMaterials[existingIdx].quantity * addedMaterials[existingIdx].unitCost;
+          } else {
+            addedMaterials.push({
+              id: `ord-mat-${Date.now()}-${mat.id}`,
+              materialId: mat.id,
+              materialName: mat.name,
+              quantity: pMat.quantity,
+              unitCost: mat.unitCost,
+              totalCost: mat.unitCost * pMat.quantity,
+            });
+          }
+        }
+      });
+      setOrderMaterials(addedMaterials);
+    }
+  };
+
+  const handleUpdateProduct = (
+    index: number,
+    field: 'productId' | 'quantity' | 'unitPrice',
+    val: any
+  ) => {
+    const updated = [...items];
+    const current = updated[index];
+
+    if (field === 'productId') {
+      const p = products.find((prod) => prod.id === val);
+      if (p) {
+        current.productId = p.id;
+        current.productName = p.name;
+        current.unitPrice = p.salePrice;
+        current.unitCost = p.calculatedCost;
+        current.totalPrice = current.quantity * p.salePrice;
+        current.totalCost = current.quantity * p.calculatedCost;
+      }
+    } else if (field === 'quantity') {
+      const qty = parseFloat(String(val).replace(',', '.')) || 0;
+      current.quantity = qty;
+      current.totalPrice = qty * current.unitPrice;
+      current.totalCost = qty * current.unitCost;
+    } else if (field === 'unitPrice') {
+      const price = parseFloat(String(val).replace(',', '.')) || 0;
+      current.unitPrice = price;
+      current.totalPrice = current.quantity * price;
+    }
+
+    setItems(updated);
+  };
+
+  const handleRemoveProduct = (index: number) => {
+    setItems(items.filter((_, i) => i !== index));
+  };
+
+  // Add Material Item
+  const handleAddMaterial = () => {
+    if (materials.length === 0) return;
+    const m = materials[0];
+    const newMat: OrderMaterialItem = {
+      id: `ord-mat-${Date.now()}`,
+      materialId: m.id,
+      materialName: m.name,
+      quantity: 1,
+      unitCost: m.unitCost,
+      totalCost: m.unitCost,
+    };
+    setOrderMaterials([...orderMaterials, newMat]);
+  };
+
+  const handleUpdateMaterial = (
+    index: number,
+    field: 'materialId' | 'quantity' | 'unitCost',
+    val: any
+  ) => {
+    const updated = [...orderMaterials];
+    const current = updated[index];
+
+    if (field === 'materialId') {
+      const m = materials.find((mat) => mat.id === val);
+      if (m) {
+        current.materialId = m.id;
+        current.materialName = m.name;
+        current.unitCost = m.unitCost;
+        current.totalCost = current.quantity * m.unitCost;
+      }
+    } else if (field === 'quantity') {
+      const qty = parseFloat(String(val).replace(',', '.')) || 0;
+      current.quantity = qty;
+      current.totalCost = qty * current.unitCost;
+    } else if (field === 'unitCost') {
+      const cost = parseFloat(String(val).replace(',', '.')) || 0;
+      current.unitCost = cost;
+      current.totalCost = current.quantity * cost;
+    }
+
+    setOrderMaterials(updated);
+  };
+
+  const handleRemoveMaterial = (index: number) => {
+    setOrderMaterials(orderMaterials.filter((_, i) => i !== index));
+  };
+
+  // Financial calculations
+  const subtotal = useMemo(() => {
+    return items.reduce((sum, item) => sum + item.totalPrice, 0);
+  }, [items]);
+
+  const numDiscount = parseFloat(discount.replace(',', '.')) || 0;
+  const totalCharged = Math.max(0, subtotal - numDiscount);
+
+  const estimatedCost = useMemo(() => {
+    const prodCost = items.reduce((sum, item) => sum + item.totalCost, 0);
+    const matCost = orderMaterials.reduce((sum, mat) => sum + mat.totalCost, 0);
+    return prodCost + matCost;
+  }, [items, orderMaterials]);
+
+  const estimatedProfit = totalCharged - estimatedCost;
+  const profitMarginPercent = totalCharged > 0 ? (estimatedProfit / totalCharged) * 100 : 0;
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientName.trim()) return;
+
+    const savedId = await saveOrderAction({
+      id: order?.id,
+      clientName: clientName.trim(),
+      clientPhone: clientPhone.trim() || undefined,
+      clientAddress: clientAddress.trim() || undefined,
+      deliveryDate: new Date(deliveryDate).toISOString(),
+      status,
+      items,
+      materials: orderMaterials,
+      subtotal,
+      discount: numDiscount,
+      totalCharged,
+      estimatedCost,
+      estimatedProfit,
+      profitMarginPercent,
+      notes: notes.trim() || undefined,
+    });
+
+    onSaved(savedId);
+  };
+
+  const handleDelete = () => {
+    if (order?.id && confirm('Deseja realmente excluir esta encomenda?')) {
+      deleteOrderAction(order.id);
+      onBack();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAF7F2] pb-24">
+      <AppHeader
+        title={isEditing ? 'Editar encomenda' : 'Nova encomenda'}
+        showBack
+        onBack={onBack}
+        rightAction={
+          isEditing && (
+            <button
+              onClick={handleDelete}
+              className="p-2 text-white/80 hover:text-white hover:bg-rose-600/30 rounded-full transition-colors"
+              title="Excluir"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )
+        }
+      />
+
+      <div className="max-w-md mx-auto p-4 sm:p-5 space-y-4">
+        <form onSubmit={handleSave} className="space-y-4">
+          {/* Dados do Cliente */}
+          <div className="p-4 bg-white rounded-2xl border border-[#E5DACD] space-y-3 shadow-xs">
+            <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5" /> Informações do Cliente
+            </h3>
+
+            <TextInput
+              label="Nome do cliente"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
+              placeholder="Ex: Diego banco"
+              required
+              autoFocus
+            />
+
+            <TextInput
+              label="Telefone / WhatsApp"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
+              placeholder="(11) 98765-4321"
+            />
+
+            <TextInput
+              label="Endereço de entrega"
+              value={clientAddress}
+              onChange={(e) => setClientAddress(e.target.value)}
+              placeholder="Ex: Av. Paulista, 1000 - Apto 42"
+            />
+
+            <TextInput
+              label="Data e hora da entrega"
+              type="datetime-local"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Produtos do Pedido */}
+          <div className="p-4 bg-white rounded-2xl border border-[#E5DACD] space-y-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+                <Cookie className="w-3.5 h-3.5" /> Produtos
+              </h3>
+              <Button type="button" size="sm" variant="secondary" onClick={handleAddProduct}>
+                <Plus className="w-3.5 h-3.5" /> Adicionar Doce
+              </Button>
+            </div>
+
+            {items.length === 0 ? (
+              <p className="text-xs text-center py-3 text-[#8A7565]">
+                Nenhum doce adicionado. Clique no botão acima.
+              </p>
+            ) : (
+              <div className="space-y-2.5">
+                {items.map((item, index) => (
+                  <div
+                    key={item.id || index}
+                    className="p-3 bg-[#FAF7F2] rounded-xl border border-[#E5DACD] space-y-2"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <select
+                        className="flex-1 bg-white px-2 py-1.5 rounded-lg border border-[#DFCFC0] text-xs font-semibold text-[#302116] focus:outline-none"
+                        value={item.productId}
+                        onChange={(e) => handleUpdateProduct(index, 'productId', e.target.value)}
+                      >
+                        {products.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name} ({formatCurrency(p.salePrice)})
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveProduct(index)}
+                        className="p-1 text-[#A89484] hover:text-rose-500"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-[#7A6453] uppercase block">Qtd</span>
+                        <input
+                          type="number"
+                          step="any"
+                          className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-md font-bold text-center"
+                          value={item.quantity}
+                          onChange={(e) =>
+                            handleUpdateProduct(index, 'quantity', e.target.value)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-[#7A6453] uppercase block">Preço Un (R$)</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-md font-bold text-center"
+                          value={item.unitPrice}
+                          onChange={(e) =>
+                            handleUpdateProduct(index, 'unitPrice', e.target.value)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-[#7A6453] uppercase block">Total</span>
+                        <span className="block pt-1 text-sm font-bold text-[#96642F] text-right">
+                          {formatCurrency(item.totalPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Materiais e Embalagens */}
+          <div className="p-4 bg-white rounded-2xl border border-[#E5DACD] space-y-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+                <Package className="w-3.5 h-3.5" /> Materiais & Embalagens
+              </h3>
+              <Button type="button" size="sm" variant="secondary" onClick={handleAddMaterial}>
+                <Plus className="w-3.5 h-3.5" /> Adicionar Material
+              </Button>
+            </div>
+
+            {orderMaterials.length === 0 ? (
+              <p className="text-xs text-center py-2 text-[#8A7565]">
+                Nenhuma embalagem extra adicionada.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {orderMaterials.map((mat, index) => (
+                  <div
+                    key={mat.id || index}
+                    className="p-2.5 bg-[#FAF7F2] rounded-xl border border-[#E5DACD] flex items-center gap-2"
+                  >
+                    <select
+                      className="flex-1 bg-white px-2 py-1 rounded-lg border border-[#DFCFC0] text-xs font-semibold text-[#302116] truncate focus:outline-none"
+                      value={mat.materialId}
+                      onChange={(e) => handleUpdateMaterial(index, 'materialId', e.target.value)}
+                    >
+                      {materials.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} (Custo: {formatCurrency(m.unitCost)})
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="any"
+                        className="w-14 px-1.5 py-1 text-xs font-bold text-center bg-white border border-[#DFCFC0] rounded-md"
+                        value={mat.quantity}
+                        onChange={(e) =>
+                          handleUpdateMaterial(index, 'quantity', e.target.value)
+                        }
+                      />
+                      <span className="text-[11px] text-[#7A6453]">un</span>
+                    </div>
+
+                    <span className="text-xs font-bold text-[#7A6453] w-14 text-right">
+                      {formatCurrency(mat.totalCost)}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMaterial(index)}
+                      className="p-1 text-[#A89484] hover:text-rose-500"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Desconto e Observações */}
+          <div className="grid grid-cols-2 gap-3">
+            <TextInput
+              label="Desconto (R$)"
+              type="number"
+              step="0.01"
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value)}
+              placeholder="0,00"
+            />
+
+            <div>
+              <label className="block text-xs font-medium text-[#7A6453] mb-1">Status Inicial</label>
+              <select
+                className="w-full px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-xs font-bold text-[#302116]"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as OrderStatus)}
+              >
+                {Object.entries(ORDER_STATUS_MAP).map(([key, val]) => (
+                  <option key={key} value={key}>
+                    {val.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <TextInput
+            label="Observações do pedido"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Ex: Entregar na portaria, cartão personalizado..."
+          />
+
+          {/* Resumo Financeiro Automático */}
+          <div className="p-4 bg-[#F2ECE1] rounded-2xl border border-[#DFCFC0] shadow-xs space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-[#7A6453]">Subtotal:</span>
+              <span className="font-semibold text-[#302116]">{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="flex justify-between items-center text-base font-bold pt-1 border-t border-[#E5DACD]">
+              <span>Total a cobrar:</span>
+              <span className="text-[#302116] text-lg">{formatCurrency(totalCharged)}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs text-[#7A6453]">
+              <span>Custo estimado dos insumos:</span>
+              <span>{formatCurrency(estimatedCost)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm font-bold text-[#4A280F] pt-1 border-t border-[#E5DACD]">
+              <span>Lucro previsto:</span>
+              <span className="text-[#96642F] text-base">
+                {formatCurrency(estimatedProfit)} ({formatDecimal(profitMarginPercent, 1)}%)
+              </span>
+            </div>
+          </div>
+
+          {/* Botão Salvar Encomenda */}
+          <div className="pt-2">
+            <Button type="submit" fullWidth size="lg">
+              Salvar encomenda
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

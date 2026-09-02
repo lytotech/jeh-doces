@@ -1,0 +1,18 @@
+{
+  "name": "jeh-doces-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev -w @jeh-doces/api\" \"npm run dev -w @jeh-doces/web -- --host\"",
+    "build": "npm run build -w @jeh-doces/shared && npm run build -w @jeh-doces/web && npm run build -w @jeh-doces/api",
+    "dev:web": "npm run dev -w @jeh-doces/web -- --host",
+    "dev:api": "npm run dev -w @jeh-doces/api",
+    "start": "npm run start -w @jeh-doces/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
