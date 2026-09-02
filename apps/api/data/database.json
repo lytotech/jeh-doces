@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "updatedAt": "2026-09-02T00:50:49.220Z",
+  "updatedAt": "2026-09-02T01:47:18.071Z",
   "ingredients": [
     {
       "id": "ing-1",
@@ -353,10 +353,10 @@
       "id": "ord-1",
       "orderNumber": "#1001",
       "clientName": "Diego banco",
-      "clientPhone": "(11) 98765-4321",
+      "clientPhone": "95981243461",
       "clientAddress": "Av. Paulista, 1000 - Bela Vista",
-      "deliveryDate": "2026-08-25T08:00",
-      "status": "confirmado",
+      "deliveryDate": "2026-08-25T14:00:00.000Z",
+      "status": "entregue",
       "items": [
         {
           "id": "item-1",
@@ -408,14 +408,14 @@
       "subtotal": 25,
       "discount": 0,
       "totalCharged": 25,
-      "estimatedCost": 10.05,
-      "estimatedProfit": 14.95,
-      "profitMarginPercent": 59.8,
+      "estimatedCost": 10.01,
+      "estimatedProfit": 14.99,
+      "profitMarginPercent": 59.96,
       "payments": [],
       "notes": "Entregar na portaria às 08:00 em ponto.",
       "stockDecremented": true,
       "createdAt": "2026-08-20T10:00:00.000Z",
-      "updatedAt": "2026-09-02T00:50:49.220Z"
+      "updatedAt": "2026-09-02T01:47:18.071Z"
     },
     {
       "id": "ord-2",
