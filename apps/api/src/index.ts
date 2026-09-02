@@ -1,10 +1,12 @@
+import 'express-async-errors';
 import express from 'express';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { db } from './db';
+import { db, runForCompany } from './db';
+import { authRouter, requireAuth, requireRole } from './auth';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,7 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
-app.use(cors());
+const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map((value) => value.trim()).filter(Boolean);
+app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : true, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 
 // Helper to get local network IP
@@ -35,6 +38,9 @@ app.get('/api/health', async (req, res) => {
   await db.ping();
   res.json({ status: 'ok', database: 'ok', time: new Date().toISOString() });
 });
+
+app.use('/api/auth', authRouter);
+app.use('/api', requireAuth, (req, _res, next) => runForCompany(req.auth!.companyId, next));
 
 // === Ingredients ===
 app.get('/api/ingredients', async (req, res) => {
@@ -153,22 +159,22 @@ app.get('/api/settings', async (req, res) => {
   res.json(await db.getSettings());
 });
 
-app.put('/api/settings', async (req, res) => {
+app.put('/api/settings', requireRole('owner', 'admin'), async (req, res) => {
   const updated = await db.saveSettings(req.body);
   res.json(updated);
 });
 
 // === Backup & Full Data ===
-app.get('/api/backup', async (req, res) => {
+app.get('/api/backup', requireRole('owner', 'admin'), async (req, res) => {
   res.json(await db.getAllData());
 });
 
-app.post('/api/backup/restore', async (req, res) => {
+app.post('/api/backup/restore', requireRole('owner'), async (req, res) => {
   const success = await db.restoreAllData(req.body);
   res.json({ success });
 });
 
-app.post('/api/backup/reset', async (req, res) => {
+app.post('/api/backup/reset', requireRole('owner'), async (req, res) => {
   await db.resetToDefault();
   res.json({ success: true });
 });
@@ -187,6 +193,12 @@ app.use(async (req, res) => {
   } else {
     res.status(404).send('Frontend build not found. Run npm run build first.');
   }
+});
+
+app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error(error);
+  const message = error instanceof Error ? error.message : 'Erro interno.';
+  res.status(message.includes('inválido') || message.includes('Informe') ? 400 : 500).json({ error: message });
 });
 
 app.listen(Number(PORT), HOST, () => {

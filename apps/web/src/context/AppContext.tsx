@@ -10,19 +10,6 @@ import {
   PriceHistoryRecord,
 } from '../types';
 import { api } from '../services/api';
-import {
-  loadIngredients,
-  saveIngredients,
-  loadMaterials,
-  saveMaterials,
-  loadProducts,
-  saveProducts,
-  loadOrders,
-  saveOrders,
-  loadSettings,
-  saveSettings,
-  resetToSampleData,
-} from '../services/storage';
 import { calculateProductCost } from '../services/costEngine';
 
 interface ToastInfo {
@@ -88,11 +75,11 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [ingredients, setIngredients] = useState<Ingredient[]>(loadIngredients);
-  const [materials, setMaterials] = useState<Material[]>(loadMaterials);
-  const [products, setProducts] = useState<Product[]>(loadProducts);
-  const [orders, setOrders] = useState<Order[]>(loadOrders);
-  const [settings, setSettings] = useState<AppSettings>(loadSettings);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [settings, setSettings] = useState<AppSettings>({ storeName: 'Jeh Doces', storePhone: '', pixKey: '', pixKeyType: 'E-mail', defaultProfitMargin: 100, currencySymbol: 'R$' });
 
   const [activeTab, setActiveTab] = useState<string>('orders');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>('ord-1');
@@ -131,16 +118,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setOrders(ordRes);
       setSettings(settRes);
 
-      // Save locally as backup cache
-      saveIngredients(ingRes);
-      saveMaterials(matRes);
-      saveProducts(prodRes);
-      saveOrders(ordRes);
-      saveSettings(settRes);
-
       setServerOnline(true);
     } catch (e) {
-      console.warn('Backend unavailable, using local cache:', e);
+      console.warn('Backend unavailable:', e);
       setServerOnline(false);
     } finally {
       setIsSyncing(false);
@@ -366,8 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('Dados restaurados para demonstração!', 'info');
     } catch (e) {
       console.error(e);
-      resetToSampleData();
-      showToast('Dados restaurados localmente.', 'info');
+      showToast('Não foi possível restaurar os dados.', 'error');
     }
   };
 

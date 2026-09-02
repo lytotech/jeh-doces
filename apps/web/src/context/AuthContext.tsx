@@ -1,0 +1,65 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
+export type CompanyRole = 'owner' | 'admin' | 'employee';
+export interface AuthState {
+  user: { id: string; name: string; email: string };
+  activeCompanyId: string;
+  role: CompanyRole;
+  companies: { id: string; name: string; role: CompanyRole }[];
+}
+
+async function authRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(`/api/auth${path}`, {
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    ...options,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
+  return data;
+}
+
+interface AuthContextValue {
+  auth: AuthState | null;
+  loading: boolean;
+  refresh: () => Promise<void>;
+  login: (email: string, password: string, invitationToken?: string) => Promise<void>;
+  register: (data: { name: string; email: string; password: string; companyName: string; invitationToken?: string }) => Promise<void>;
+  logout: () => Promise<void>;
+  switchCompany: (companyId: string) => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [auth, setAuth] = useState<AuthState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const refresh = async () => {
+    try { setAuth(await authRequest<AuthState>('/me')); }
+    catch { setAuth(null); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { void refresh(); }, []);
+  const login = async (email: string, password: string, invitationToken?: string) => {
+    await authRequest('/login', { method: 'POST', body: JSON.stringify({ email, password, invitationToken }) });
+    await refresh();
+  };
+  const register = async (data: { name: string; email: string; password: string; companyName: string; invitationToken?: string }) => {
+    await authRequest('/register', { method: 'POST', body: JSON.stringify(data) });
+    await refresh();
+  };
+  const logout = async () => { await authRequest('/logout', { method: 'POST' }); setAuth(null); };
+  const switchCompany = async (companyId: string) => {
+    await authRequest('/switch-company', { method: 'POST', body: JSON.stringify({ companyId }) });
+    window.location.reload();
+  };
+  return <AuthContext.Provider value={{ auth, loading, refresh, login, register, logout, switchCompany }}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const value = useContext(AuthContext);
+  if (!value) throw new Error('useAuth must be used inside AuthProvider');
+  return value;
+}
+
+export { authRequest };

@@ -93,3 +93,29 @@ npm run db:import-json -w @jeh-doces/api
 No ambiente Proxmox, o banco `jeh_doces` fica no PostgreSQL do LXC 102
 (`192.168.2.102:5432`). A aplicação deve receber a URL completa exclusivamente
 por variável de ambiente. Não versione credenciais.
+
+## Contas e empresas
+
+O sistema é multiempresa. Cada pessoa possui sua própria conta e acessa apenas
+os dados das empresas às quais está vinculada. Proprietários e administradores
+podem convidar funcionários pela tela **Equipe**.
+
+O primeiro cadastro após a migração assume a empresa existente e preserva seus
+dados. Cadastros posteriores sem convite criam empresas separadas. Convites e
+recuperação de senha são enviados por SMTP.
+
+Variáveis adicionais de produção:
+
+```env
+APP_URL=https://seu-dominio.example
+CORS_ORIGINS=https://seu-dominio.example
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=usuario
+SMTP_PASSWORD=segredo
+SMTP_FROM=Jeh Doces <no-reply@example.com>
+```
+
+`APP_URL` também determina se o cookie de sessão será marcado como `Secure`:
+use uma URL `https://` no acesso público e a URL HTTP da LAN apenas durante a
+validação interna.

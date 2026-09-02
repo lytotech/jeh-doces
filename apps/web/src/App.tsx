@@ -4,6 +4,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { BackupSettingsModal } from './components/settings/BackupSettingsModal';
+import { TeamModal } from './components/settings/TeamModal';
 
 // Orders
 import { OrderList } from './components/orders/OrderList';
@@ -47,6 +48,7 @@ export const App: React.FC = () => {
   const [isCreatingNewMaterial, setIsCreatingNewMaterial] = useState(false);
   const [isCreatingNewProduct, setIsCreatingNewProduct] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
@@ -204,7 +206,7 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-row">
       {/* Sidebar on desktop */}
-      <Sidebar onOpenSettings={() => setShowSettingsModal(true)} />
+      <Sidebar onOpenSettings={() => setShowSettingsModal(true)} onOpenTeam={() => setShowTeamModal(true)} />
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FAF7F2] min-h-screen relative">
@@ -223,6 +225,7 @@ export const App: React.FC = () => {
           onClose={() => setShowSettingsModal(false)}
         />
       )}
+      {showTeamModal && <TeamModal isOpen={showTeamModal} onClose={() => setShowTeamModal(false)} />}
     </div>
   );
 };

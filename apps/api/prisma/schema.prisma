@@ -7,6 +7,97 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CompanyRole {
+  owner
+  admin
+  employee
+}
+
+model Company {
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  memberships Membership[]
+  invitations Invitation[]
+  ingredients Ingredient[]
+  materials   Material[]
+  products    Product[]
+  orders      Order[]
+  setting     Setting?
+
+  @@map("companies")
+}
+
+model User {
+  id            String               @id @default(cuid())
+  name          String
+  email         String               @unique
+  passwordHash  String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  memberships   Membership[]
+  sessions      Session[]
+  resetTokens   PasswordResetToken[]
+
+  @@map("users")
+}
+
+model Membership {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  role      CompanyRole @default(employee)
+  createdAt DateTime    @default(now())
+
+  @@unique([userId, companyId])
+  @@index([companyId])
+  @@map("memberships")
+}
+
+model Session {
+  id              String   @id @default(cuid())
+  tokenHash       String   @unique
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeCompanyId String
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Invitation {
+  id        String      @id @default(cuid())
+  tokenHash String      @unique
+  email     String
+  role      CompanyRole @default(employee)
+  companyId String
+  company   Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  acceptedAt DateTime?
+  createdAt DateTime    @default(now())
+
+  @@index([companyId, email])
+  @@map("invitations")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
 model Ingredient {
   id              String         @id @default(cuid())
   name            String
@@ -18,6 +109,8 @@ model Ingredient {
   yieldQuantity   Float?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   priceHistory    PriceHistory[]
   subIngredients  SubIngredient[] @relation("CompositeParent")
@@ -25,6 +118,7 @@ model Ingredient {
   productItems    ProductIngredient[]
 
   @@map("ingredients")
+  @@index([companyId])
 }
 
 model PriceHistory {
@@ -64,11 +158,14 @@ model Material {
   minStockAlert Float?          @default(5)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
+  companyId     String
+  company       Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   productItems  ProductMaterial[]
   orderItems    OrderMaterial[]
 
   @@map("materials")
+  @@index([companyId])
 }
 
 model Product {
@@ -82,12 +179,15 @@ model Product {
   profitMargin   Float               @default(100)
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
+  companyId      String
+  company        Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   ingredients    ProductIngredient[]
   materials      ProductMaterial[]
   orderItems     OrderItem[]
 
   @@map("products")
+  @@index([companyId])
 }
 
 model ProductIngredient {
@@ -123,7 +223,7 @@ enum OrderStatus {
 
 model Order {
   id                  String          @id @default(cuid())
-  orderNumber         String          @unique
+  orderNumber         String
   clientName          String
   clientPhone         String?
   clientAddress       String?
@@ -139,12 +239,16 @@ model Order {
   stockDecremented    Boolean         @default(false)
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
+  companyId           String
+  company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   items               OrderItem[]
   materials           OrderMaterial[]
   payments            Payment[]
 
   @@map("orders")
+  @@unique([companyId, orderNumber])
+  @@index([companyId])
 }
 
 model OrderItem {
@@ -200,7 +304,9 @@ model Payment {
 }
 
 model Setting {
-  id                  String   @id @default("default")
+  id                  String   @id @default(cuid())
+  companyId           String   @unique
+  company             Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   storeName           String   @default("Jeh Doces")
   storePhone          String?  @default("(11) 99876-5432")
   pixKey              String?  @default("jehdoces@exemplo.com.br")

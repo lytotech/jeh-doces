@@ -2,12 +2,13 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { DatabaseSchema } from '@jeh-doces/shared';
-import { db } from './db';
+import { db, runForCompany } from './db';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const source = process.argv[2] || path.resolve(currentDir, '../data/database.json');
 
 async function main() {
+  await runForCompany('legacy-jeh-doces', async () => {
   const current = await db.getAllData();
   const recordCount = current.ingredients.length + current.materials.length + current.products.length + current.orders.length;
   if (recordCount > 0 && !process.argv.includes('--force')) {
@@ -23,6 +24,7 @@ async function main() {
     products: imported.products.length,
     orders: imported.orders.length,
   }));
+  });
 }
 
 main()

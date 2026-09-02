@@ -15,12 +15,15 @@
     "@prisma/client": "^6.19.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "express-async-errors": "^3.1.1",
+    "nodemailer": "^9.1.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.9",
+    "@types/nodemailer": "^7.0.12",
     "prisma": "^6.19.3",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"

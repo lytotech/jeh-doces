@@ -1,11 +1,14 @@
 import { OrderStatus as PrismaOrderStatus, Prisma, PrismaClient } from '@prisma/client';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   AppSettings, DatabaseSchema, Ingredient, Material, Order, OrderStatus,
   PaymentRecord, PriceHistoryRecord, Product, initialIngredients, initialMaterials,
   initialOrders, initialProducts, initialSettings,
 } from '@jeh-doces/shared';
 
-const prisma = new PrismaClient();
+export const prisma = new PrismaClient();
+const companyContext = new AsyncLocalStorage<string>();
+export const runForCompany = <T>(companyId: string, callback: () => T) => companyContext.run(companyId, callback);
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
 const ingredientInclude = { priceHistory: { orderBy: { date: 'desc' as const } }, subIngredients: true };
 const productInclude = { ingredients: true, materials: true };
@@ -100,26 +103,34 @@ const orderFields = (data: Partial<Order>, orderNumber: string) => ({
 });
 
 class Database {
+  private companyId() {
+    const companyId = companyContext.getStore();
+    if (!companyId) throw new Error('Empresa não definida para esta operação.');
+    return companyId;
+  }
   connect = () => prisma.$connect();
   disconnect = () => prisma.$disconnect();
   async ping() { await prisma.$queryRaw`SELECT 1`; }
 
   async getIngredients() {
-    return (await prisma.ingredient.findMany({ include: ingredientInclude, orderBy: { createdAt: 'desc' } })).map(mapIngredient);
+    return (await prisma.ingredient.findMany({ where: { companyId: this.companyId() }, include: ingredientInclude, orderBy: { createdAt: 'desc' } })).map(mapIngredient);
   }
   async getIngredientById(id: string) {
-    const row = await prisma.ingredient.findUnique({ where: { id }, include: ingredientInclude });
+    const row = await prisma.ingredient.findFirst({ where: { id, companyId: this.companyId() }, include: ingredientInclude });
     return row ? mapIngredient(row) : null;
   }
   async saveIngredient(data: Partial<Ingredient>) {
     const relations = { subIngredients: { deleteMany: {}, create: (data.subIngredients ?? []).map(({ id, ingredientId, quantity }) => ({ ...(id ? { id } : {}), ingredientId, quantity })) } };
     let row: IngredientRow;
-    if (data.id && await prisma.ingredient.count({ where: { id: data.id } })) {
+    const companyId = this.companyId();
+    const subIngredientIds = [...new Set((data.subIngredients ?? []).map((item) => item.ingredientId))];
+    if (subIngredientIds.length && await prisma.ingredient.count({ where: { id: { in: subIngredientIds }, companyId } }) !== subIngredientIds.length) throw new Error('Ingrediente relacionado inválido para esta empresa.');
+    if (data.id && await prisma.ingredient.count({ where: { id: data.id, companyId } })) {
       row = await prisma.ingredient.update({ where: { id: data.id }, data: { ...ingredientFields(data), ...relations }, include: ingredientInclude });
     } else {
       const history = data.priceHistory?.length ? data.priceHistory : [{ date: new Date().toISOString(), paidPrice: data.paidPrice ?? 0, packageQuantity: data.packageQuantity ?? 1000, unitCost: data.unitCost ?? 0, notes: 'Cadastro inicial' }];
       row = await prisma.ingredient.create({
-        data: { ...(data.id ? { id: data.id } : {}), ...ingredientFields(data),
+        data: { ...(data.id ? { id: data.id } : {}), companyId, ...ingredientFields(data),
           subIngredients: { create: relations.subIngredients.create },
           priceHistory: { create: history.map((item) => ({ ...('id' in item && item.id ? { id: item.id } : {}), date: new Date(item.date), paidPrice: item.paidPrice, packageQuantity: item.packageQuantity, unitCost: item.unitCost, notes: item.notes ?? null })) } },
         include: ingredientInclude,
@@ -127,9 +138,9 @@ class Database {
     }
     return mapIngredient(row);
   }
-  async deleteIngredient(id: string) { return (await prisma.ingredient.deleteMany({ where: { id } })).count > 0; }
+  async deleteIngredient(id: string) { return (await prisma.ingredient.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0; }
   async addPriceHistory(id: string, data: Omit<PriceHistoryRecord, 'id'>) {
-    if (!await prisma.ingredient.count({ where: { id } })) return null;
+    if (!await prisma.ingredient.count({ where: { id, companyId: this.companyId() } })) return null;
     return mapIngredient(await prisma.ingredient.update({
       where: { id }, data: { paidPrice: data.paidPrice, packageQuantity: data.packageQuantity, unitCost: data.unitCost,
         priceHistory: { create: { date: new Date(data.date), paidPrice: data.paidPrice, packageQuantity: data.packageQuantity, unitCost: data.unitCost, notes: data.notes ?? null } } },
@@ -137,35 +148,41 @@ class Database {
     }));
   }
 
-  async getMaterials() { return (await prisma.material.findMany({ orderBy: { createdAt: 'desc' } })).map(mapMaterial); }
-  async getMaterialById(id: string) { const row = await prisma.material.findUnique({ where: { id } }); return row ? mapMaterial(row) : null; }
+  async getMaterials() { return (await prisma.material.findMany({ where: { companyId: this.companyId() }, orderBy: { createdAt: 'desc' } })).map(mapMaterial); }
+  async getMaterialById(id: string) { const row = await prisma.material.findFirst({ where: { id, companyId: this.companyId() } }); return row ? mapMaterial(row) : null; }
   async saveMaterial(data: Partial<Material>) {
-    const row = data.id && await prisma.material.count({ where: { id: data.id } })
+    const companyId = this.companyId();
+    const row = data.id && await prisma.material.count({ where: { id: data.id, companyId } })
       ? await prisma.material.update({ where: { id: data.id }, data: materialFields(data) })
-      : await prisma.material.create({ data: { ...(data.id ? { id: data.id } : {}), ...materialFields(data) } });
+      : await prisma.material.create({ data: { ...(data.id ? { id: data.id } : {}), companyId, ...materialFields(data) } });
     return mapMaterial(row);
   }
-  async deleteMaterial(id: string) { return (await prisma.material.deleteMany({ where: { id } })).count > 0; }
+  async deleteMaterial(id: string) { return (await prisma.material.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0; }
   async adjustMaterialStock(id: string, stockQuantity: number) {
-    if (!await prisma.material.count({ where: { id } })) return null;
+    if (!await prisma.material.count({ where: { id, companyId: this.companyId() } })) return null;
     return mapMaterial(await prisma.material.update({ where: { id }, data: { stockQuantity } }));
   }
 
-  async getProducts() { return (await prisma.product.findMany({ include: productInclude, orderBy: { createdAt: 'desc' } })).map(mapProduct); }
-  async getProductById(id: string) { const row = await prisma.product.findUnique({ where: { id }, include: productInclude }); return row ? mapProduct(row) : null; }
+  async getProducts() { return (await prisma.product.findMany({ where: { companyId: this.companyId() }, include: productInclude, orderBy: { createdAt: 'desc' } })).map(mapProduct); }
+  async getProductById(id: string) { const row = await prisma.product.findFirst({ where: { id, companyId: this.companyId() }, include: productInclude }); return row ? mapProduct(row) : null; }
   async saveProduct(data: Partial<Product>) {
     const relations = {
       ingredients: { deleteMany: {}, create: (data.ingredients ?? []).map(({ ingredientId, quantity }) => ({ ingredientId, quantity })) },
       materials: { deleteMany: {}, create: (data.materials ?? []).map(({ materialId, quantity }) => ({ materialId, quantity })) },
     };
-    const row = data.id && await prisma.product.count({ where: { id: data.id } })
+    const companyId = this.companyId();
+    const ingredientIds = [...new Set((data.ingredients ?? []).map((item) => item.ingredientId))];
+    const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
+    if (ingredientIds.length && await prisma.ingredient.count({ where: { id: { in: ingredientIds }, companyId } }) !== ingredientIds.length) throw new Error('Ingrediente relacionado inválido para esta empresa.');
+    if (materialIds.length && await prisma.material.count({ where: { id: { in: materialIds }, companyId } }) !== materialIds.length) throw new Error('Material relacionado inválido para esta empresa.');
+    const row = data.id && await prisma.product.count({ where: { id: data.id, companyId } })
       ? await prisma.product.update({ where: { id: data.id }, data: { ...productFields(data), ...relations }, include: productInclude })
-      : await prisma.product.create({ data: { ...(data.id ? { id: data.id } : {}), ...productFields(data), ingredients: { create: relations.ingredients.create }, materials: { create: relations.materials.create } }, include: productInclude });
+      : await prisma.product.create({ data: { ...(data.id ? { id: data.id } : {}), companyId, ...productFields(data), ingredients: { create: relations.ingredients.create }, materials: { create: relations.materials.create } }, include: productInclude });
     return mapProduct(row);
   }
-  async deleteProduct(id: string) { return (await prisma.product.deleteMany({ where: { id } })).count > 0; }
+  async deleteProduct(id: string) { return (await prisma.product.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0; }
 
-  async getOrders() { return (await prisma.order.findMany({ include: orderInclude, orderBy: { createdAt: 'desc' } })).map(mapOrder); }
+  async getOrders() { return (await prisma.order.findMany({ where: { companyId: this.companyId() }, include: orderInclude, orderBy: { createdAt: 'desc' } })).map(mapOrder); }
   private async decrementInventory(tx: Prisma.TransactionClient, id: string) {
     const order = await tx.order.findUnique({ where: { id }, include: { items: true, materials: true } });
     if (!order || order.stockDecremented) return;
@@ -184,8 +201,13 @@ class Database {
   }
   async saveOrder(data: Partial<Order>) {
     return prisma.$transaction(async (tx) => {
-      const exists = data.id ? await tx.order.count({ where: { id: data.id } }) : 0;
-      const orderNumber = exists ? (await tx.order.findUniqueOrThrow({ where: { id: data.id! }, select: { orderNumber: true } })).orderNumber : data.orderNumber || `#${await tx.order.count() + 1001}`;
+      const companyId = this.companyId();
+      const productIds = [...new Set((data.items ?? []).map((item) => item.productId))];
+      const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
+      if (productIds.length && await tx.product.count({ where: { id: { in: productIds }, companyId } }) !== productIds.length) throw new Error('Produto relacionado inválido para esta empresa.');
+      if (materialIds.length && await tx.material.count({ where: { id: { in: materialIds }, companyId } }) !== materialIds.length) throw new Error('Material relacionado inválido para esta empresa.');
+      const exists = data.id ? await tx.order.count({ where: { id: data.id, companyId } }) : 0;
+      const orderNumber = exists ? (await tx.order.findUniqueOrThrow({ where: { id: data.id! }, select: { orderNumber: true } })).orderNumber : data.orderNumber || `#${await tx.order.count({ where: { companyId } }) + 1001}`;
       const relations = {
         items: { deleteMany: {}, create: (data.items ?? []).map((item) => ({ ...item })) },
         materials: { deleteMany: {}, create: (data.materials ?? []).map((item) => ({ ...item })) },
@@ -193,45 +215,67 @@ class Database {
       };
       const row = exists
         ? await tx.order.update({ where: { id: data.id }, data: { ...orderFields(data, orderNumber), ...relations } })
-        : await tx.order.create({ data: { ...(data.id ? { id: data.id } : {}), ...orderFields(data, orderNumber), items: { create: relations.items.create }, materials: { create: relations.materials.create }, payments: { create: relations.payments.create } } });
+        : await tx.order.create({ data: { ...(data.id ? { id: data.id } : {}), companyId, ...orderFields(data, orderNumber), items: { create: relations.items.create }, materials: { create: relations.materials.create }, payments: { create: relations.payments.create } } });
       if (activeStatuses.includes((data.status ?? 'orcamento') as OrderStatus)) await this.decrementInventory(tx, row.id);
       return mapOrder(await tx.order.findUniqueOrThrow({ where: { id: row.id }, include: orderInclude }));
     });
   }
-  async deleteOrder(id: string) { return (await prisma.order.deleteMany({ where: { id } })).count > 0; }
+  async deleteOrder(id: string) { return (await prisma.order.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0; }
   async updateOrderStatus(id: string, status: OrderStatus) {
     return prisma.$transaction(async (tx) => {
-      if (!await tx.order.count({ where: { id } })) return null;
+      if (!await tx.order.count({ where: { id, companyId: this.companyId() } })) return null;
       await tx.order.update({ where: { id }, data: { status: status as PrismaOrderStatus } });
       if (activeStatuses.includes(status)) await this.decrementInventory(tx, id);
       return mapOrder(await tx.order.findUniqueOrThrow({ where: { id }, include: orderInclude }));
     });
   }
   async addPayment(orderId: string, data: Omit<PaymentRecord, 'id'>) {
-    if (!await prisma.order.count({ where: { id: orderId } })) return null;
+    if (!await prisma.order.count({ where: { id: orderId, companyId: this.companyId() } })) return null;
     await prisma.payment.create({ data: { orderId, amount: data.amount, method: data.method, paidAt: new Date(data.paidAt), notes: data.notes ?? null } });
     return mapOrder(await prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: orderInclude }));
   }
   async removePayment(orderId: string, paymentId: string) {
-    if (!await prisma.order.count({ where: { id: orderId } })) return null;
+    if (!await prisma.order.count({ where: { id: orderId, companyId: this.companyId() } })) return null;
     await prisma.payment.deleteMany({ where: { id: paymentId, orderId } });
     return mapOrder(await prisma.order.findUniqueOrThrow({ where: { id: orderId }, include: orderInclude }));
   }
 
   async getSettings(): Promise<AppSettings> {
-    const row = await prisma.setting.upsert({ where: { id: 'default' }, create: { id: 'default', ...initialSettings }, update: {} });
+    const companyId = this.companyId();
+    const row = await prisma.setting.upsert({ where: { companyId }, create: { companyId, ...initialSettings }, update: {} });
     return { storeName: row.storeName, storePhone: row.storePhone ?? '', pixKey: row.pixKey ?? '', pixKeyType: row.pixKeyType ?? '', defaultProfitMargin: row.defaultProfitMargin, currencySymbol: row.currencySymbol };
   }
   async saveSettings(data: Partial<AppSettings>) {
+    const companyId = this.companyId();
     const value = { ...await this.getSettings(), ...data };
-    const row = await prisma.setting.upsert({ where: { id: 'default' }, create: { id: 'default', ...value }, update: value });
+    const row = await prisma.setting.upsert({ where: { companyId }, create: { companyId, ...value }, update: value });
     return { storeName: row.storeName, storePhone: row.storePhone ?? '', pixKey: row.pixKey ?? '', pixKeyType: row.pixKeyType ?? '', defaultProfitMargin: row.defaultProfitMargin, currencySymbol: row.currencySymbol };
   }
   async getAllData(): Promise<DatabaseSchema> {
     return { version: '2.0.0', updatedAt: new Date().toISOString(), ingredients: await this.getIngredients(), materials: await this.getMaterials(), products: await this.getProducts(), orders: await this.getOrders(), settings: await this.getSettings() };
   }
   private async clearAll() {
-    await prisma.$transaction([prisma.payment.deleteMany(), prisma.orderMaterial.deleteMany(), prisma.orderItem.deleteMany(), prisma.order.deleteMany(), prisma.productMaterial.deleteMany(), prisma.productIngredient.deleteMany(), prisma.product.deleteMany(), prisma.subIngredient.deleteMany(), prisma.priceHistory.deleteMany(), prisma.ingredient.deleteMany(), prisma.material.deleteMany(), prisma.setting.deleteMany()]);
+    const companyId = this.companyId();
+    const orders = await prisma.order.findMany({ where: { companyId }, select: { id: true } });
+    const products = await prisma.product.findMany({ where: { companyId }, select: { id: true } });
+    const ingredients = await prisma.ingredient.findMany({ where: { companyId }, select: { id: true } });
+    const orderIds = orders.map(({ id }) => id);
+    const productIds = products.map(({ id }) => id);
+    const ingredientIds = ingredients.map(({ id }) => id);
+    await prisma.$transaction([
+      prisma.payment.deleteMany({ where: { orderId: { in: orderIds } } }),
+      prisma.orderMaterial.deleteMany({ where: { orderId: { in: orderIds } } }),
+      prisma.orderItem.deleteMany({ where: { orderId: { in: orderIds } } }),
+      prisma.order.deleteMany({ where: { companyId } }),
+      prisma.productMaterial.deleteMany({ where: { productId: { in: productIds } } }),
+      prisma.productIngredient.deleteMany({ where: { productId: { in: productIds } } }),
+      prisma.product.deleteMany({ where: { companyId } }),
+      prisma.subIngredient.deleteMany({ where: { parentId: { in: ingredientIds } } }),
+      prisma.priceHistory.deleteMany({ where: { ingredientId: { in: ingredientIds } } }),
+      prisma.ingredient.deleteMany({ where: { companyId } }),
+      prisma.material.deleteMany({ where: { companyId } }),
+      prisma.setting.deleteMany({ where: { companyId } }),
+    ]);
   }
   async restoreAllData(data: DatabaseSchema) {
     await this.clearAll();

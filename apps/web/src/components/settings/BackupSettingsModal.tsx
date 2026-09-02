@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { TextInput } from '../ui/Input';
-import { exportAllDataJSON, importAllDataJSON } from '../../services/storage';
+import { api } from '../../services/api';
 import {
   Download,
   Upload,
@@ -43,8 +43,8 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
     onClose();
   };
 
-  const handleExport = () => {
-    const jsonStr = exportAllDataJSON();
+  const handleExport = async () => {
+    const jsonStr = JSON.stringify(await api.getBackup(), null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -61,11 +61,12 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const content = event.target?.result as string;
-      if (content && importAllDataJSON(content)) {
+      try {
+        await api.restoreBackup(JSON.parse(content));
         window.location.reload();
-      } else {
+      } catch {
         showToast('Falha ao importar arquivo. Verifique o formato JSON.', 'error');
       }
     };

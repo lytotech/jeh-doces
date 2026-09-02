@@ -1,6 +1,10 @@
 {
   "name": "jeh-doces-monorepo",
   "private": true,
+  "engines": {
+    "node": "22.x",
+    "npm": "10.x"
+  },
   "workspaces": [
     "packages/*",
     "apps/*"

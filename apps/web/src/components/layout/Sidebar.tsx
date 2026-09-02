@@ -10,14 +10,19 @@ import {
   Store,
   Wifi,
   WifiOff,
+  Users,
+  LogOut,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface SidebarProps {
   onOpenSettings: () => void;
+  onOpenTeam: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) => {
   const { activeTab, setActiveTab, setSelectedOrderId, settings, serverOnline, isSyncing } = useApp();
+  const { auth, logout, switchCompany } = useAuth();
 
   const navItems = [
     {
@@ -121,6 +126,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
 
       {/* Footer / Server Status & Settings */}
       <div className="p-4 border-t border-[#E8DECFC] bg-[#F5ECE0]/60 space-y-2">
+        <div className="px-2 pb-1">
+          <p className="text-xs font-bold text-[#5C4533] truncate">{auth?.user.name}</p>
+          <p className="text-[10px] text-[#8C7665] truncate">{auth?.user.email}</p>
+          {auth && auth.companies.length > 1 && <select value={auth.activeCompanyId} onChange={e => void switchCompany(e.target.value)} className="mt-2 w-full rounded-lg border border-[#E5DACD] bg-white px-2 py-1 text-xs">{auth.companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select>}
+        </div>
         <div className="flex items-center justify-between px-2 text-xs text-[#7A6453]">
           <div className="flex items-center gap-1.5">
             {serverOnline ? (
@@ -140,12 +150,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings }) => {
         </div>
 
         <button
+          onClick={onOpenTeam}
+          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#5C4533] hover:bg-[#E8DAC6] transition-colors"
+        ><Users className="w-4 h-4 text-[#8C7665]"/><span>Equipe</span></button>
+        <button
           onClick={onOpenSettings}
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#5C4533] hover:bg-[#E8DAC6] transition-colors"
         >
           <SettingsIcon className="w-4 h-4 text-[#8C7665]" />
           <span>Configurações & Backup</span>
         </button>
+        <button onClick={() => void logout()} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 hover:bg-rose-50"><LogOut className="w-4 h-4"/>Sair</button>
       </div>
     </aside>
   );
