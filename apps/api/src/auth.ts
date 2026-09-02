@@ -70,7 +70,47 @@ async function createSession(res: Response, userId: string, companyId: string) {
   sessionCookie(res, token);
 }
 
-async function sendMail(to: string, subject: string, text: string) {
+const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, character => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
+}[character]!));
+
+function emailTemplate(options: { preheader: string; eyebrow: string; title: string; greeting: string; body: string; buttonLabel: string; url: string; expires: string }) {
+  const { preheader, eyebrow, title, greeting, body, buttonLabel, url, expires } = options;
+  const safeUrl = escapeHtml(url);
+  return `<!doctype html>
+<html lang="pt-BR">
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title)}</title></head>
+  <body style="margin:0;padding:0;background:#faf7f2;color:#382b20;font-family:Arial,Helvetica,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf7f2;padding:32px 12px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
+          <tr><td style="padding:0 8px 20px;text-align:center;">
+            <div style="display:inline-block;width:52px;height:52px;line-height:52px;border-radius:18px;background:#a86f35;color:#fff;font-size:26px;text-align:center;">🧁</div>
+            <div style="margin-top:10px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:bold;color:#4a3423;">Jeh Doces</div>
+            <div style="margin-top:3px;font-size:11px;color:#8c7665;letter-spacing:.08em;text-transform:uppercase;">Gestão para confeitaria</div>
+          </td></tr>
+          <tr><td style="background:#fff;border:1px solid #e8decf;border-radius:24px;padding:36px 32px;box-shadow:0 10px 30px rgba(90,56,32,.08);">
+            <div style="font-size:11px;font-weight:bold;letter-spacing:.12em;text-transform:uppercase;color:#a86f35;">${escapeHtml(eyebrow)}</div>
+            <h1 style="margin:10px 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:30px;line-height:1.2;color:#3d2a1c;">${escapeHtml(title)}</h1>
+            <p style="margin:0 0 12px;font-size:16px;line-height:1.6;color:#5f4b3c;">${escapeHtml(greeting)}</p>
+            <p style="margin:0 0 26px;font-size:15px;line-height:1.65;color:#715d4d;">${escapeHtml(body)}</p>
+            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto 26px;"><tr><td style="border-radius:14px;background:#96642f;">
+              <a href="${safeUrl}" style="display:inline-block;padding:15px 26px;color:#fff;text-decoration:none;font-size:15px;font-weight:bold;">${escapeHtml(buttonLabel)} →</a>
+            </td></tr></table>
+            <div style="border-radius:14px;background:#faf7f2;padding:14px 16px;text-align:center;font-size:12px;line-height:1.5;color:#7a6453;">⏱ ${escapeHtml(expires)}</div>
+            <p style="margin:24px 0 8px;font-size:11px;line-height:1.5;color:#9a8674;">Se o botão não funcionar, copie e cole este endereço no navegador:</p>
+            <p style="margin:0;word-break:break-all;font-size:11px;line-height:1.5;color:#96642f;"><a href="${safeUrl}" style="color:#96642f;">${safeUrl}</a></p>
+          </td></tr>
+          <tr><td style="padding:22px 16px 0;text-align:center;font-size:11px;line-height:1.6;color:#9a8674;">Esta mensagem foi enviada automaticamente pelo Jeh Doces.<br>Se você não solicitou esta ação, pode ignorar este e-mail com segurança.</td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
+}
+
+async function sendMail(to: string, subject: string, text: string, html?: string) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM } = process.env;
   if (!SMTP_HOST || !SMTP_FROM) {
     if (process.env.NODE_ENV !== 'production') console.log(`[DEV EMAIL] ${to}: ${text}`);
@@ -81,7 +121,7 @@ async function sendMail(to: string, subject: string, text: string) {
     host: SMTP_HOST, port: Number(SMTP_PORT || 587), secure: Number(SMTP_PORT) === 465,
     auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASSWORD } : undefined,
   });
-  await transport.sendMail({ from: SMTP_FROM, to, subject, text });
+  await transport.sendMail({ from: SMTP_FROM, to, subject, text, html });
 }
 
 const appUrl = () => process.env.APP_URL || 'http://localhost:5173';
@@ -95,7 +135,13 @@ async function sendVerificationEmail(user: { id: string; email: string; name: st
   } });
   const link = `${appUrl()}/?verify=${encodeURIComponent(token)}`;
   await sendMail(user.email, 'Confirme seu e-mail — Jeh Doces',
-    `Olá, ${user.name}! Confirme seu e-mail para acessar o Jeh Doces. Este link expira em ${VERIFICATION_HOURS} horas: ${link}`);
+    `Olá, ${user.name}! Confirme seu e-mail para acessar o Jeh Doces. Este link expira em ${VERIFICATION_HOURS} horas: ${link}`,
+    emailTemplate({
+      preheader: 'Confirme seu e-mail para começar a usar o Jeh Doces.',
+      eyebrow: 'Só falta um passo', title: 'Confirme seu e-mail', greeting: `Olá, ${user.name}!`,
+      body: 'Confirme que este endereço pertence a você para liberar seu acesso e proteger os dados da sua empresa.',
+      buttonLabel: 'Confirmar meu e-mail', url: link, expires: `Este link expira em ${VERIFICATION_HOURS} horas e só pode ser usado uma vez.`,
+    }));
 }
 
 const asyncRoute = (handler: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) =>
@@ -247,7 +293,15 @@ authRouter.post('/forgot-password', asyncRoute(async (req, res) => {
     await prisma.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
     const token = randomToken();
     await prisma.passwordResetToken.create({ data: { userId: user.id, tokenHash: tokenHash(token), expiresAt: new Date(Date.now() + 60 * 60 * 1000) } });
-    await sendMail(user.email, 'Recuperação de senha — Jeh Doces', `Use este link em até 1 hora: ${appUrl()}/?reset=${encodeURIComponent(token)}`);
+    const link = `${appUrl()}/?reset=${encodeURIComponent(token)}`;
+    await sendMail(user.email, 'Redefina sua senha — Jeh Doces',
+      `Olá, ${user.name}! Use este link para criar uma nova senha. Ele expira em 1 hora: ${link}`,
+      emailTemplate({
+        preheader: 'Use este link seguro para criar uma nova senha.',
+        eyebrow: 'Recuperação de acesso', title: 'Crie uma nova senha', greeting: `Olá, ${user.name}!`,
+        body: 'Recebemos uma solicitação para redefinir a senha da sua conta. Use o botão abaixo para escolher uma nova senha.',
+        buttonLabel: 'Redefinir minha senha', url: link, expires: 'Este link expira em 1 hora e só pode ser usado uma vez.',
+      }));
   }
   res.json({ success: true, message: 'Se o e-mail existir, enviaremos as instruções.' });
 }));
@@ -275,7 +329,15 @@ authRouter.post('/invitations', requireAuth, requireRole('owner', 'admin'), asyn
   if (!email.includes('@')) return res.status(400).json({ error: 'E-mail inválido.' });
   const token = randomToken();
   await prisma.invitation.create({ data: { email, role, companyId: req.auth!.companyId, tokenHash: tokenHash(token), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) } });
-  await sendMail(email, 'Convite para o Jeh Doces', `${req.auth!.name} convidou você. Aceite em até 7 dias: ${appUrl()}/?invite=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`);
+  const link = `${appUrl()}/?invite=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
+  await sendMail(email, 'Você recebeu um convite — Jeh Doces',
+    `${req.auth!.name} convidou você para fazer parte da equipe no Jeh Doces. Aceite em até 7 dias: ${link}`,
+    emailTemplate({
+      preheader: `${req.auth!.name} convidou você para uma equipe no Jeh Doces.`,
+      eyebrow: 'Convite para a equipe', title: 'Vamos trabalhar juntos?', greeting: 'Olá!',
+      body: `${req.auth!.name} convidou você para acessar a empresa no Jeh Doces e colaborar na gestão de encomendas, receitas e estoque.`,
+      buttonLabel: 'Aceitar convite', url: link, expires: 'Este convite expira em 7 dias e é válido somente para este e-mail.',
+    }));
   res.status(201).json({ success: true });
 }));
 
