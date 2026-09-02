@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import {
   Ingredient,
   Material,
@@ -91,6 +91,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [serverOnline, setServerOnline] = useState<boolean>(true);
   const [toasts, setToasts] = useState<ToastInfo[]>([]);
+  const refreshInFlight = useRef<Promise<void> | null>(null);
+  const lastRefreshAt = useRef(0);
 
   const showToast = (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'success') => {
     const id = Math.random().toString(36).substring(2, 9);
@@ -102,36 +104,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Synchronize state with backend
   const refreshData = useCallback(async () => {
+    if (refreshInFlight.current) return refreshInFlight.current;
+
+    const refresh = (async () => {
+      try {
+        setIsSyncing(true);
+        const [ingRes, matRes, prodRes, ordRes, settRes] = await Promise.all([
+          api.getIngredients(),
+          api.getMaterials(),
+          api.getProducts(),
+          api.getOrders(),
+          api.getSettings(),
+        ]);
+
+        setIngredients(ingRes);
+        setMaterials(matRes);
+        setProducts(prodRes);
+        setOrders(ordRes);
+        setSettings(settRes);
+        setServerOnline(true);
+      } catch (e) {
+        console.warn('Backend unavailable:', e);
+        setServerOnline(false);
+      } finally {
+        lastRefreshAt.current = Date.now();
+        setIsSyncing(false);
+      }
+    })();
+
+    refreshInFlight.current = refresh;
     try {
-      setIsSyncing(true);
-      const [ingRes, matRes, prodRes, ordRes, settRes] = await Promise.all([
-        api.getIngredients(),
-        api.getMaterials(),
-        api.getProducts(),
-        api.getOrders(),
-        api.getSettings(),
-      ]);
-
-      setIngredients(ingRes);
-      setMaterials(matRes);
-      setProducts(prodRes);
-      setOrders(ordRes);
-      setSettings(settRes);
-
-      setServerOnline(true);
-    } catch (e) {
-      console.warn('Backend unavailable:', e);
-      setServerOnline(false);
+      await refresh;
     } finally {
-      setIsSyncing(false);
+      refreshInFlight.current = null;
     }
   }, []);
 
-  // Initial load and periodic polling (multi-device live-sync every 5 seconds)
+  // Load once, refresh when the user returns, and poll lightly while visible.
   useEffect(() => {
-    refreshData();
-    const interval = setInterval(refreshData, 5000);
-    return () => clearInterval(interval);
+    void refreshData();
+
+    const refreshWhenActive = () => {
+      const recentlyRefreshed = Date.now() - lastRefreshAt.current < 5_000;
+      if (document.visibilityState === 'visible' && !recentlyRefreshed) void refreshData();
+    };
+
+    window.addEventListener('focus', refreshWhenActive);
+    document.addEventListener('visibilitychange', refreshWhenActive);
+    const interval = window.setInterval(refreshWhenActive, 60_000);
+
+    return () => {
+      window.removeEventListener('focus', refreshWhenActive);
+      document.removeEventListener('visibilitychange', refreshWhenActive);
+      window.clearInterval(interval);
+    };
   }, [refreshData]);
 
   // Recalculate product costs whenever ingredients or materials change

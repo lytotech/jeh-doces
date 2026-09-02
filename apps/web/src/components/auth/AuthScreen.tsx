@@ -16,6 +16,8 @@ export function AuthScreen() {
   const [email, setEmail] = useState(params.get('email') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
@@ -41,7 +43,7 @@ export function AuthScreen() {
     try {
       if (mode === 'login') await login(email, password, invite);
       if (mode === 'register') {
-        const result = await register({ name, email, password, companyName, invitationToken: invite });
+        const result = await register({ name, email, password, companyName, invitationToken: invite, acceptedTerms, acceptedPrivacy });
         setMode('resend'); setMessage(result.message); setPassword('');
       }
       if (mode === 'forgot') {
@@ -75,6 +77,10 @@ export function AuthScreen() {
           {mode === 'register' && <>
             <label className="relative block"><User className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input className={inputClass} placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} required /></label>
             {!invite && <label className="relative block"><Store className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input className={inputClass} placeholder="Nome da empresa" value={companyName} onChange={e => setCompanyName(e.target.value)} required /></label>}
+            <div className="space-y-2 rounded-2xl bg-[#FAF7F2] p-3 text-xs text-[#6B5747]">
+              <label className="flex cursor-pointer items-start gap-2.5"><input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#96642F]" checked={acceptedTerms} onChange={event => setAcceptedTerms(event.target.checked)} required/><span>Li e aceito os <a className="font-bold text-[#96642F] underline" href="/?legal=terms" target="_blank">Termos de Uso</a>.</span></label>
+              <label className="flex cursor-pointer items-start gap-2.5"><input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#96642F]" checked={acceptedPrivacy} onChange={event => setAcceptedPrivacy(event.target.checked)} required/><span>Li a <a className="font-bold text-[#96642F] underline" href="/?legal=privacy" target="_blank">Política de Privacidade</a> e estou ciente do tratamento dos dados.</span></label>
+            </div>
           </>}
           {!['reset', 'verify'].includes(mode) && <label className="relative block"><Mail className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input type="email" className={inputClass} placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required disabled={Boolean(invite)} /></label>}
           {!['forgot', 'resend', 'verify'].includes(mode) && <label className="relative block"><LockKeyhole className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input type={showPassword ? 'text' : 'password'} minLength={8} className={`${inputClass} pr-11`} placeholder="Sua senha" value={password} onChange={e => setPassword(e.target.value)} required /><button type="button" className="absolute right-4 top-4 text-[#8C7665]" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></label>}

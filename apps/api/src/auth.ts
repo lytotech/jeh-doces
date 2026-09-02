@@ -9,6 +9,7 @@ const scrypt = promisify(crypto.scrypt);
 const SESSION_COOKIE = 'jeh_session';
 const SESSION_DAYS = 30;
 const VERIFICATION_HOURS = 24;
+const LEGAL_VERSION = '2026-09-02';
 
 export interface AuthContext {
   userId: string;
@@ -185,12 +186,20 @@ authRouter.post('/register', asyncRoute(async (req, res) => {
   const password = String(req.body.password ?? '');
   const companyName = String(req.body.companyName ?? '').trim();
   const invitationToken = String(req.body.invitationToken ?? '');
+  const acceptedTerms = req.body.acceptedTerms === true;
+  const acceptedPrivacy = req.body.acceptedPrivacy === true;
   if (name.length < 2 || !email.includes('@') || password.length < 8) return res.status(400).json({ error: 'Informe nome, e-mail válido e senha com pelo menos 8 caracteres.' });
+  if (!acceptedTerms || !acceptedPrivacy) return res.status(400).json({ error: 'Aceite os Termos de Uso e a Política de Privacidade para continuar.' });
   if (await prisma.user.count({ where: { email } })) return res.status(409).json({ error: 'Este e-mail já possui cadastro.' });
   const passwordHash = await hashPassword(password);
 
   const result = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({ data: { name, email, passwordHash } });
+    const acceptedAt = new Date();
+    const user = await tx.user.create({ data: {
+      name, email, passwordHash,
+      termsAcceptedAt: acceptedAt, termsVersion: LEGAL_VERSION,
+      privacyAcceptedAt: acceptedAt, privacyVersion: LEGAL_VERSION,
+    } });
     let companyId: string;
     let role: CompanyRole = 'owner';
     if (invitationToken) {
