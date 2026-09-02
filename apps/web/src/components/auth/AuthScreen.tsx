@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Cake, Eye, EyeOff, Mail, LockKeyhole, User, Store } from 'lucide-react';
 import { authRequest, useAuth } from '../../context/AuthContext';
 
-type Mode = 'login' | 'register' | 'forgot' | 'reset';
+type Mode = 'login' | 'register' | 'forgot' | 'reset' | 'resend' | 'verify';
 
 export function AuthScreen() {
   const params = new URLSearchParams(window.location.search);
   const invite = params.get('invite') || undefined;
   const resetToken = params.get('reset');
-  const [mode, setMode] = useState<Mode>(resetToken ? 'reset' : invite ? 'register' : 'login');
+  const verifyToken = params.get('verify');
+  const requestedMode = params.get('auth');
+  const [mode, setMode] = useState<Mode>(verifyToken ? 'verify' : resetToken ? 'reset' : invite || requestedMode === 'register' ? 'register' : 'login');
   const [name, setName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState(params.get('email') || '');
@@ -17,13 +19,31 @@ export function AuthScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const { login, register } = useAuth();
+  const { login, register, refresh } = useAuth();
+  const verificationStarted = useRef(false);
+
+  useEffect(() => {
+    if (!verifyToken || verificationStarted.current) return;
+    verificationStarted.current = true;
+    setBusy(true);
+    authRequest('/verify-email', { method: 'POST', body: JSON.stringify({ token: verifyToken }) })
+      .then(async () => {
+        history.replaceState({}, '', '/');
+        setMessage('E-mail confirmado. Entrando…');
+        await refresh();
+      })
+      .catch(err => setError(err instanceof Error ? err.message : 'Não foi possível confirmar o e-mail.'))
+      .finally(() => setBusy(false));
+  }, [refresh, verifyToken]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setBusy(true); setError(''); setMessage('');
     try {
       if (mode === 'login') await login(email, password, invite);
-      if (mode === 'register') await register({ name, email, password, companyName, invitationToken: invite });
+      if (mode === 'register') {
+        const result = await register({ name, email, password, companyName, invitationToken: invite });
+        setMode('resend'); setMessage(result.message); setPassword('');
+      }
       if (mode === 'forgot') {
         const result = await authRequest<{ message: string }>('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
         setMessage(result.message);
@@ -31,6 +51,10 @@ export function AuthScreen() {
       if (mode === 'reset') {
         await authRequest('/reset-password', { method: 'POST', body: JSON.stringify({ token: resetToken, password }) });
         history.replaceState({}, '', '/'); setMode('login'); setMessage('Senha alterada. Entre com a nova senha.'); setPassword('');
+      }
+      if (mode === 'resend') {
+        const result = await authRequest<{ message: string }>('/resend-verification', { method: 'POST', body: JSON.stringify({ email }) });
+        setMessage(result.message);
       }
     } catch (err) { setError(err instanceof Error ? err.message : 'Erro inesperado.'); }
     finally { setBusy(false); }
@@ -46,21 +70,22 @@ export function AuthScreen() {
           <p className="text-[#8C7665] mt-1">Gestão simples para negócios doces</p>
         </div>
         <form onSubmit={submit} className="bg-white rounded-[2rem] border border-[#E8DECF] shadow-xl shadow-[#7A4B1D]/5 p-7 space-y-4">
-          <div><h2 className="font-serif text-2xl font-bold text-[#4A3423]">{mode === 'login' ? 'Bem-vindo de volta' : mode === 'register' ? (invite ? 'Aceitar convite' : 'Criar sua conta') : mode === 'forgot' ? 'Recuperar senha' : 'Nova senha'}</h2>
-          <p className="text-sm text-[#8C7665] mt-1">{mode === 'forgot' ? 'Enviaremos um link seguro para seu e-mail.' : mode === 'reset' ? 'Escolha uma senha com pelo menos 8 caracteres.' : 'Seus dados ficam separados por empresa.'}</p></div>
+          <div><h2 className="font-serif text-2xl font-bold text-[#4A3423]">{mode === 'login' ? 'Bem-vindo de volta' : mode === 'register' ? (invite ? 'Aceitar convite' : 'Criar sua conta') : mode === 'forgot' ? 'Recuperar senha' : mode === 'reset' ? 'Nova senha' : mode === 'resend' ? 'Confirme seu e-mail' : 'Confirmando e-mail'}</h2>
+          <p className="text-sm text-[#8C7665] mt-1">{mode === 'forgot' ? 'Enviaremos um link seguro para seu e-mail.' : mode === 'reset' ? 'Escolha uma senha com pelo menos 8 caracteres.' : mode === 'resend' ? 'Abra o link enviado. Ele é válido por 24 horas.' : mode === 'verify' ? 'Validando seu link seguro…' : 'Seus dados ficam separados por empresa.'}</p></div>
           {mode === 'register' && <>
             <label className="relative block"><User className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input className={inputClass} placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} required /></label>
             {!invite && <label className="relative block"><Store className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input className={inputClass} placeholder="Nome da empresa" value={companyName} onChange={e => setCompanyName(e.target.value)} required /></label>}
           </>}
-          {mode !== 'reset' && <label className="relative block"><Mail className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input type="email" className={inputClass} placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required disabled={Boolean(invite)} /></label>}
-          {mode !== 'forgot' && <label className="relative block"><LockKeyhole className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input type={showPassword ? 'text' : 'password'} minLength={8} className={`${inputClass} pr-11`} placeholder="Sua senha" value={password} onChange={e => setPassword(e.target.value)} required /><button type="button" className="absolute right-4 top-4 text-[#8C7665]" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></label>}
+          {!['reset', 'verify'].includes(mode) && <label className="relative block"><Mail className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input type="email" className={inputClass} placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required disabled={Boolean(invite)} /></label>}
+          {!['forgot', 'resend', 'verify'].includes(mode) && <label className="relative block"><LockKeyhole className="absolute left-4 top-4 text-[#A77A4D]" size={18}/><input type={showPassword ? 'text' : 'password'} minLength={8} className={`${inputClass} pr-11`} placeholder="Sua senha" value={password} onChange={e => setPassword(e.target.value)} required /><button type="button" className="absolute right-4 top-4 text-[#8C7665]" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}</button></label>}
           {error && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>}
           {message && <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{message}</p>}
-          <button disabled={busy} className="w-full rounded-2xl bg-[#96642F] py-3.5 font-bold text-white hover:bg-[#7A4B1D] disabled:opacity-60">{busy ? 'Aguarde…' : mode === 'login' ? 'Entrar' : mode === 'register' ? 'Criar acesso' : mode === 'forgot' ? 'Enviar instruções' : 'Alterar senha'}</button>
+          {mode !== 'verify' && <button disabled={busy} className="w-full rounded-2xl bg-[#96642F] py-3.5 font-bold text-white hover:bg-[#7A4B1D] disabled:opacity-60">{busy ? 'Aguarde…' : mode === 'login' ? 'Entrar' : mode === 'register' ? 'Criar acesso' : mode === 'forgot' ? 'Enviar instruções' : mode === 'resend' ? 'Reenviar confirmação' : 'Alterar senha'}</button>}
           <div className="text-center text-sm space-y-2">
-            {mode === 'login' && <><button type="button" className="block w-full text-[#96642F]" onClick={() => setMode('forgot')}>Esqueci minha senha</button><button type="button" className="text-[#5C4533]" onClick={() => setMode('register')}>Ainda não tenho conta</button></>}
-            {mode !== 'login' && <button type="button" className="text-[#96642F]" onClick={() => setMode('login')}>{invite ? 'Já tenho uma conta' : 'Voltar para o login'}</button>}
+            {mode === 'login' && <><button type="button" className="block w-full text-[#96642F]" onClick={() => setMode('forgot')}>Esqueci minha senha</button><button type="button" className="block w-full text-[#96642F]" onClick={() => setMode('resend')}>Reenviar confirmação</button><button type="button" className="text-[#5C4533]" onClick={() => setMode('register')}>Ainda não tenho conta</button></>}
+            {mode !== 'login' && <button type="button" className="text-[#96642F]" onClick={() => { history.replaceState({}, '', '/'); setMode('login'); setError(''); setMessage(''); }}>{invite ? 'Já tenho uma conta' : 'Voltar para o login'}</button>}
           </div>
+          <a href="/" className="block text-center text-xs font-semibold text-[#8C7665] hover:text-[#96642F]">← Voltar para o início</a>
         </form>
       </div>
     </main>

@@ -82,7 +82,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [settings, setSettings] = useState<AppSettings>({ storeName: 'Jeh Doces', storePhone: '', pixKey: '', pixKeyType: 'E-mail', defaultProfitMargin: 100, currencySymbol: 'R$' });
 
   const [activeTab, setActiveTab] = useState<string>('orders');
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>('ord-1');
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -342,7 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.resetToDefault();
       await refreshData();
-      setSelectedOrderId('ord-1');
+      setSelectedOrderId(null);
       showToast('Dados restaurados para demonstração!', 'info');
     } catch (e) {
       console.error(e);

@@ -8,6 +8,7 @@ import { prisma } from './db';
 const scrypt = promisify(crypto.scrypt);
 const SESSION_COOKIE = 'jeh_session';
 const SESSION_DAYS = 30;
+const VERIFICATION_HOURS = 24;
 
 export interface AuthContext {
   userId: string;
@@ -73,7 +74,7 @@ async function sendMail(to: string, subject: string, text: string) {
   const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM } = process.env;
   if (!SMTP_HOST || !SMTP_FROM) {
     if (process.env.NODE_ENV !== 'production') console.log(`[DEV EMAIL] ${to}: ${text}`);
-    else console.error('SMTP não configurado; e-mail não enviado.');
+    else throw new Error('SMTP não configurado; e-mail não enviado.');
     return;
   }
   const transport = nodemailer.createTransport({
@@ -84,6 +85,19 @@ async function sendMail(to: string, subject: string, text: string) {
 }
 
 const appUrl = () => process.env.APP_URL || 'http://localhost:5173';
+async function sendVerificationEmail(user: { id: string; email: string; name: string }) {
+  await prisma.emailVerificationToken.deleteMany({ where: { userId: user.id, usedAt: null } });
+  const token = randomToken();
+  await prisma.emailVerificationToken.create({ data: {
+    userId: user.id,
+    tokenHash: tokenHash(token),
+    expiresAt: new Date(Date.now() + VERIFICATION_HOURS * 60 * 60 * 1000),
+  } });
+  const link = `${appUrl()}/?verify=${encodeURIComponent(token)}`;
+  await sendMail(user.email, 'Confirme seu e-mail — Jeh Doces',
+    `Olá, ${user.name}! Confirme seu e-mail para acessar o Jeh Doces. Este link expira em ${VERIFICATION_HOURS} horas: ${link}`);
+}
+
 const asyncRoute = (handler: (req: Request, res: Response, next: NextFunction) => Promise<unknown>) =>
   (req: Request, res: Response, next: NextFunction) => void handler(req, res, next).catch(next);
 
@@ -98,6 +112,11 @@ export const requireAuth = asyncRoute(async (req, res, next) => {
     if (session) await prisma.session.delete({ where: { id: session.id } });
     res.clearCookie(SESSION_COOKIE, { path: '/' });
     return res.status(401).json({ error: 'Sessão expirada.' });
+  }
+  if (!session.user.emailVerifiedAt) {
+    await prisma.session.deleteMany({ where: { userId: session.userId } });
+    res.clearCookie(SESSION_COOKIE, { path: '/' });
+    return res.status(403).json({ error: 'Confirme seu e-mail para acessar.' });
   }
   const membership = await prisma.membership.findUnique({
     where: { userId_companyId: { userId: session.userId, companyId: session.activeCompanyId } },
@@ -144,16 +163,17 @@ authRouter.post('/register', asyncRoute(async (req, res) => {
       }
     }
     await tx.membership.create({ data: { userId: user.id, companyId, role } });
-    return { userId: user.id, companyId };
+    return { id: user.id, email: user.email, name: user.name };
   });
-  await createSession(res, result.userId, result.companyId);
-  res.status(201).json({ success: true });
+  await sendVerificationEmail(result);
+  res.status(201).json({ success: true, message: 'Enviamos um link de confirmação para seu e-mail.' });
 }));
 
 authRouter.post('/login', asyncRoute(async (req, res) => {
   const email = normalizeEmail(req.body.email);
   const user = await prisma.user.findUnique({ where: { email }, include: { memberships: true } });
   if (!user || !await verifyPassword(String(req.body.password ?? ''), user.passwordHash)) return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+  if (!user.emailVerifiedAt) return res.status(403).json({ error: 'Confirme seu e-mail antes de entrar. Você pode solicitar um novo link abaixo.' });
   let membership = user.memberships[0];
   const invitationToken = String(req.body.invitationToken ?? '');
   if (invitationToken) {
@@ -168,6 +188,38 @@ authRouter.post('/login', asyncRoute(async (req, res) => {
   if (!membership) return res.status(403).json({ error: 'Usuário sem empresa.' });
   await createSession(res, user.id, membership.companyId);
   res.json({ success: true });
+}));
+
+authRouter.post('/verify-email', asyncRoute(async (req, res) => {
+  const rawToken = String(req.body.token ?? '');
+  const verification = rawToken
+    ? await prisma.emailVerificationToken.findUnique({ where: { tokenHash: tokenHash(rawToken) }, include: { user: { include: { memberships: true } } } })
+    : null;
+  if (!verification || verification.usedAt || verification.expiresAt <= new Date()) return res.status(400).json({ error: 'Link de confirmação inválido ou expirado.' });
+  const membership = verification.user.memberships[0];
+  if (!membership) return res.status(403).json({ error: 'Usuário sem empresa.' });
+  await prisma.$transaction(async (tx) => {
+    const consumed = await tx.emailVerificationToken.updateMany({
+      where: { id: verification.id, usedAt: null, expiresAt: { gt: new Date() } },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count !== 1) throw new Error('Link de confirmação já utilizado.');
+    await tx.user.update({ where: { id: verification.userId }, data: { emailVerifiedAt: new Date() } });
+    await tx.emailVerificationToken.updateMany({
+      where: { userId: verification.userId, usedAt: null }, data: { usedAt: new Date() },
+    });
+  });
+  await createSession(res, verification.userId, membership.companyId);
+  res.json({ success: true });
+}));
+
+authRouter.post('/resend-verification', asyncRoute(async (req, res) => {
+  const user = await prisma.user.findUnique({ where: { email: normalizeEmail(req.body.email) } });
+  if (user && !user.emailVerifiedAt) {
+    const latest = await prisma.emailVerificationToken.findFirst({ where: { userId: user.id }, orderBy: { createdAt: 'desc' } });
+    if (!latest || latest.createdAt <= new Date(Date.now() - 60 * 1000)) await sendVerificationEmail(user);
+  }
+  res.json({ success: true, message: 'Se houver uma conta pendente, enviaremos um novo link de confirmação.' });
 }));
 
 authRouter.post('/logout', requireAuth, asyncRoute(async (req, res) => {
