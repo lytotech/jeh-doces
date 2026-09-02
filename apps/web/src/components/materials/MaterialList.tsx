@@ -16,7 +16,7 @@ export const MaterialList: React.FC<MaterialListProps> = ({
   onSelectMaterial,
   onNewMaterial,
 }) => {
-  const { materials, adjustMaterialStockAction } = useApp();
+  const { materials } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filtered = materials.filter((mat) =>
@@ -24,63 +24,65 @@ export const MaterialList: React.FC<MaterialListProps> = ({
   );
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24">
+    <div className="min-h-screen bg-[#FAF7F2]">
       <AppHeader
-        title="Materiais e Embalagens"
+        title="Materiais & Embalagens"
         rightAction={
-          <Button size="sm" onClick={onNewMaterial} className="shadow-none">
-            <Plus className="w-4 h-4" /> Novo
+          <Button size="sm" onClick={onNewMaterial} className="shadow-none font-semibold">
+            <Plus className="w-4 h-4" /> Novo Material
           </Button>
         }
       />
 
-      <div className="max-w-md mx-auto p-4 space-y-3">
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
         {/* Search */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-[#A89484] absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar material ou embalagem..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-sm font-medium text-[#302116] placeholder-[#B0A294] transition-colors"
-          />
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-[#A89484] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar material ou embalagem..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-sm font-medium text-[#302116] placeholder-[#B0A294] transition-colors shadow-xs"
+            />
+          </div>
+
+          <div className="text-xs text-[#7A6453]">
+            <span>{filtered.length} materiais cadastrados</span>
+          </div>
         </div>
 
-        {/* Count */}
-        <div className="flex items-center justify-between text-xs text-[#7A6453] px-1">
-          <span>{filtered.length} materiais cadastrados</span>
-          <span>Desconto automático em vendas</span>
-        </div>
-
-        {/* List of Materials */}
-        <div className="space-y-2.5">
-          {filtered.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-3xl border border-[#E5DACD] p-6">
-              <Package className="w-12 h-12 text-[#D7BC9B] mx-auto mb-2" />
-              <p className="font-serif text-lg font-medium text-[#4A3828]">Nenhum material cadastrado</p>
-              <p className="text-xs text-[#8A7565] mt-1 mb-4">
-                Cadastre caixas, fitas, sacolas e embalagens para controlar custos e estoque.
-              </p>
-              <Button size="sm" onClick={onNewMaterial}>
-                <Plus className="w-4 h-4" /> Cadastrar Material
-              </Button>
-            </div>
-          ) : (
-            filtered.map((mat) => {
+        {/* List of Materials in responsive grid */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-[#E5DACD] p-8 max-w-md mx-auto">
+            <Package className="w-12 h-12 text-[#D7BC9B] mx-auto mb-3" />
+            <p className="font-serif text-xl font-medium text-[#4A3828]">Nenhum material cadastrado</p>
+            <p className="text-xs text-[#8A7565] mt-1.5 mb-5">
+              Cadastre caixas, fitas, sacolas e embalagens para controlar custos e estoque.
+            </p>
+            <Button size="md" onClick={onNewMaterial}>
+              <Plus className="w-4 h-4" /> Cadastrar Material
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((mat) => {
               const isLowStock = mat.trackStock && mat.stockQuantity <= (mat.minStockAlert || 5);
               return (
                 <div
                   key={mat.id}
                   onClick={() => onSelectMaterial(mat)}
-                  className="bg-white hover:bg-[#FAF6F0] p-4 rounded-2xl border border-[#E5DACD] shadow-xs cursor-pointer transition-all flex items-center justify-between active:scale-[0.99]"
+                  className="bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#D7BC9B] shadow-xs hover:shadow-card cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] group"
                 >
-                  <div className="space-y-1.5 flex-1 pr-2">
+                  <div className="space-y-1.5 flex-1 pr-2 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-base text-[#302116]">{mat.name}</span>
+                      <span className="font-semibold text-base text-[#302116] group-hover:text-[#96642F] transition-colors truncate">
+                        {mat.name}
+                      </span>
                       <TagBadge variant="material">Material</TagBadge>
                       {isLowStock && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
                           <AlertTriangle className="w-3 h-3" /> Estoque baixo
                         </span>
                       )}
@@ -92,7 +94,7 @@ export const MaterialList: React.FC<MaterialListProps> = ({
                       {mat.trackStock && (
                         <>
                           <span>•</span>
-                          <span className={isLowStock ? 'font-bold text-amber-700' : 'font-medium'}>
+                          <span className={isLowStock ? 'font-bold text-amber-800' : 'font-medium'}>
                             Estoque: {formatDecimal(mat.stockQuantity)} {mat.unit}
                           </span>
                         </>
@@ -108,13 +110,13 @@ export const MaterialList: React.FC<MaterialListProps> = ({
                         <span className="text-xs font-normal text-[#7A6453]">/{mat.unit}</span>
                       </span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-[#C4B2A0]" />
+                    <ChevronRight className="w-5 h-5 text-[#C4B2A0] group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

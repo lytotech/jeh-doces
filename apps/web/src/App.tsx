@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from './context/AppContext';
+import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { BackupSettingsModal } from './components/settings/BackupSettingsModal';
@@ -201,11 +202,18 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex flex-col justify-between">
-      <main className="flex-1 w-full max-w-lg mx-auto bg-[#FAF7F2] shadow-sm min-h-screen relative">
-        {renderContent()}
-      </main>
+    <div className="min-h-screen bg-[#FAF7F2] flex flex-row">
+      {/* Sidebar on desktop */}
+      <Sidebar onOpenSettings={() => setShowSettingsModal(true)} />
 
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0 bg-[#FAF7F2] min-h-screen relative">
+        <main className="flex-1 w-full pb-20 md:pb-8">
+          {renderContent()}
+        </main>
+      </div>
+
+      {/* Bottom Nav on mobile */}
       <BottomNav />
       <ToastContainer />
 

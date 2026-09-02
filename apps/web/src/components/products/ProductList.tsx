@@ -32,85 +32,89 @@ export const ProductList: React.FC<ProductListProps> = ({
   });
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24">
+    <div className="min-h-screen bg-[#FAF7F2]">
       <AppHeader
         title="Cardápio & Receitas"
         rightAction={
-          <Button size="sm" onClick={onNewProduct} className="shadow-none">
-            <Plus className="w-4 h-4" /> Novo
+          <Button size="sm" onClick={onNewProduct} className="shadow-none font-semibold">
+            <Plus className="w-4 h-4" /> Novo Produto
           </Button>
         }
       />
 
-      <div className="max-w-md mx-auto p-4 space-y-3">
-        {/* Search */}
-        <div className="relative">
-          <Search className="w-4 h-4 text-[#A89484] absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar por doce ou receita..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-sm font-medium text-[#302116] placeholder-[#B0A294] transition-colors"
-          />
-        </div>
-
-        {/* Category Pills */}
-        {categories.length > 2 && (
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 rounded-full text-xs font-semibold capitalize whitespace-nowrap transition-colors ${
-                  selectedCategory === cat
-                    ? 'bg-[#96642F] text-white'
-                    : 'bg-white text-[#7A6453] border border-[#E5DACD] hover:bg-[#F6ECE0]'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
+        {/* Search & Categories */}
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-[#A89484] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar por doce ou receita..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-sm font-medium text-[#302116] placeholder-[#B0A294] transition-colors shadow-xs"
+            />
           </div>
-        )}
+
+          {/* Category Pills */}
+          {categories.length > 2 && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold capitalize whitespace-nowrap transition-colors ${
+                    selectedCategory === cat
+                      ? 'bg-[#96642F] text-white shadow-xs'
+                      : 'bg-white text-[#7A6453] border border-[#E5DACD] hover:bg-[#F6ECE0]'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Count */}
         <div className="flex items-center justify-between text-xs text-[#7A6453] px-1">
           <span>{filtered.length} doces e receitas</span>
-          <span>Ficha técnica com CMV</span>
+          <span>Fichas técnicas com cálculo de CMV em tempo real</span>
         </div>
 
-        {/* List of Products */}
-        <div className="space-y-2.5">
-          {filtered.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-3xl border border-[#E5DACD] p-6">
-              <Cake className="w-12 h-12 text-[#D7BC9B] mx-auto mb-2" />
-              <p className="font-serif text-lg font-medium text-[#4A3828]">Nenhum produto cadastrado</p>
-              <p className="text-xs text-[#8A7565] mt-1 mb-4">
-                Monte suas receitas com custos automáticos de ingredientes e embalagens.
-              </p>
-              <Button size="sm" onClick={onNewProduct}>
-                <Plus className="w-4 h-4" /> Cadastrar Produto
-              </Button>
-            </div>
-          ) : (
-            filtered.map((prod) => {
+        {/* List of Products in responsive grid */}
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-3xl border border-[#E5DACD] p-8 max-w-md mx-auto">
+            <Cake className="w-12 h-12 text-[#D7BC9B] mx-auto mb-3" />
+            <p className="font-serif text-xl font-medium text-[#4A3828]">Nenhum produto cadastrado</p>
+            <p className="text-xs text-[#8A7565] mt-1.5 mb-5">
+              Monte suas receitas com custos automáticos de ingredientes e embalagens.
+            </p>
+            <Button size="md" onClick={onNewProduct}>
+              <Plus className="w-4 h-4" /> Cadastrar Produto
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filtered.map((prod) => {
               const profit = prod.salePrice - prod.calculatedCost;
               const margin = prod.salePrice > 0 ? (profit / prod.salePrice) * 100 : 0;
               return (
                 <div
                   key={prod.id}
                   onClick={() => onSelectProduct(prod)}
-                  className="bg-white hover:bg-[#FAF6F0] p-4 rounded-2xl border border-[#E5DACD] shadow-xs cursor-pointer transition-all flex items-center justify-between active:scale-[0.99]"
+                  className="bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#D7BC9B] shadow-xs hover:shadow-card cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] group"
                 >
-                  <div className="flex items-center gap-3 flex-1 pr-2">
-                    <div className="w-11 h-11 rounded-2xl bg-[#F6EFE6] border border-[#E8DACB] flex items-center justify-center text-xl shrink-0">
+                  <div className="flex items-center gap-3 flex-1 pr-2 min-w-0">
+                    <div className="w-12 h-12 rounded-2xl bg-[#F6EFE6] border border-[#E8DACB] flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
                       {prod.icon || '🧁'}
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-base text-[#302116]">{prod.name}</span>
+                        <span className="font-semibold text-base text-[#302116] group-hover:text-[#96642F] transition-colors truncate">
+                          {prod.name}
+                        </span>
                         {prod.category && <TagBadge>{prod.category}</TagBadge>}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-[#7A6453]">
@@ -130,13 +134,13 @@ export const ProductList: React.FC<ProductListProps> = ({
                         {formatCurrency(prod.salePrice)}
                       </span>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-[#C4B2A0]" />
+                    <ChevronRight className="w-5 h-5 text-[#C4B2A0] group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
