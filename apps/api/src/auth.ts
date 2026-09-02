@@ -135,7 +135,7 @@ authRouter.post('/register', asyncRoute(async (req, res) => {
       role = invitation.role;
       await tx.invitation.update({ where: { id: invitation.id }, data: { acceptedAt: new Date() } });
     } else {
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(7420190201)`;
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(7420190201)::text AS lock_result`;
       const unclaimed = await tx.company.findFirst({ where: { memberships: { none: {} } }, orderBy: { createdAt: 'asc' } });
       if (unclaimed) companyId = unclaimed.id;
       else {
