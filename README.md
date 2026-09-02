@@ -75,3 +75,21 @@ jeh-doces/
    ```bash
    npm start
    ```
+
+## Banco de dados
+
+A API usa PostgreSQL 17 por meio do Prisma. Crie `apps/api/.env` a partir de
+`apps/api/.env.example` e defina `DATABASE_URL`. O arquivo real é ignorado pelo
+Git e deve ser configurado como segredo no ambiente de publicação.
+
+```bash
+# Aplicar migrações versionadas (desenvolvimento e produção)
+npm run db:deploy -w @jeh-doces/api
+
+# Importação única do banco JSON legado; recusa sobrescrever banco não vazio
+npm run db:import-json -w @jeh-doces/api
+```
+
+No ambiente Proxmox, o banco `jeh_doces` fica no PostgreSQL do LXC 102
+(`192.168.2.102:5432`). A aplicação deve receber a URL completa exclusivamente
+por variável de ambiente. Não versione credenciais.

@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || '0.0.0.0';
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -30,144 +31,145 @@ function getLocalIpAddress() {
 }
 
 // === Health Check ===
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  await db.ping();
+  res.json({ status: 'ok', database: 'ok', time: new Date().toISOString() });
 });
 
 // === Ingredients ===
-app.get('/api/ingredients', (req, res) => {
-  res.json(db.getIngredients());
+app.get('/api/ingredients', async (req, res) => {
+  res.json(await db.getIngredients());
 });
 
-app.post('/api/ingredients', (req, res) => {
-  const saved = db.saveIngredient(req.body);
+app.post('/api/ingredients', async (req, res) => {
+  const saved = await db.saveIngredient(req.body);
   res.status(201).json(saved);
 });
 
-app.put('/api/ingredients/:id', (req, res) => {
-  const saved = db.saveIngredient({ ...req.body, id: req.params.id });
+app.put('/api/ingredients/:id', async (req, res) => {
+  const saved = await db.saveIngredient({ ...req.body, id: req.params.id });
   res.json(saved);
 });
 
-app.delete('/api/ingredients/:id', (req, res) => {
-  const success = db.deleteIngredient(req.params.id);
+app.delete('/api/ingredients/:id', async (req, res) => {
+  const success = await db.deleteIngredient(req.params.id);
   res.json({ success });
 });
 
-app.post('/api/ingredients/:id/history', (req, res) => {
-  const updated = db.addPriceHistory(req.params.id, req.body);
+app.post('/api/ingredients/:id/history', async (req, res) => {
+  const updated = await db.addPriceHistory(req.params.id, req.body);
   if (!updated) return res.status(404).json({ error: 'Ingredient not found' });
   res.json(updated);
 });
 
 // === Materials ===
-app.get('/api/materials', (req, res) => {
-  res.json(db.getMaterials());
+app.get('/api/materials', async (req, res) => {
+  res.json(await db.getMaterials());
 });
 
-app.post('/api/materials', (req, res) => {
-  const saved = db.saveMaterial(req.body);
+app.post('/api/materials', async (req, res) => {
+  const saved = await db.saveMaterial(req.body);
   res.status(201).json(saved);
 });
 
-app.put('/api/materials/:id', (req, res) => {
-  const saved = db.saveMaterial({ ...req.body, id: req.params.id });
+app.put('/api/materials/:id', async (req, res) => {
+  const saved = await db.saveMaterial({ ...req.body, id: req.params.id });
   res.json(saved);
 });
 
-app.delete('/api/materials/:id', (req, res) => {
-  const success = db.deleteMaterial(req.params.id);
+app.delete('/api/materials/:id', async (req, res) => {
+  const success = await db.deleteMaterial(req.params.id);
   res.json({ success });
 });
 
-app.patch('/api/materials/:id/stock', (req, res) => {
+app.patch('/api/materials/:id/stock', async (req, res) => {
   const { stockQuantity } = req.body;
-  const updated = db.adjustMaterialStock(req.params.id, Number(stockQuantity));
+  const updated = await db.adjustMaterialStock(req.params.id, Number(stockQuantity));
   if (!updated) return res.status(404).json({ error: 'Material not found' });
   res.json(updated);
 });
 
 // === Products ===
-app.get('/api/products', (req, res) => {
-  res.json(db.getProducts());
+app.get('/api/products', async (req, res) => {
+  res.json(await db.getProducts());
 });
 
-app.post('/api/products', (req, res) => {
-  const saved = db.saveProduct(req.body);
+app.post('/api/products', async (req, res) => {
+  const saved = await db.saveProduct(req.body);
   res.status(201).json(saved);
 });
 
-app.put('/api/products/:id', (req, res) => {
-  const saved = db.saveProduct({ ...req.body, id: req.params.id });
+app.put('/api/products/:id', async (req, res) => {
+  const saved = await db.saveProduct({ ...req.body, id: req.params.id });
   res.json(saved);
 });
 
-app.delete('/api/products/:id', (req, res) => {
-  const success = db.deleteProduct(req.params.id);
+app.delete('/api/products/:id', async (req, res) => {
+  const success = await db.deleteProduct(req.params.id);
   res.json({ success });
 });
 
 // === Orders ===
-app.get('/api/orders', (req, res) => {
-  res.json(db.getOrders());
+app.get('/api/orders', async (req, res) => {
+  res.json(await db.getOrders());
 });
 
-app.post('/api/orders', (req, res) => {
-  const saved = db.saveOrder(req.body);
+app.post('/api/orders', async (req, res) => {
+  const saved = await db.saveOrder(req.body);
   res.status(201).json(saved);
 });
 
-app.put('/api/orders/:id', (req, res) => {
-  const saved = db.saveOrder({ ...req.body, id: req.params.id });
+app.put('/api/orders/:id', async (req, res) => {
+  const saved = await db.saveOrder({ ...req.body, id: req.params.id });
   res.json(saved);
 });
 
-app.delete('/api/orders/:id', (req, res) => {
-  const success = db.deleteOrder(req.params.id);
+app.delete('/api/orders/:id', async (req, res) => {
+  const success = await db.deleteOrder(req.params.id);
   res.json({ success });
 });
 
-app.patch('/api/orders/:id/status', (req, res) => {
+app.patch('/api/orders/:id/status', async (req, res) => {
   const { status } = req.body;
-  const updated = db.updateOrderStatus(req.params.id, status);
+  const updated = await db.updateOrderStatus(req.params.id, status);
   if (!updated) return res.status(404).json({ error: 'Order not found' });
   res.json(updated);
 });
 
-app.post('/api/orders/:id/payments', (req, res) => {
-  const updated = db.addPayment(req.params.id, req.body);
+app.post('/api/orders/:id/payments', async (req, res) => {
+  const updated = await db.addPayment(req.params.id, req.body);
   if (!updated) return res.status(404).json({ error: 'Order not found' });
   res.json(updated);
 });
 
-app.delete('/api/orders/:id/payments/:paymentId', (req, res) => {
-  const updated = db.removePayment(req.params.id, req.params.paymentId);
+app.delete('/api/orders/:id/payments/:paymentId', async (req, res) => {
+  const updated = await db.removePayment(req.params.id, req.params.paymentId);
   if (!updated) return res.status(404).json({ error: 'Order not found' });
   res.json(updated);
 });
 
 // === Settings ===
-app.get('/api/settings', (req, res) => {
-  res.json(db.getSettings());
+app.get('/api/settings', async (req, res) => {
+  res.json(await db.getSettings());
 });
 
-app.put('/api/settings', (req, res) => {
-  const updated = db.saveSettings(req.body);
+app.put('/api/settings', async (req, res) => {
+  const updated = await db.saveSettings(req.body);
   res.json(updated);
 });
 
 // === Backup & Full Data ===
-app.get('/api/backup', (req, res) => {
-  res.json(db.getAllData());
+app.get('/api/backup', async (req, res) => {
+  res.json(await db.getAllData());
 });
 
-app.post('/api/backup/restore', (req, res) => {
-  const success = db.restoreAllData(req.body);
+app.post('/api/backup/restore', async (req, res) => {
+  const success = await db.restoreAllData(req.body);
   res.json({ success });
 });
 
-app.post('/api/backup/reset', (req, res) => {
-  db.resetToDefault();
+app.post('/api/backup/reset', async (req, res) => {
+  await db.resetToDefault();
   res.json({ success: true });
 });
 
@@ -175,7 +177,7 @@ app.post('/api/backup/reset', (req, res) => {
 const distPath = path.resolve(__dirname, '../../web/dist');
 app.use(express.static(distPath));
 
-app.use((req, res) => {
+app.use(async (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'API endpoint not found' });
   }
@@ -187,7 +189,7 @@ app.use((req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+app.listen(Number(PORT), HOST, () => {
   const ips = getLocalIpAddress();
   console.log(`\n🧁 ===============================================`);
   console.log(`✨ JEH DOCES • BACK-END & API SERVIDOR RODANDO`);

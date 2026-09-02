@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Ingredient {
+  id              String         @id @default(cuid())
+  name            String
+  isComposite     Boolean        @default(false)
+  unit            String         @default("g") // g, ml, un
+  packageQuantity Float          @default(1000)
+  paidPrice       Float          @default(0)
+  unitCost        Float          @default(0)
+  yieldQuantity   Float?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  priceHistory    PriceHistory[]
+  subIngredients  SubIngredient[] @relation("CompositeParent")
+  usedInComposite SubIngredient[] @relation("SubIngredientItem")
+  productItems    ProductIngredient[]
+
+  @@map("ingredients")
+}
+
+model PriceHistory {
+  id              String     @id @default(cuid())
+  ingredientId    String
+  ingredient      Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  date            DateTime   @default(now())
+  paidPrice       Float
+  packageQuantity Float
+  unitCost        Float
+  notes           String?
+  createdAt       DateTime   @default(now())
+
+  @@map("price_history")
+}
+
+model SubIngredient {
+  id             String     @id @default(cuid())
+  parentId       String
+  parent         Ingredient @relation("CompositeParent", fields: [parentId], references: [id], onDelete: Cascade)
+  ingredientId   String
+  subIngredient  Ingredient @relation("SubIngredientItem", fields: [ingredientId], references: [id], onDelete: Cascade)
+  quantity       Float
+
+  @@map("sub_ingredients")
+}
+
+model Material {
+  id            String          @id @default(cuid())
+  name          String
+  unit          String          @default("un")
+  baseQuantity  Float           @default(1)
+  totalCost     Float           @default(0)
+  unitCost      Float           @default(0)
+  trackStock    Boolean         @default(true)
+  stockQuantity Float           @default(0)
+  minStockAlert Float?          @default(5)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  productItems  ProductMaterial[]
+  orderItems    OrderMaterial[]
+
+  @@map("materials")
+}
+
+model Product {
+  id             String              @id @default(cuid())
+  name           String
+  category       String              @default("Geral")
+  description    String?
+  icon           String?             @default("🧁")
+  salePrice      Float               @default(0)
+  calculatedCost Float               @default(0)
+  profitMargin   Float               @default(100)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  ingredients    ProductIngredient[]
+  materials      ProductMaterial[]
+  orderItems     OrderItem[]
+
+  @@map("products")
+}
+
+model ProductIngredient {
+  id           String     @id @default(cuid())
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredientId String
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  quantity     Float
+
+  @@map("product_ingredients")
+}
+
+model ProductMaterial {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  materialId String
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  quantity   Float
+
+  @@map("product_materials")
+}
+
+enum OrderStatus {
+  orcamento
+  confirmado
+  produzindo
+  pronto
+  entregue
+  cancelado
+}
+
+model Order {
+  id                  String          @id @default(cuid())
+  orderNumber         String          @unique
+  clientName          String
+  clientPhone         String?
+  clientAddress       String?
+  deliveryDate        DateTime
+  status              OrderStatus     @default(orcamento)
+  subtotal            Float           @default(0)
+  discount            Float           @default(0)
+  totalCharged        Float           @default(0)
+  estimatedCost       Float           @default(0)
+  estimatedProfit     Float           @default(0)
+  profitMarginPercent Float           @default(0)
+  notes               String?
+  stockDecremented    Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  items               OrderItem[]
+  materials           OrderMaterial[]
+  payments            Payment[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productName String
+  quantity    Float    @default(1)
+  unitPrice   Float    @default(0)
+  totalPrice  Float    @default(0)
+  unitCost    Float    @default(0)
+  totalCost   Float    @default(0)
+
+  @@map("order_items")
+}
+
+model OrderMaterial {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  materialId   String
+  material     Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  materialName String
+  quantity     Float    @default(1)
+  unitCost     Float    @default(0)
+  totalCost    Float    @default(0)
+
+  @@map("order_materials")
+}
+
+enum PaymentMethod {
+  pix
+  dinheiro
+  cartao_credito
+  cartao_debito
+  transferencia
+  outro
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  orderId   String
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount    Float
+  method    PaymentMethod @default(pix)
+  paidAt    DateTime      @default(now())
+  notes     String?
+  createdAt DateTime      @default(now())
+
+  @@map("payments")
+}
+
+model Setting {
+  id                  String   @id @default("default")
+  storeName           String   @default("Jeh Doces")
+  storePhone          String?  @default("(11) 99876-5432")
+  pixKey              String?  @default("jehdoces@exemplo.com.br")
+  pixKeyType          String?  @default("E-mail")
+  defaultProfitMargin Float    @default(100)
+  currencySymbol      String   @default("R$")
+  updatedAt           DateTime @updatedAt
+
+  @@map("settings")
+}
