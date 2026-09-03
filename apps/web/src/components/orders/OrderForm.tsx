@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Order,
   OrderProductItem,
@@ -48,6 +48,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [customerId, setCustomerId] = useState(order?.customerId || '');
   const [showQuickCustomer, setShowQuickCustomer] = useState(false);
   const [quickCustomerName, setQuickCustomerName] = useState('');
+
+  // Keep the order snapshot in sync when the selected customer is edited elsewhere.
+  useEffect(() => {
+    if (!customerId) return;
+    const customer = customers.find((item) => item.id === customerId);
+    if (!customer) return;
+    setClientName(customer.name);
+    setClientPhone(customer.phone || '');
+    setClientAddress(customer.address || '');
+  }, [customerId, customers]);
   const [deliveryDate, setDeliveryDate] = useState(
     order?.deliveryDate
       ? order.deliveryDate.slice(0, 16)

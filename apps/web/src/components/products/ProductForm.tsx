@@ -135,7 +135,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#FAF7F2] pb-24">
       <AppHeader
         title={isEditing ? 'Editar produto' : 'Novo produto'}
         showBack
@@ -153,7 +153,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
         }
       />
 
-      <div className="max-w-md mx-auto p-4 sm:p-5 space-y-4">
+      <div className="w-full max-w-md mx-auto p-4 sm:p-5 space-y-4">
         <form onSubmit={handleSave} className="space-y-4">
           {/* Nome e Ícone */}
           <div className="flex gap-2">
@@ -213,10 +213,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   return (
                     <div
                       key={index}
-                      className="bg-white p-2.5 rounded-xl border border-[#E5DACD] flex items-center gap-2"
+                      className="bg-white p-2.5 rounded-xl border border-[#E5DACD] flex flex-wrap sm:flex-nowrap items-center gap-2 min-w-0"
                     >
                       <select
-                        className="flex-1 bg-transparent text-xs font-semibold text-[#302116] border-none focus:outline-none truncate"
+                        className="w-full sm:flex-1 min-w-0 bg-transparent text-xs font-semibold text-[#302116] border-none focus:outline-none truncate"
                         value={item.ingredientId}
                         onChange={(e) =>
                           handleUpdateIngredient(index, 'ingredientId', e.target.value)
@@ -285,10 +285,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                   return (
                     <div
                       key={index}
-                      className="bg-white p-2.5 rounded-xl border border-[#E5DACD] flex items-center gap-2"
+                      className="bg-white p-2.5 rounded-xl border border-[#E5DACD] flex flex-wrap sm:flex-nowrap items-center gap-2 min-w-0"
                     >
                       <select
-                        className="flex-1 bg-transparent text-xs font-semibold text-[#302116] border-none focus:outline-none truncate"
+                        className="w-full sm:flex-1 min-w-0 bg-transparent text-xs font-semibold text-[#302116] border-none focus:outline-none truncate"
                         value={item.materialId}
                         onChange={(e) =>
                           handleUpdateMaterial(index, 'materialId', e.target.value)
@@ -337,7 +337,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
             </div>
 
             {/* Sugestões de Markup */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
               <span className="text-xs text-[#7A4B1D] font-medium">Margens:</span>
               <button
                 type="button"
