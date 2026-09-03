@@ -10,6 +10,7 @@ import { api } from '../../services/api';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
 import { TagBadge } from '../ui/Badge';
 import {
   formatCurrency,
@@ -18,6 +19,7 @@ import {
 } from '../../services/costEngine';
 import {
   Plus,
+  UserPlus,
   Trash2,
   Cookie,
   Package,
@@ -53,6 +55,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const customerPickerRef = useRef<HTMLDivElement>(null);
   const [showQuickCustomer, setShowQuickCustomer] = useState(false);
   const [quickCustomerName, setQuickCustomerName] = useState('');
+  const [quickCustomerPhone, setQuickCustomerPhone] = useState('');
+  const [quickCustomerAddress, setQuickCustomerAddress] = useState('');
 
   // Keep the order snapshot in sync when the selected customer is edited elsewhere.
   useEffect(() => {
@@ -314,7 +318,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div ref={customerPickerRef} className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Cliente cadastrado</label><div className="flex gap-2"><input className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Digite para buscar..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(e.target.value); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /><button type="button" onClick={() => setShowQuickCustomer(v => !v)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-lg" title="Cadastrar cliente">+</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-12 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
+                <div ref={customerPickerRef} className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Buscar cliente</label><div className="flex gap-2"><input className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Digite o nome..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(''); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /><button type="button" onClick={() => setShowQuickCustomer(true)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-xs font-semibold whitespace-nowrap" title="Cadastrar novo cliente"><UserPlus className="w-4 h-4 inline mr-1" />Novo</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-0 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
                 <TextInput
                   label="Nome do cliente"
                   value={clientName}
@@ -332,7 +336,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                 />
               </div>
 
-              {showQuickCustomer && <div className="p-3 bg-[#F5ECE0] rounded-2xl border border-[#DFCFC0] flex gap-2 items-end"><div className="flex-1"><TextInput label="Nome do novo cliente" value={quickCustomerName} onChange={e => setQuickCustomerName(e.target.value)} autoFocus /></div><Button type="button" size="sm" onClick={async () => { if (!quickCustomerName.trim()) return; const c = await saveCustomerAction({ name: quickCustomerName }); if (c) { setCustomerId(c.id); setClientName(c.name); setQuickCustomerName(''); setShowQuickCustomer(false); } }}>Cadastrar</Button></div>}
+              <Modal isOpen={showQuickCustomer} onClose={() => setShowQuickCustomer(false)} title="Novo cliente" subtitle="Cadastre e selecione na encomenda"><div className="space-y-3"><TextInput label="Nome" value={quickCustomerName} onChange={e => setQuickCustomerName(e.target.value)} autoFocus required /><TextInput label="Telefone / WhatsApp" value={quickCustomerPhone} onChange={e => setQuickCustomerPhone(e.target.value)} /><TextInput label="Endereço" value={quickCustomerAddress} onChange={e => setQuickCustomerAddress(e.target.value)} /><div className="flex justify-end gap-2 pt-2"><Button type="button" variant="secondary" onClick={() => setShowQuickCustomer(false)}>Cancelar</Button><Button type="button" onClick={async () => { if (!quickCustomerName.trim()) return; const c = await saveCustomerAction({ name: quickCustomerName, phone: quickCustomerPhone, address: quickCustomerAddress }); if (c) { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setQuickCustomerName(''); setQuickCustomerPhone(''); setQuickCustomerAddress(''); setShowQuickCustomer(false); } }}>Cadastrar cliente</Button></div></div></Modal>
 
               <TextInput
                 label="Endereço de entrega"

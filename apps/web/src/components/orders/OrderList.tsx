@@ -142,9 +142,7 @@ export const OrderList: React.FC<OrderListProps> = ({
                       <span className="truncate pr-2">
                         {ord.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ') || 'Sem doces'}
                       </span>
-                      <span className="font-bold text-sm text-[#96642F] shrink-0">
-                        {formatCurrency(ord.totalCharged)}
-                      </span>
+                      <span className="text-right shrink-0 leading-tight"><span className="block text-[10px] text-[#8C7665]">Cobrado</span><span className="font-bold text-sm text-[#96642F]">{formatCurrency(ord.totalCharged)}</span><span className="block text-[10px] text-[#7A6453]">Custo: {formatCurrency(ord.estimatedCost)}</span></span>
                     </div>
                   </div>
 
