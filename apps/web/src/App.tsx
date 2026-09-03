@@ -25,6 +25,8 @@ import { ProductForm } from './components/products/ProductForm';
 
 // Dashboard
 import { DashboardView } from './components/dashboard/DashboardView';
+import { CustomerList } from './components/customers/CustomerList';
+import { CustomerForm } from './components/customers/CustomerForm';
 
 export const App: React.FC = () => {
   const {
@@ -40,6 +42,8 @@ export const App: React.FC = () => {
     setEditingProduct,
     editingOrder,
     setEditingOrder,
+    editingCustomer,
+    setEditingCustomer,
     orders,
   } = useApp();
 
@@ -47,6 +51,7 @@ export const App: React.FC = () => {
   const [isCreatingNewIngredient, setIsCreatingNewIngredient] = useState(false);
   const [isCreatingNewMaterial, setIsCreatingNewMaterial] = useState(false);
   const [isCreatingNewProduct, setIsCreatingNewProduct] = useState(false);
+  const [isCreatingNewCustomer, setIsCreatingNewCustomer] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
 
@@ -196,6 +201,12 @@ export const App: React.FC = () => {
             onOpenSettings={() => setShowSettingsModal(true)}
           />
         );
+      }
+
+      case 'customers': {
+        if (isCreatingNewCustomer) return <CustomerForm customer={null} onBack={() => setIsCreatingNewCustomer(false)} />;
+        if (editingCustomer) return <CustomerForm customer={editingCustomer} onBack={() => setEditingCustomer(null)} />;
+        return <CustomerList onSelectCustomer={setEditingCustomer} onNewCustomer={() => setIsCreatingNewCustomer(true)} />;
       }
 
       default:

@@ -8,6 +8,7 @@ import {
   AppSettings,
   PaymentRecord,
   PriceHistoryRecord,
+  Customer,
 } from '../types';
 import { api } from '../services/api';
 import { calculateProductCost } from '../services/costEngine';
@@ -23,6 +24,7 @@ interface AppContextType {
   materials: Material[];
   products: Product[];
   orders: Order[];
+  customers: Customer[];
   settings: AppSettings;
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -36,6 +38,8 @@ interface AppContextType {
   setEditingProduct: (prod: Product | null) => void;
   editingOrder: Order | null;
   setEditingOrder: (ord: Order | null) => void;
+  editingCustomer: Customer | null;
+  setEditingCustomer: (customer: Customer | null) => void;
   
   // Sync state
   isSyncing: boolean;
@@ -66,6 +70,10 @@ interface AppContextType {
   addPaymentAction: (orderId: string, payment: Omit<PaymentRecord, 'id'>) => Promise<void>;
   removePaymentAction: (orderId: string, paymentId: string) => Promise<void>;
 
+  // Customer Actions
+  saveCustomerAction: (customer: Partial<Customer>) => Promise<Customer | null>;
+  archiveCustomerAction: (id: string, archived?: boolean) => Promise<void>;
+
   // Settings & Reset
   updateSettingsAction: (newSettings: Partial<AppSettings>) => Promise<void>;
   resetAllDataAction: () => Promise<void>;
@@ -79,6 +87,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [materials, setMaterials] = useState<Material[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [settings, setSettings] = useState<AppSettings>({ storeName: 'Jeh Doces', storePhone: '', pixKey: '', pixKeyType: 'E-mail', defaultProfitMargin: 100, currencySymbol: 'R$' });
 
   const [activeTab, setActiveTab] = useState<string>('orders');
@@ -87,6 +96,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [serverOnline, setServerOnline] = useState<boolean>(true);
@@ -109,11 +119,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const refresh = (async () => {
       try {
         setIsSyncing(true);
-        const [ingRes, matRes, prodRes, ordRes, settRes] = await Promise.all([
+        const [ingRes, matRes, prodRes, ordRes, custRes, settRes] = await Promise.all([
           api.getIngredients(),
           api.getMaterials(),
           api.getProducts(),
           api.getOrders(),
+          api.getCustomers(true),
           api.getSettings(),
         ]);
 
@@ -121,6 +132,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setMaterials(matRes);
         setProducts(prodRes);
         setOrders(ordRes);
+        setCustomers(custRes);
         setSettings(settRes);
         setServerOnline(true);
       } catch (e) {
@@ -352,6 +364,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const saveCustomerAction = async (data: Partial<Customer>): Promise<Customer | null> => {
+    try {
+      const saved = await api.saveCustomer(data);
+      setCustomers((prev) => prev.some((c) => c.id === saved.id) ? prev.map((c) => c.id === saved.id ? saved : c) : [saved, ...prev]);
+      showToast('Cliente salvo no servidor!');
+      return saved;
+    } catch (e) {
+      console.error(e);
+      showToast('Erro ao salvar cliente.', 'error');
+      return null;
+    }
+  };
+
+  const archiveCustomerAction = async (id: string, archived = true) => {
+    try {
+      const updated = await api.archiveCustomer(id, archived);
+      setCustomers((prev) => prev.map((c) => c.id === id ? updated : c));
+      showToast(archived ? 'Cliente arquivado.' : 'Cliente restaurado.');
+    } catch (e) {
+      console.error(e);
+      showToast('Erro ao atualizar cliente.', 'error');
+    }
+  };
+
   // === Settings & Reset ===
   const updateSettingsAction = async (newSettings: Partial<AppSettings>) => {
     try {
@@ -383,6 +419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         materials,
         products,
         orders,
+        customers,
         settings,
         activeTab,
         setActiveTab,
@@ -396,6 +433,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setEditingProduct,
         editingOrder,
         setEditingOrder,
+        editingCustomer,
+        setEditingCustomer,
         isSyncing,
         serverOnline,
         toasts,
@@ -413,6 +452,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteOrderAction,
         addPaymentAction,
         removePaymentAction,
+        saveCustomerAction,
+        archiveCustomerAction,
         updateSettingsAction,
         resetAllDataAction,
         refreshData,

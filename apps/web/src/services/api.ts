@@ -8,6 +8,7 @@ import {
   PaymentRecord,
   PriceHistoryRecord,
   DatabaseSchema,
+  Customer,
 } from '../types';
 
 const getApiBase = (): string => {
@@ -41,6 +42,25 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // === Customers ===
+  async getCustomers(includeArchived = false): Promise<Customer[]> {
+    return request<Customer[]>(`/customers${includeArchived ? '?archived=true' : ''}`);
+  },
+
+  async saveCustomer(data: Partial<Customer>): Promise<Customer> {
+    if (data.id) {
+      return request<Customer>(`/customers/${data.id}`, { method: 'PUT', body: JSON.stringify(data) });
+    }
+    return request<Customer>('/customers', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async archiveCustomer(id: string, archived = true): Promise<Customer> {
+    return request<Customer>(`/customers/${id}/archive`, {
+      method: 'PATCH',
+      body: JSON.stringify({ archived }),
+    });
+  },
+
   // === Ingredients ===
   async getIngredients(): Promise<Ingredient[]> {
     return request<Ingredient[]>('/ingredients');

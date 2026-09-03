@@ -2,7 +2,7 @@ import { OrderStatus as PrismaOrderStatus, Prisma, PrismaClient } from '@prisma/
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   AppSettings, DatabaseSchema, Ingredient, Material, Order, OrderStatus,
-  PaymentRecord, PriceHistoryRecord, Product, initialIngredients, initialMaterials,
+  PaymentRecord, PriceHistoryRecord, Product, Customer, initialIngredients, initialMaterials,
   initialOrders, initialProducts, initialSettings,
 } from '@jeh-doces/shared';
 
@@ -58,6 +58,7 @@ function mapOrder(row: OrderRow): Order {
   return {
     id: row.id, orderNumber: row.orderNumber, clientName: row.clientName,
     clientPhone: row.clientPhone ?? undefined, clientAddress: row.clientAddress ?? undefined,
+    customerId: row.customerId ?? undefined,
     deliveryDate: iso(row.deliveryDate), status: row.status as OrderStatus,
     items: row.items.map(({ orderId: _, ...item }) => item),
     materials: row.materials.map(({ orderId: _, ...item }) => item),
@@ -183,6 +184,24 @@ class Database {
   async deleteProduct(id: string) { return (await prisma.product.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0; }
 
   async getOrders() { return (await prisma.order.findMany({ where: { companyId: this.companyId() }, include: orderInclude, orderBy: { createdAt: 'desc' } })).map(mapOrder); }
+  async getCustomers(includeArchived = false): Promise<Customer[]> {
+    const rows = await prisma.customer.findMany({ where: { companyId: this.companyId(), ...(includeArchived ? {} : { archivedAt: null }) }, orderBy: { name: 'asc' } });
+    return rows.map(row => ({ id: row.id, name: row.name, phone: row.phone ?? undefined, email: row.email ?? undefined, address: row.address ?? undefined, notes: row.notes ?? undefined, archivedAt: row.archivedAt ? iso(row.archivedAt) : undefined, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) }));
+  }
+  async saveCustomer(data: Partial<Customer>) {
+    const companyId = this.companyId();
+    const fields = { name: (data.name ?? '').trim(), phone: data.phone?.trim() || null, email: data.email?.trim().toLowerCase() || null, address: data.address?.trim() || null, notes: data.notes?.trim() || null };
+    if (fields.name.length < 1) throw new Error('Informe o nome do cliente.');
+    const exists = data.id ? await prisma.customer.count({ where: { id: data.id, companyId } }) : 0;
+    const row = exists ? await prisma.customer.update({ where: { id: data.id }, data: fields }) : await prisma.customer.create({ data: { companyId, ...fields } });
+    return { id: row.id, name: row.name, phone: row.phone ?? undefined, email: row.email ?? undefined, address: row.address ?? undefined, notes: row.notes ?? undefined, archivedAt: row.archivedAt ? iso(row.archivedAt) : undefined, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) };
+  }
+  async archiveCustomer(id: string, archived: boolean) {
+    const row = await prisma.customer.findFirst({ where: { id, companyId: this.companyId() } });
+    if (!row) return null;
+    const updated = await prisma.customer.update({ where: { id }, data: { archivedAt: archived ? new Date() : null } });
+    return { id: updated.id, name: updated.name, phone: updated.phone ?? undefined, email: updated.email ?? undefined, address: updated.address ?? undefined, notes: updated.notes ?? undefined, archivedAt: updated.archivedAt ? iso(updated.archivedAt) : undefined, createdAt: iso(updated.createdAt), updatedAt: iso(updated.updatedAt) };
+  }
   private async decrementInventory(tx: Prisma.TransactionClient, id: string) {
     const order = await tx.order.findUnique({ where: { id }, include: { items: true, materials: true } });
     if (!order || order.stockDecremented) return;
@@ -202,6 +221,7 @@ class Database {
   async saveOrder(data: Partial<Order>) {
     return prisma.$transaction(async (tx) => {
       const companyId = this.companyId();
+      if (data.customerId && !await tx.customer.count({ where: { id: data.customerId, companyId } })) throw new Error('Cliente relacionado inválido para esta empresa.');
       const productIds = [...new Set((data.items ?? []).map((item) => item.productId))];
       const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
       if (productIds.length && await tx.product.count({ where: { id: { in: productIds }, companyId } }) !== productIds.length) throw new Error('Produto relacionado inválido para esta empresa.');
@@ -214,8 +234,8 @@ class Database {
         payments: { deleteMany: {}, create: (data.payments ?? []).map((item) => ({ ...item, paidAt: new Date(item.paidAt) })) },
       };
       const row = exists
-        ? await tx.order.update({ where: { id: data.id }, data: { ...orderFields(data, orderNumber), ...relations } })
-        : await tx.order.create({ data: { ...(data.id ? { id: data.id } : {}), companyId, ...orderFields(data, orderNumber), items: { create: relations.items.create }, materials: { create: relations.materials.create }, payments: { create: relations.payments.create } } });
+        ? await tx.order.update({ where: { id: data.id }, data: { ...orderFields(data, orderNumber), customerId: data.customerId ?? null, ...relations } })
+        : await tx.order.create({ data: { ...(data.id ? { id: data.id } : {}), companyId, ...orderFields(data, orderNumber), customerId: data.customerId ?? null, items: { create: relations.items.create }, materials: { create: relations.materials.create }, payments: { create: relations.payments.create } } });
       if (activeStatuses.includes((data.status ?? 'orcamento') as OrderStatus)) await this.decrementInventory(tx, row.id);
       return mapOrder(await tx.order.findUniqueOrThrow({ where: { id: row.id }, include: orderInclude }));
     });

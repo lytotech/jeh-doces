@@ -25,6 +25,7 @@ model Company {
   products    Product[]
   orders      Order[]
   setting     Setting?
+  customers   Customer[]
 
   @@map("companies")
 }
@@ -260,6 +261,8 @@ model Order {
   updatedAt           DateTime        @updatedAt
   companyId           String
   company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customerId          String?
+  customer            Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   items               OrderItem[]
   materials           OrderMaterial[]
@@ -268,6 +271,26 @@ model Order {
   @@map("orders")
   @@unique([companyId, orderNumber])
   @@index([companyId])
+  @@index([customerId])
+}
+
+model Customer {
+  id           String    @id @default(cuid())
+  name         String
+  phone        String?
+  email        String?
+  address      String?
+  notes        String?
+  archivedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  companyId    String
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  orders       Order[]
+
+  @@index([companyId, archivedAt])
+  @@index([companyId, name])
+  @@map("customers")
 }
 
 model OrderItem {

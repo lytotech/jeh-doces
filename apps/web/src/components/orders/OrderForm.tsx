@@ -38,13 +38,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   onBack,
   onSaved,
 }) => {
-  const { products, materials, saveOrderAction, deleteOrderAction } = useApp();
+  const { products, materials, customers, saveOrderAction, deleteOrderAction, saveCustomerAction } = useApp();
 
   const isEditing = !!order?.id;
 
   const [clientName, setClientName] = useState(order?.clientName || '');
   const [clientPhone, setClientPhone] = useState(order?.clientPhone || '');
   const [clientAddress, setClientAddress] = useState(order?.clientAddress || '');
+  const [customerId, setCustomerId] = useState(order?.customerId || '');
+  const [showQuickCustomer, setShowQuickCustomer] = useState(false);
+  const [quickCustomerName, setQuickCustomerName] = useState('');
   const [deliveryDate, setDeliveryDate] = useState(
     order?.deliveryDate
       ? order.deliveryDate.slice(0, 16)
@@ -212,6 +215,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
       clientName: clientName.trim(),
       clientPhone: clientPhone.trim() || undefined,
       clientAddress: clientAddress.trim() || undefined,
+      customerId: customerId || undefined,
       deliveryDate: new Date(deliveryDate).toISOString(),
       status,
       items,
@@ -265,6 +269,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><label className="block text-xs font-medium text-[#7A6453] mb-1">Cliente cadastrado</label><div className="flex gap-2"><select className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerId} onChange={e => { const id = e.target.value; setCustomerId(id); const c = customers.find(item => item.id === id); if (c) { setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); } }}><option value="">Digitar manualmente</option>{customers.filter(c => !c.archivedAt || c.id === customerId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><button type="button" onClick={() => setShowQuickCustomer(v => !v)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-lg" title="Cadastrar cliente">+</button></div></div>
                 <TextInput
                   label="Nome do cliente"
                   value={clientName}
@@ -281,6 +286,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                   placeholder="(11) 98765-4321"
                 />
               </div>
+
+              {showQuickCustomer && <div className="p-3 bg-[#F5ECE0] rounded-2xl border border-[#DFCFC0] flex gap-2 items-end"><div className="flex-1"><TextInput label="Nome do novo cliente" value={quickCustomerName} onChange={e => setQuickCustomerName(e.target.value)} autoFocus /></div><Button type="button" size="sm" onClick={async () => { if (!quickCustomerName.trim()) return; const c = await saveCustomerAction({ name: quickCustomerName }); if (c) { setCustomerId(c.id); setClientName(c.name); setQuickCustomerName(''); setShowQuickCustomer(false); } }}>Cadastrar</Button></div>}
 
               <TextInput
                 label="Endereço de entrega"

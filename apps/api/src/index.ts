@@ -142,6 +142,25 @@ app.patch('/api/orders/:id/status', async (req, res) => {
   res.json(updated);
 });
 
+// === Customers ===
+app.get('/api/customers', async (req, res) => {
+  res.json(await db.getCustomers(req.query.archived === 'true'));
+});
+
+app.post('/api/customers', async (req, res) => {
+  res.status(201).json(await db.saveCustomer(req.body));
+});
+
+app.put('/api/customers/:id', async (req, res) => {
+  res.json(await db.saveCustomer({ ...req.body, id: req.params.id }));
+});
+
+app.patch('/api/customers/:id/archive', async (req, res) => {
+  const updated = await db.archiveCustomer(req.params.id, req.body.archived !== false);
+  if (!updated) return res.status(404).json({ error: 'Cliente não encontrado' });
+  res.json(updated);
+});
+
 app.post('/api/orders/:id/payments', async (req, res) => {
   const updated = await db.addPayment(req.params.id, req.body);
   if (!updated) return res.status(404).json({ error: 'Order not found' });

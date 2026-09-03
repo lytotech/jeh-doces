@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { ClipboardList, Cookie, Package, Cake, BarChart3 } from 'lucide-react';
+import { ClipboardList, Cookie, Package, Cake, BarChart3, Users } from 'lucide-react';
 
 export const BottomNav: React.FC = () => {
   const { activeTab, setActiveTab, setSelectedOrderId } = useApp();
@@ -11,6 +11,7 @@ export const BottomNav: React.FC = () => {
       label: 'Encomendas',
       icon: ClipboardList,
     },
+    { id: 'customers', label: 'Clientes', icon: Users },
     {
       id: 'products',
       label: 'Produtos',

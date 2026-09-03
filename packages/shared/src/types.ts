@@ -114,6 +114,7 @@ export interface Order {
   clientName: string;
   clientPhone?: string;
   clientAddress?: string;
+  customerId?: string;
   deliveryDate: string; // e.g. "2026-08-25T08:00"
   status: OrderStatus;
   items: OrderProductItem[];
@@ -127,6 +128,18 @@ export interface Order {
   payments: PaymentRecord[];
   notes?: string;
   stockDecremented?: boolean; // track if inventory was deducted
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  archivedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

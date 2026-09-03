@@ -31,6 +31,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
       icon: ClipboardList,
       badge: 'Pedidos',
     },
+    { id: 'customers', label: 'Clientes', icon: Users, badge: 'Cadastro' },
     {
       id: 'products',
       label: 'Cardápio & Receitas',
