@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { randomBytes } from 'node:crypto';
 import {
   AppSettings, DatabaseSchema, Ingredient, Material, Order, OrderStatus,
-  PaymentRecord, PriceHistoryRecord, Product, Customer, initialIngredients, initialMaterials,
+  PaymentRecord, PriceHistoryRecord, Product, Customer, Commitment, initialIngredients, initialMaterials,
   initialOrders, initialProducts, initialSettings,
 } from '@jeh-doces/shared';
 
@@ -199,6 +199,9 @@ class Database {
     const rows = await prisma.customer.findMany({ where: { companyId: this.companyId(), ...(includeArchived ? {} : { archivedAt: null }), ...(term ? { OR: [{ name: { contains: term, mode: 'insensitive' } }, { phone: { contains: term } }, { email: { contains: term, mode: 'insensitive' } }] } : {}) }, orderBy: { name: 'asc' }, take: term ? 20 : undefined });
     return rows.map(row => ({ id: row.id, name: row.name, phone: row.phone ?? undefined, email: row.email ?? undefined, address: row.address ?? undefined, notes: row.notes ?? undefined, archivedAt: row.archivedAt ? iso(row.archivedAt) : undefined, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) }));
   }
+  async getCommitments(): Promise<Commitment[]> { return (await prisma.commitment.findMany({ where: { companyId: this.companyId() }, orderBy: { startsAt: 'asc' } })).map(c => ({ id: c.id, title: c.title, description: c.description ?? undefined, startsAt: iso(c.startsAt), endsAt: c.endsAt ? iso(c.endsAt) : undefined, createdAt: iso(c.createdAt), updatedAt: iso(c.updatedAt) })); }
+  async saveCommitment(data: Partial<Commitment>) { const companyId = this.companyId(); const fields = { title: (data.title ?? '').trim(), description: data.description?.trim() || null, startsAt: new Date(data.startsAt ?? Date.now()), endsAt: data.endsAt ? new Date(data.endsAt) : null }; if (!fields.title) throw new Error('Informe o título do compromisso.'); const row = data.id && await prisma.commitment.count({ where: { id: data.id, companyId } }) ? await prisma.commitment.update({ where: { id: data.id }, data: fields }) : await prisma.commitment.create({ data: { companyId, ...fields } }); return { id: row.id, title: row.title, description: row.description ?? undefined, startsAt: iso(row.startsAt), endsAt: row.endsAt ? iso(row.endsAt) : undefined, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) }; }
+  async deleteCommitment(id: string) { return (await prisma.commitment.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0; }
   async saveCustomer(data: Partial<Customer>) {
     const companyId = this.companyId();
     const fields = { name: (data.name ?? '').trim(), phone: data.phone?.trim() || null, email: data.email?.trim().toLowerCase() || null, address: data.address?.trim() || null, notes: data.notes?.trim() || null };

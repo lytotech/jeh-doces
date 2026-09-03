@@ -157,6 +157,10 @@ app.post('/api/orders/:id/share-link', async (req, res) => {
 app.get('/api/customers', async (req, res) => {
   res.json(await db.getCustomers(req.query.archived === 'true', String(req.query.search || '')));
 });
+app.get('/api/commitments', async (_req, res) => res.json(await db.getCommitments()));
+app.post('/api/commitments', async (req, res) => res.status(201).json(await db.saveCommitment(req.body)));
+app.put('/api/commitments/:id', async (req, res) => res.json(await db.saveCommitment({ ...req.body, id: req.params.id })));
+app.delete('/api/commitments/:id', async (req, res) => res.json({ success: await db.deleteCommitment(req.params.id) }));
 
 app.post('/api/customers', async (req, res) => {
   res.status(201).json(await db.saveCustomer(req.body));

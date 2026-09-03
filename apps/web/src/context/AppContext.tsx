@@ -9,6 +9,7 @@ import {
   PaymentRecord,
   PriceHistoryRecord,
   Customer,
+  Commitment,
 } from '../types';
 import { api } from '../services/api';
 import { calculateProductCost } from '../services/costEngine';
@@ -25,6 +26,7 @@ interface AppContextType {
   products: Product[];
   orders: Order[];
   customers: Customer[];
+  commitments: Commitment[];
   settings: AppSettings;
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -73,6 +75,8 @@ interface AppContextType {
   // Customer Actions
   saveCustomerAction: (customer: Partial<Customer>) => Promise<Customer | null>;
   archiveCustomerAction: (id: string, archived?: boolean) => Promise<void>;
+  saveCommitmentAction: (commitment: Partial<Commitment>) => Promise<void>;
+  deleteCommitmentAction: (id: string) => Promise<void>;
 
   // Settings & Reset
   updateSettingsAction: (newSettings: Partial<AppSettings>) => Promise<void>;
@@ -88,6 +92,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [commitments, setCommitments] = useState<Commitment[]>([]);
   const [settings, setSettings] = useState<AppSettings>({ storeName: 'Jeh Doces', storePhone: '', pixKey: '', pixKeyType: 'E-mail', defaultProfitMargin: 100, currencySymbol: 'R$' });
 
   const [activeTab, setActiveTab] = useState<string>('orders');
@@ -119,12 +124,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const refresh = (async () => {
       try {
         setIsSyncing(true);
-        const [ingRes, matRes, prodRes, ordRes, custRes, settRes] = await Promise.all([
+        const [ingRes, matRes, prodRes, ordRes, custRes, commitmentRes, settRes] = await Promise.all([
           api.getIngredients(),
           api.getMaterials(),
           api.getProducts(),
           api.getOrders(),
           api.getCustomers(true),
+          api.getCommitments(),
           api.getSettings(),
         ]);
 
@@ -133,6 +139,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProducts(prodRes);
         setOrders(ordRes);
         setCustomers(custRes);
+        setCommitments(commitmentRes);
         setSettings(settRes);
         setServerOnline(true);
       } catch (e) {
@@ -375,6 +382,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const saveCommitmentAction = async (data: Partial<Commitment>) => { try { const saved = await api.saveCommitment(data); setCommitments(prev => prev.some(c => c.id === saved.id) ? prev.map(c => c.id === saved.id ? saved : c) : [...prev, saved]); showToast('Compromisso salvo com sucesso!'); } catch { showToast('Erro ao salvar compromisso.', 'error'); } };
+  const deleteCommitmentAction = async (id: string) => { try { await api.deleteCommitment(id); setCommitments(prev => prev.filter(c => c.id !== id)); showToast('Compromisso removido com sucesso.', 'info'); } catch { showToast('Erro ao remover compromisso.', 'error'); } };
+
   // === Settings & Reset ===
   const updateSettingsAction = async (newSettings: Partial<AppSettings>) => {
     try {
@@ -407,6 +417,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         products,
         orders,
         customers,
+        commitments,
         settings,
         activeTab,
         setActiveTab,
@@ -441,6 +452,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removePaymentAction,
         saveCustomerAction,
         archiveCustomerAction,
+        saveCommitmentAction,
+        deleteCommitmentAction,
         updateSettingsAction,
         resetAllDataAction,
         refreshData,

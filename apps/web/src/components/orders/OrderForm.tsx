@@ -20,6 +20,7 @@ import {
 import {
   Plus,
   UserPlus,
+  Search,
   Trash2,
   Cookie,
   Package,
@@ -317,10 +318,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                 <User className="w-3.5 h-3.5" /> Informações do Cliente
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div ref={customerPickerRef} className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Buscar cliente</label><div className="flex gap-2"><input className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Digite o nome..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(''); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /><button type="button" onClick={() => setShowQuickCustomer(true)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-xs font-semibold whitespace-nowrap" title="Cadastrar novo cliente"><UserPlus className="w-4 h-4 inline mr-1" />Novo</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-0 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:[&>div:first-child]:col-span-2">
+                <div ref={customerPickerRef} className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Selecionar cliente cadastrado</label><div className="flex gap-2"><div className="relative min-w-0 flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A89484]" /><input className="w-full min-w-0 pl-9 pr-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Buscar por nome..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(''); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /></div><button type="button" onClick={() => setShowQuickCustomer(true)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-xs font-semibold whitespace-nowrap" title="Cadastrar novo cliente"><UserPlus className="w-4 h-4 inline mr-1" />Novo</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-0 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
                 <TextInput
-                  label="Nome do cliente"
+                  label={customerId ? 'Nome do cliente (editar cadastro)' : 'Nome do cliente'}
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   placeholder="Ex: Diego banco"

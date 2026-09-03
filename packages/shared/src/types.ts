@@ -145,6 +145,16 @@ export interface Customer {
   updatedAt: string;
 }
 
+export interface Commitment {
+  id: string;
+  title: string;
+  description?: string;
+  startsAt: string;
+  endsAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppSettings {
   storeName: string;
   storePhone: string;

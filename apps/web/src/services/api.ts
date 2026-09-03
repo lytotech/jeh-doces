@@ -9,6 +9,7 @@ import {
   PriceHistoryRecord,
   DatabaseSchema,
   Customer,
+  Commitment,
 } from '../types';
 
 const getApiBase = (): string => {
@@ -42,6 +43,9 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  async getCommitments(): Promise<Commitment[]> { return request<Commitment[]>('/commitments'); },
+  async saveCommitment(data: Partial<Commitment>): Promise<Commitment> { return request<Commitment>(data.id ? `/commitments/${data.id}` : '/commitments', { method: data.id ? 'PUT' : 'POST', body: JSON.stringify(data) }); },
+  async deleteCommitment(id: string): Promise<{ success: boolean }> { return request<{ success: boolean }>(`/commitments/${id}`, { method: 'DELETE' }); },
   // === Customers ===
   async getCustomers(includeArchived = false, search = ''): Promise<Customer[]> {
     const params = new URLSearchParams();
