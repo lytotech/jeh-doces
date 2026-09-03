@@ -1,5 +1,6 @@
 import { OrderStatus as PrismaOrderStatus, Prisma, PrismaClient } from '@prisma/client';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { randomBytes } from 'node:crypto';
 import {
   AppSettings, DatabaseSchema, Ingredient, Material, Order, OrderStatus,
   PaymentRecord, PriceHistoryRecord, Product, Customer, initialIngredients, initialMaterials,
@@ -12,7 +13,7 @@ export const runForCompany = <T>(companyId: string, callback: () => T) => compan
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
 const ingredientInclude = { priceHistory: { orderBy: { date: 'desc' as const } }, subIngredients: true };
 const productInclude = { ingredients: true, materials: true };
-const orderInclude = { items: true, materials: true, payments: { orderBy: { paidAt: 'asc' as const } } };
+const orderInclude = { items: true, materials: true, payments: { orderBy: { paidAt: 'asc' as const } }, customer: true };
 type IngredientRow = Prisma.IngredientGetPayload<{ include: typeof ingredientInclude }>;
 type ProductRow = Prisma.ProductGetPayload<{ include: typeof productInclude }>;
 type OrderRow = Prisma.OrderGetPayload<{ include: typeof orderInclude }>;
@@ -56,8 +57,8 @@ function mapProduct(row: ProductRow): Product {
 
 function mapOrder(row: OrderRow): Order {
   return {
-    id: row.id, orderNumber: row.orderNumber, clientName: row.clientName,
-    clientPhone: row.clientPhone ?? undefined, clientAddress: row.clientAddress ?? undefined,
+    id: row.id, orderNumber: row.orderNumber, clientName: row.customer?.name ?? 'Cliente não cadastrado',
+    clientPhone: row.customer?.phone ?? undefined, clientAddress: row.customer?.address ?? undefined,
     customerId: row.customerId ?? undefined,
     deliveryDate: iso(row.deliveryDate), status: row.status as OrderStatus,
     items: row.items.map(({ orderId: _, ...item }) => item),
@@ -92,8 +93,7 @@ const productFields = (data: Partial<Product>) => ({
   profitMargin: data.profitMargin ?? 100,
 });
 const orderFields = (data: Partial<Order>, orderNumber: string) => ({
-  orderNumber, clientName: data.clientName ?? 'Novo Cliente',
-  clientPhone: data.clientPhone ?? null, clientAddress: data.clientAddress ?? null,
+  orderNumber,
   deliveryDate: new Date(data.deliveryDate ?? Date.now()),
   status: (data.status ?? 'orcamento') as PrismaOrderStatus,
   subtotal: data.subtotal ?? 0, discount: data.discount ?? 0,
@@ -184,6 +184,16 @@ class Database {
   async deleteProduct(id: string) { return (await prisma.product.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0; }
 
   async getOrders() { return (await prisma.order.findMany({ where: { companyId: this.companyId() }, include: orderInclude, orderBy: { createdAt: 'desc' } })).map(mapOrder); }
+  async createOrderShareLink(id: string) {
+    const row = await prisma.order.findFirst({ where: { id, companyId: this.companyId() } });
+    if (!row) return null;
+    const updated = await prisma.order.update({ where: { id }, data: { shareToken: randomBytes(32).toString('hex') } });
+    return updated.shareToken;
+  }
+  async getPublicOrder(token: string) {
+    const row = await prisma.order.findUnique({ where: { shareToken: token }, include: orderInclude });
+    return row ? mapOrder(row) : null;
+  }
   async getCustomers(includeArchived = false): Promise<Customer[]> {
     const rows = await prisma.customer.findMany({ where: { companyId: this.companyId(), ...(includeArchived ? {} : { archivedAt: null }) }, orderBy: { name: 'asc' } });
     return rows.map(row => ({ id: row.id, name: row.name, phone: row.phone ?? undefined, email: row.email ?? undefined, address: row.address ?? undefined, notes: row.notes ?? undefined, archivedAt: row.archivedAt ? iso(row.archivedAt) : undefined, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) }));
@@ -221,7 +231,12 @@ class Database {
   async saveOrder(data: Partial<Order>) {
     return prisma.$transaction(async (tx) => {
       const companyId = this.companyId();
-      if (data.customerId && !await tx.customer.count({ where: { id: data.customerId, companyId } })) throw new Error('Cliente relacionado inválido para esta empresa.');
+      let customerId = data.customerId;
+      if (customerId && !await tx.customer.count({ where: { id: customerId, companyId } })) throw new Error('Cliente relacionado inválido para esta empresa.');
+      if (!customerId && data.clientName?.trim()) {
+        const customer = await tx.customer.create({ data: { companyId, name: data.clientName.trim(), phone: data.clientPhone?.trim() || null, address: data.clientAddress?.trim() || null } });
+        customerId = customer.id;
+      }
       const productIds = [...new Set((data.items ?? []).map((item) => item.productId))];
       const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
       if (productIds.length && await tx.product.count({ where: { id: { in: productIds }, companyId } }) !== productIds.length) throw new Error('Produto relacionado inválido para esta empresa.');
@@ -234,8 +249,8 @@ class Database {
         payments: { deleteMany: {}, create: (data.payments ?? []).map((item) => ({ ...item, paidAt: new Date(item.paidAt) })) },
       };
       const row = exists
-        ? await tx.order.update({ where: { id: data.id }, data: { ...orderFields(data, orderNumber), customerId: data.customerId ?? null, ...relations } })
-        : await tx.order.create({ data: { ...(data.id ? { id: data.id } : {}), companyId, ...orderFields(data, orderNumber), customerId: data.customerId ?? null, items: { create: relations.items.create }, materials: { create: relations.materials.create }, payments: { create: relations.payments.create } } });
+        ? await tx.order.update({ where: { id: data.id }, data: { ...orderFields(data, orderNumber), customerId: customerId ?? null, ...relations } })
+        : await tx.order.create({ data: { ...(data.id ? { id: data.id } : {}), companyId, ...orderFields(data, orderNumber), customerId: customerId ?? null, items: { create: relations.items.create }, materials: { create: relations.materials.create }, payments: { create: relations.payments.create } } });
       if (activeStatuses.includes((data.status ?? 'orcamento') as OrderStatus)) await this.decrementInventory(tx, row.id);
       return mapOrder(await tx.order.findUniqueOrThrow({ where: { id: row.id }, include: orderInclude }));
     });

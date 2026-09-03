@@ -40,6 +40,11 @@ app.get('/api/health', async (req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.get('/api/public/orders/:token', async (req, res) => {
+  const order = await db.getPublicOrder(req.params.token);
+  if (!order) return res.status(404).json({ error: 'Link inválido ou expirado' });
+  res.json(order);
+});
 app.use('/api', requireAuth, (req, _res, next) => runForCompany(req.auth!.companyId, next));
 
 // === Ingredients ===
@@ -140,6 +145,12 @@ app.patch('/api/orders/:id/status', async (req, res) => {
   const updated = await db.updateOrderStatus(req.params.id, status);
   if (!updated) return res.status(404).json({ error: 'Order not found' });
   res.json(updated);
+});
+
+app.post('/api/orders/:id/share-link', async (req, res) => {
+  const token = await db.createOrderShareLink(req.params.id);
+  if (!token) return res.status(404).json({ error: 'Order not found' });
+  res.json({ token });
 });
 
 // === Customers ===

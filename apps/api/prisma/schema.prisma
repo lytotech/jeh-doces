@@ -244,9 +244,6 @@ enum OrderStatus {
 model Order {
   id                  String          @id @default(cuid())
   orderNumber         String
-  clientName          String
-  clientPhone         String?
-  clientAddress       String?
   deliveryDate        DateTime
   status              OrderStatus     @default(orcamento)
   subtotal            Float           @default(0)
@@ -263,6 +260,7 @@ model Order {
   company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   customerId          String?
   customer            Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  shareToken           String?         @unique
 
   items               OrderItem[]
   materials           OrderMaterial[]

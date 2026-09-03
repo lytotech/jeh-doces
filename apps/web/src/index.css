@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+.print-quote { display: none; }
+
+@media print {
+  @page { size: A4; margin: 22mm 20mm; }
+  body { background: #fff !important; color: #302116 !important; }
+  body > * { visibility: hidden !important; }
+  #root, #root * { visibility: hidden !important; }
+  #root .print-quote, #root .print-quote * { visibility: visible !important; }
+  #root .print-quote { display: block !important; position: absolute; inset: 0; width: 100%; font-family: Arial, sans-serif; font-size: 12px; color: #302116; }
+  .print-quote-header { border-bottom: 2px solid #b57e44; padding-bottom: 18px; margin-bottom: 26px; }
+  .print-quote-header h1 { margin: 0 0 6px; font-family: Georgia, serif; font-size: 25px; color: #96642f; }
+  .print-quote-header p { margin: 3px 0; color: #7a6453; }
+  .print-quote-section { margin: 0 0 25px; }
+  .print-quote-section h2 { margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid #e5dacd; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: #7a4b1d; }
+  .print-quote-section p { margin: 5px 0; }
+  .print-quote-row, .print-quote-totals > div { display: flex; justify-content: space-between; gap: 20px; padding: 9px 0; border-bottom: 1px solid #f0e9e1; }
+  .print-quote-row span:first-child { flex: 1; }
+  .print-quote-totals { margin-top: 34px; }
+  .print-quote-total { margin-top: 8px; padding-top: 13px !important; border-top: 2px solid #b57e44; border-bottom: 0 !important; font-size: 15px; }
+  .print-quote footer { margin-top: 70px; text-align: center; color: #9b8878; font-size: 10px; }
+}
+
 @layer base {
   body {
     background-color: #FAF7F2;

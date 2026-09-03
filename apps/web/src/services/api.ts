@@ -155,6 +155,10 @@ export const api = {
     return request<Order[]>('/orders');
   },
 
+  async createOrderShareLink(id: string): Promise<{ token: string }> {
+    return request<{ token: string }>(`/orders/${id}/share-link`, { method: 'POST' });
+  },
+
   async saveOrder(data: Partial<Order>): Promise<Order> {
     if (data.id) {
       return request<Order>(`/orders/${data.id}`, {

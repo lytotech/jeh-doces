@@ -7,9 +7,12 @@ import { AuthScreen } from './components/auth/AuthScreen';
 import { LandingPage } from './components/landing/LandingPage';
 import { LegalDocument, LegalPage } from './components/legal/LegalPage';
 import './index.css';
+import { PublicOrderPage } from './components/public/PublicOrderPage';
 
 function Root() {
   const { auth, loading } = useAuth();
+  const publicMatch = window.location.pathname.match(/^\/pedido\/([^/]+)$/);
+  if (publicMatch) return <PublicOrderPage token={publicMatch[1]} />;
   if (loading) return <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center text-[#96642F] font-semibold">Carregando…</div>;
   const params = new URLSearchParams(window.location.search);
   const legal = params.get('legal');

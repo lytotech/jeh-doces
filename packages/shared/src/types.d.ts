@@ -95,6 +95,8 @@ export interface Order {
     clientName: string;
     clientPhone?: string;
     clientAddress?: string;
+    customerId?: string;
+    shareToken?: string;
     deliveryDate: string;
     status: OrderStatus;
     items: OrderProductItem[];
@@ -108,6 +110,17 @@ export interface Order {
     payments: PaymentRecord[];
     notes?: string;
     stockDecremented?: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+export interface Customer {
+    id: string;
+    name: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    notes?: string;
+    archivedAt?: string;
     createdAt: string;
     updatedAt: string;
 }

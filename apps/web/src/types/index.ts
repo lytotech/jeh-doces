@@ -115,6 +115,7 @@ export interface Order {
   clientPhone?: string;
   clientAddress?: string;
   customerId?: string;
+  shareToken?: string;
   deliveryDate: string; // e.g. "2026-08-25T08:00"
   status: OrderStatus;
   items: OrderProductItem[];
