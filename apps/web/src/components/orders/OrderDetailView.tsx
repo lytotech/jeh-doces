@@ -143,8 +143,8 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
               onCancel={handleCancelOrder}
             />
 
-            {/* Section Heading: Itens */}
-            <div className="space-y-3 pt-2">
+            {/* Section Heading: Itens — only show when there is something to display */}
+            {(order.items.length > 0 || order.materials.length > 0) && <div className="space-y-3 pt-2">
               <h3 className="text-base font-bold text-[#302116] px-1">Itens do Pedido</h3>
 
               <div className="space-y-2.5">
@@ -199,7 +199,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* Right Column (col-span-5): Financials, Payments, Actions */}

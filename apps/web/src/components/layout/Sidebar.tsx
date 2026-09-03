@@ -12,6 +12,7 @@ import {
   WifiOff,
   Users,
   LogOut,
+  CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
       badge: 'Pedidos',
     },
     { id: 'customers', label: 'Clientes', icon: Users, badge: 'Cadastro' },
+    { id: 'calendar', label: 'Calendário', icon: CalendarDays, badge: 'Agenda' },
     {
       id: 'products',
       label: 'Cardápio & Receitas',

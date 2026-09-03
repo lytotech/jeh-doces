@@ -27,6 +27,7 @@ import { ProductForm } from './components/products/ProductForm';
 import { DashboardView } from './components/dashboard/DashboardView';
 import { CustomerList } from './components/customers/CustomerList';
 import { CustomerForm } from './components/customers/CustomerForm';
+import { CalendarView } from './components/calendar/CalendarView';
 
 export const App: React.FC = () => {
   const {
@@ -208,6 +209,9 @@ export const App: React.FC = () => {
         if (editingCustomer) return <CustomerForm customer={editingCustomer} onBack={() => setEditingCustomer(null)} />;
         return <CustomerList onSelectCustomer={setEditingCustomer} onNewCustomer={() => setIsCreatingNewCustomer(true)} />;
       }
+
+      case 'calendar':
+        return <CalendarView onSelectOrder={(order) => { setActiveTab('orders'); setSelectedOrderId(order.id); }} />;
 
       default:
         return null;

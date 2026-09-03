@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { ClipboardList, Cookie, Package, Cake, BarChart3, Users, LogOut } from 'lucide-react';
+import { ClipboardList, Cookie, Package, Cake, BarChart3, Users, LogOut, CalendarDays } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const BottomNav: React.FC = () => {
@@ -14,6 +14,7 @@ export const BottomNav: React.FC = () => {
       icon: ClipboardList,
     },
     { id: 'customers', label: 'Clientes', icon: Users },
+    { id: 'calendar', label: 'Agenda', icon: CalendarDays },
     {
       id: 'products',
       label: 'Produtos',

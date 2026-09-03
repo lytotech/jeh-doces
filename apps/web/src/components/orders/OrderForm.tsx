@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Order,
   OrderProductItem,
@@ -50,6 +50,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerSuggestions, setCustomerSuggestions] = useState<typeof customers>([]);
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
+  const customerPickerRef = useRef<HTMLDivElement>(null);
   const [showQuickCustomer, setShowQuickCustomer] = useState(false);
   const [quickCustomerName, setQuickCustomerName] = useState('');
 
@@ -69,6 +70,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     const timer = window.setTimeout(() => { void api.getCustomers(false, customerSearch).then(setCustomerSuggestions).catch(() => setCustomerSuggestions([])); }, 250);
     return () => window.clearTimeout(timer);
   }, [customerSearch, customerPickerOpen]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (customerPickerRef.current && !customerPickerRef.current.contains(event.target as Node)) {
+        setCustomerPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
   const [deliveryDate, setDeliveryDate] = useState(
     order?.deliveryDate
       ? order.deliveryDate.slice(0, 16)
@@ -303,7 +314,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Cliente cadastrado</label><div className="flex gap-2"><input className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Digite para buscar..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(e.target.value); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /><button type="button" onClick={() => setShowQuickCustomer(v => !v)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-lg" title="Cadastrar cliente">+</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-12 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
+                <div ref={customerPickerRef} className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Cliente cadastrado</label><div className="flex gap-2"><input className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Digite para buscar..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(e.target.value); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /><button type="button" onClick={() => setShowQuickCustomer(v => !v)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-lg" title="Cadastrar cliente">+</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-12 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
                 <TextInput
                   label="Nome do cliente"
                   value={clientName}
