@@ -178,7 +178,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return [saved, ...prev];
       });
-      showToast('Ingrediente salvo no servidor!');
+      showToast('Ingrediente salvo com sucesso!');
     } catch (e) {
       console.error(e);
       showToast('Erro ao salvar no servidor.', 'error');
@@ -203,7 +203,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await api.addPriceHistory(ingredientId, historyData);
       setIngredients((prev) => prev.map((i) => (i.id === ingredientId ? updated : i)));
-      showToast('Histórico de preço atualizado no servidor!');
+      showToast('Histórico de preço atualizado com sucesso!');
     } catch (e) {
       console.error(e);
       showToast('Erro ao registrar histórico.', 'error');
@@ -221,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return [saved, ...prev];
       });
-      showToast('Material salvo no servidor!');
+      showToast('Material salvo com sucesso!');
     } catch (e) {
       console.error(e);
       showToast('Erro ao salvar material.', 'error');
@@ -243,7 +243,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await api.adjustMaterialStock(id, newStock);
       setMaterials((prev) => prev.map((m) => (m.id === id ? updated : m)));
-      showToast('Estoque atualizado no servidor!');
+      showToast('Estoque atualizado com sucesso!');
     } catch (e) {
       console.error(e);
       showToast('Erro ao atualizar estoque.', 'error');
@@ -261,7 +261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return [saved, ...prev];
       });
-      showToast('Produto salvo no servidor!');
+      showToast('Produto salvo com sucesso!');
     } catch (e) {
       console.error(e);
       showToast('Erro ao salvar produto.', 'error');
@@ -292,7 +292,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       // Also refresh materials because stock might have decremented
       api.getMaterials().then(setMaterials);
-      showToast('Encomenda salva no servidor!');
+      showToast('Encomenda salva com sucesso!');
       return saved.id;
     } catch (e) {
       console.error(e);
@@ -331,7 +331,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await api.addPayment(orderId, paymentData);
       setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-      showToast('Pagamento registrado no servidor!');
+      showToast('Pagamento registrado com sucesso!');
     } catch (e) {
       console.error(e);
       showToast('Erro ao registrar pagamento.', 'error');
@@ -342,7 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await api.removePayment(orderId, paymentId);
       setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-      showToast('Pagamento removido no servidor.', 'info');
+      showToast('Pagamento removido com sucesso.', 'info');
     } catch (e) {
       console.error(e);
       showToast('Erro ao remover pagamento.', 'error');
@@ -354,7 +354,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = await api.saveCustomer(data);
       setCustomers((prev) => prev.some((c) => c.id === saved.id) ? prev.map((c) => c.id === saved.id ? saved : c) : [saved, ...prev]);
       api.getOrders().then(setOrders).catch(() => undefined);
-      showToast('Cliente salvo no servidor!');
+      showToast('Cliente salvo com sucesso!');
       return saved;
     } catch (e) {
       console.error(e);
@@ -380,7 +380,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await api.saveSettings(newSettings);
       setSettings(updated);
-      showToast('Configurações salvas no servidor!');
+      showToast('Configurações salvas com sucesso!');
     } catch (e) {
       console.error(e);
       showToast('Erro ao salvar configurações.', 'error');
