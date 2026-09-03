@@ -6,6 +6,7 @@ import {
   OrderStatus,
 } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { api } from '../../services/api';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -46,6 +47,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [clientPhone, setClientPhone] = useState(order?.clientPhone || '');
   const [clientAddress, setClientAddress] = useState(order?.clientAddress || '');
   const [customerId, setCustomerId] = useState(order?.customerId || '');
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerSuggestions, setCustomerSuggestions] = useState<typeof customers>([]);
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [showQuickCustomer, setShowQuickCustomer] = useState(false);
   const [quickCustomerName, setQuickCustomerName] = useState('');
 
@@ -55,9 +59,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     const customer = customers.find((item) => item.id === customerId);
     if (!customer) return;
     setClientName(customer.name);
+    setCustomerSearch(customer.name);
     setClientPhone(customer.phone || '');
     setClientAddress(customer.address || '');
   }, [customerId, customers]);
+
+  useEffect(() => {
+    if (!customerPickerOpen) return;
+    const timer = window.setTimeout(() => { void api.getCustomers(false, customerSearch).then(setCustomerSuggestions).catch(() => setCustomerSuggestions([])); }, 250);
+    return () => window.clearTimeout(timer);
+  }, [customerSearch, customerPickerOpen]);
   const [deliveryDate, setDeliveryDate] = useState(
     order?.deliveryDate
       ? order.deliveryDate.slice(0, 16)
@@ -220,6 +231,19 @@ export const OrderForm: React.FC<OrderFormProps> = ({
     e.preventDefault();
     if (!clientName.trim()) return;
 
+    // The order form is also a convenient place to keep the selected customer's
+    // contact data current. Orders reference the customer directly, so updates
+    // are reflected everywhere after saving.
+    if (customerId) {
+      const updatedCustomer = await saveCustomerAction({
+        id: customerId,
+        name: clientName.trim(),
+        phone: clientPhone.trim() || undefined,
+        address: clientAddress.trim() || undefined,
+      });
+      if (!updatedCustomer) return;
+    }
+
     const savedId = await saveOrderAction({
       id: order?.id,
       clientName: clientName.trim(),
@@ -279,7 +303,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><label className="block text-xs font-medium text-[#7A6453] mb-1">Cliente cadastrado</label><div className="flex gap-2"><select className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerId} onChange={e => { const id = e.target.value; setCustomerId(id); const c = customers.find(item => item.id === id); if (c) { setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); } }}><option value="">Digitar manualmente</option>{customers.filter(c => !c.archivedAt || c.id === customerId).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select><button type="button" onClick={() => setShowQuickCustomer(v => !v)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-lg" title="Cadastrar cliente">+</button></div></div>
+                <div className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Cliente cadastrado</label><div className="flex gap-2"><input className="min-w-0 flex-1 px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Digite para buscar..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(e.target.value); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /><button type="button" onClick={() => setShowQuickCustomer(v => !v)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-lg" title="Cadastrar cliente">+</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-12 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
                 <TextInput
                   label="Nome do cliente"
                   value={clientName}

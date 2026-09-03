@@ -43,8 +43,12 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   // === Customers ===
-  async getCustomers(includeArchived = false): Promise<Customer[]> {
-    return request<Customer[]>(`/customers${includeArchived ? '?archived=true' : ''}`);
+  async getCustomers(includeArchived = false, search = ''): Promise<Customer[]> {
+    const params = new URLSearchParams();
+    if (includeArchived) params.set('archived', 'true');
+    if (search.trim()) params.set('search', search.trim());
+    const query = params.toString();
+    return request<Customer[]>(`/customers${query ? `?${query}` : ''}`);
   },
 
   async saveCustomer(data: Partial<Customer>): Promise<Customer> {

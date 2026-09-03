@@ -194,8 +194,9 @@ class Database {
     const row = await prisma.order.findUnique({ where: { shareToken: token }, include: orderInclude });
     return row ? mapOrder(row) : null;
   }
-  async getCustomers(includeArchived = false): Promise<Customer[]> {
-    const rows = await prisma.customer.findMany({ where: { companyId: this.companyId(), ...(includeArchived ? {} : { archivedAt: null }) }, orderBy: { name: 'asc' } });
+  async getCustomers(includeArchived = false, search = ''): Promise<Customer[]> {
+    const term = search.trim();
+    const rows = await prisma.customer.findMany({ where: { companyId: this.companyId(), ...(includeArchived ? {} : { archivedAt: null }), ...(term ? { OR: [{ name: { contains: term, mode: 'insensitive' } }, { phone: { contains: term } }, { email: { contains: term, mode: 'insensitive' } }] } : {}) }, orderBy: { name: 'asc' }, take: term ? 20 : undefined });
     return rows.map(row => ({ id: row.id, name: row.name, phone: row.phone ?? undefined, email: row.email ?? undefined, address: row.address ?? undefined, notes: row.notes ?? undefined, archivedAt: row.archivedAt ? iso(row.archivedAt) : undefined, createdAt: iso(row.createdAt), updatedAt: iso(row.updatedAt) }));
   }
   async saveCustomer(data: Partial<Customer>) {

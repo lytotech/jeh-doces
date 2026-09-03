@@ -155,7 +155,7 @@ app.post('/api/orders/:id/share-link', async (req, res) => {
 
 // === Customers ===
 app.get('/api/customers', async (req, res) => {
-  res.json(await db.getCustomers(req.query.archived === 'true'));
+  res.json(await db.getCustomers(req.query.archived === 'true', String(req.query.search || '')));
 });
 
 app.post('/api/customers', async (req, res) => {
