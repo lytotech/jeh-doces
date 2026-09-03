@@ -1,0 +1,11 @@
+{
+  "name": "Jeh Doces — Gestão para confeitaria",
+  "short_name": "Jeh Doces",
+  "description": "Gestão simples para sua confeitaria.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#B57E44",
+  "lang": "pt-BR",
+  "icons": [{ "src": "/pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

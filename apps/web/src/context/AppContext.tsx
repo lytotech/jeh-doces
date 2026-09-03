@@ -152,25 +152,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Load once, refresh when the user returns, and poll lightly while visible.
+  // Load on entry and whenever the user navigates to another section. No polling.
   useEffect(() => {
     void refreshData();
-
-    const refreshWhenActive = () => {
-      const recentlyRefreshed = Date.now() - lastRefreshAt.current < 5_000;
-      if (document.visibilityState === 'visible' && !recentlyRefreshed) void refreshData();
-    };
-
-    window.addEventListener('focus', refreshWhenActive);
-    document.addEventListener('visibilitychange', refreshWhenActive);
-    const interval = window.setInterval(refreshWhenActive, 60_000);
-
-    return () => {
-      window.removeEventListener('focus', refreshWhenActive);
-      document.removeEventListener('visibilitychange', refreshWhenActive);
-      window.clearInterval(interval);
-    };
-  }, [refreshData]);
+  }, [refreshData, activeTab]);
 
   // Recalculate product costs whenever ingredients or materials change
   useEffect(() => {
@@ -368,6 +353,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const saved = await api.saveCustomer(data);
       setCustomers((prev) => prev.some((c) => c.id === saved.id) ? prev.map((c) => c.id === saved.id ? saved : c) : [saved, ...prev]);
+      api.getOrders().then(setOrders).catch(() => undefined);
       showToast('Cliente salvo no servidor!');
       return saved;
     } catch (e) {
@@ -381,6 +367,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const updated = await api.archiveCustomer(id, archived);
       setCustomers((prev) => prev.map((c) => c.id === id ? updated : c));
+      api.getOrders().then(setOrders).catch(() => undefined);
       showToast(archived ? 'Cliente arquivado.' : 'Cliente restaurado.');
     } catch (e) {
       console.error(e);

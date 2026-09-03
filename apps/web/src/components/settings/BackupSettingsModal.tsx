@@ -6,8 +6,6 @@ import { TextInput } from '../ui/Input';
 import { api } from '../../services/api';
 import {
   Download,
-  Upload,
-  RotateCcw,
   Store,
   QrCode,
   Phone,
@@ -23,7 +21,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { settings, updateSettingsAction, resetAllDataAction, showToast } = useApp();
+  const { settings, updateSettingsAction, showToast } = useApp();
 
   const [storeName, setStoreName] = useState(settings.storeName);
   const [storePhone, setStorePhone] = useState(settings.storePhone);
@@ -56,29 +54,6 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
     showToast('Backup exportado com sucesso!');
   };
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      try {
-        await api.restoreBackup(JSON.parse(content));
-        window.location.reload();
-      } catch {
-        showToast('Falha ao importar arquivo. Verifique o formato JSON.', 'error');
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const handleReset = () => {
-    if (confirm('Deseja restaurar os dados de demonstração iniciais? Todas as alterações manuais serão resetadas.')) {
-      resetAllDataAction();
-      onClose();
-    }
-  };
 
   return (
     <Modal
@@ -140,13 +115,13 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
           </Button>
         </form>
 
-        {/* Seção Backup e Restauração */}
+        {/* Exportação de dados */}
         <div className="pt-4 border-t border-[#E5DACD] space-y-3">
           <h4 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5" /> Backup & Sincronização
           </h4>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div>
             <Button
               type="button"
               variant="outline"
@@ -157,27 +132,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
               <Download className="w-4 h-4" /> Baixar Backup JSON
             </Button>
 
-            <label className="inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 text-xs px-3 py-1.5 gap-1.5 border border-[#D7BC9B] bg-white text-[#7A4B1D] hover:bg-[#FAF5EE] cursor-pointer text-center">
-              <Upload className="w-4 h-4" /> Restaurar Backup
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImport}
-                className="hidden"
-              />
-            </label>
           </div>
-
-          <Button
-            type="button"
-            variant="danger"
-            size="sm"
-            fullWidth
-            onClick={handleReset}
-            className="mt-2"
-          >
-            <RotateCcw className="w-3.5 h-3.5" /> Restaurar Dados de Demonstração
-          </Button>
         </div>
       </div>
     </Modal>

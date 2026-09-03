@@ -1,9 +1,11 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { ClipboardList, Cookie, Package, Cake, BarChart3, Users } from 'lucide-react';
+import { ClipboardList, Cookie, Package, Cake, BarChart3, Users, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 export const BottomNav: React.FC = () => {
   const { activeTab, setActiveTab, setSelectedOrderId } = useApp();
+  const { logout } = useAuth();
 
   const navItems = [
     {
@@ -43,7 +45,7 @@ export const BottomNav: React.FC = () => {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8DECFC] shadow-lg">
-      <div className="max-w-3xl mx-auto flex items-center justify-around py-1.5 px-2">
+      <div className="max-w-3xl mx-auto flex items-center justify-around py-1.5 px-1 overflow-x-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -68,6 +70,14 @@ export const BottomNav: React.FC = () => {
             </button>
           );
         })}
+        <button
+          onClick={() => void logout()}
+          className="flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl transition-all duration-200 min-w-[58px] text-rose-700 hover:text-rose-800"
+          aria-label="Sair"
+        >
+          <div className="p-1 rounded-xl"><LogOut className="w-5 h-5" /></div>
+          <span className="text-[11px] mt-0.5 tracking-tight">Sair</span>
+        </button>
       </div>
     </nav>
   );

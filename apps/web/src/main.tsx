@@ -8,6 +8,7 @@ import { LandingPage } from './components/landing/LandingPage';
 import { LegalDocument, LegalPage } from './components/legal/LegalPage';
 import './index.css';
 import { PublicOrderPage } from './components/public/PublicOrderPage';
+import { InstallAppPrompt } from './components/pwa/InstallAppPrompt';
 
 function Root() {
   const { auth, loading } = useAuth();
@@ -21,7 +22,7 @@ function Root() {
     const requiresAuthScreen = ['auth', 'invite', 'reset', 'verify'].some(key => params.has(key));
     return requiresAuthScreen ? <AuthScreen /> : <LandingPage />;
   }
-  return <AppProvider><App /></AppProvider>;
+  return <AppProvider><App /><InstallAppPrompt /></AppProvider>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -29,3 +30,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <AuthProvider><Root /></AuthProvider>
   </React.StrictMode>,
 );
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+}
