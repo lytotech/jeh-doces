@@ -3,9 +3,10 @@ import { useApp } from '../../context/AppContext';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FormField, TextInput } from '../ui/Input';
-import { api } from '../../services/api';
-import { Download, Store, ShieldCheck } from 'lucide-react';
+import { api, BillingStatus, PixPayment } from '../../services/api';
+import { Download, Store, ShieldCheck, CreditCard, Copy } from 'lucide-react';
 import { maskPhone } from '../../services/formatters';
+import { CancelSubscriptionDialog } from '../billing/CancelSubscriptionDialog';
 
 interface BackupSettingsModalProps {
   isOpen: boolean;
@@ -22,6 +23,14 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
   const [defaultMargin] = useState(settings.defaultProfitMargin.toString());
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [pixPayment, setPixPayment] = useState<PixPayment | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) void api.getBilling().then(setBilling).catch(() => undefined);
+  }, [isOpen]);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +70,16 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
     }
   };
 
+  const startPayment = async (plan: 'monthly' | 'annual') => {
+    setBillingLoading(true);
+    try { setPixPayment(await api.createPixPayment(plan)); } finally { setBillingLoading(false); }
+  };
+
+  const cancelRenewal = async () => {
+    setBillingLoading(true);
+    try { setBilling(await api.cancelBilling()); } finally { setBillingLoading(false); }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -70,6 +89,16 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
       maxWidth="lg"
     >
       <div className="space-y-6">
+        <section className="rounded-2xl border border-[#EADDE2] bg-white p-4">
+          <h4 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5"><CreditCard className="w-3.5 h-3.5" /> Meu plano</h4>
+          {billing && billing.plan === 'basic' ? (
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-bold text-[#302116]">Plano Básico</p><p className="text-xs text-[#7A6453]">Assine o Completo para liberar todos os recursos.</p></div><div className="flex gap-2"><Button size="sm" disabled={billingLoading} onClick={() => void startPayment('monthly')}>R$ 19,80/mês</Button><Button size="sm" disabled={billingLoading} onClick={() => void startPayment('annual')}>R$ 179,80/ano</Button></div></div>
+          ) : billing ? (
+            <div className="mt-3 flex items-center justify-between gap-3"><div><p className="font-bold text-[#302116]">Plano Completo <span className="ml-1 text-xs font-normal text-emerald-700">Ativo</span></p><p className="text-xs text-[#7A6453]">Válido até {billing.currentPeriodEnd ? new Date(billing.currentPeriodEnd).toLocaleDateString('pt-BR') : '—'}</p></div>{billing.status !== 'canceled' && <Button variant="outline" size="sm" disabled={billingLoading} onClick={() => setCancelOpen(true)}>Cancelar renovação</Button>}</div>
+          ) : <p className="mt-3 text-sm text-[#7A6453]">Carregando assinatura…</p>}
+          {pixPayment?.qrCode && <div className="mt-4 border-t border-[#EADDE2] pt-4 text-center"><p className="text-sm font-semibold text-[#302116]">Pix gerado — R$ {pixPayment.amount.toFixed(2).replace('.', ',')}</p>{pixPayment.qrCodeBase64 && <img src={`data:image/png;base64,${pixPayment.qrCodeBase64}`} alt="QR Code Pix" className="mx-auto mt-2 h-36 w-36" />}<button type="button" onClick={() => void navigator.clipboard.writeText(pixPayment.qrCode!)} className="inline-flex items-center gap-1.5 rounded-lg bg-[#F7E5EA] px-3 py-2 text-xs font-bold text-[#63304B]"><Copy className="h-3.5 w-3.5" /> Copiar código Pix</button></div>}
+        </section>
+
         {/* Form Configurações */}
         <form onSubmit={handleSaveSettings} className="space-y-3.5">
           <h4 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
@@ -141,6 +170,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
           </div>
         </div>
       </div>
+      <CancelSubscriptionDialog isOpen={cancelOpen} onClose={() => setCancelOpen(false)} onConfirm={cancelRenewal} />
     </Modal>
   );
 };
