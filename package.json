@@ -9,6 +9,9 @@
     "packages/*",
     "apps/*"
   ],
+  "overrides": {
+    "deepmerge-ts": "8.0.0"
+  },
   "scripts": {
     "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev -w @jeh-doces/api\" \"npm run dev -w @jeh-doces/web -- --host\"",
     "build": "npm run build -w @jeh-doces/shared && npm run build -w @jeh-doces/web && npm run build -w @jeh-doces/api",
