@@ -79,6 +79,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
       />
 
       <div className="max-w-[1480px] mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="rounded-[2rem] bg-white p-4 shadow-sm sm:p-6 lg:p-7">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column (col-span-7): Order Info, Stepper & Items */}
           <div className="lg:col-span-8 space-y-5">
@@ -327,6 +328,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
               </Button>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

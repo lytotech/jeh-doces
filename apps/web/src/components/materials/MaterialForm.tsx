@@ -86,7 +86,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
       />
 
       <div className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-4 rounded-[2rem] bg-white p-5 shadow-sm sm:p-7">
           {/* Nome */}
           <TextInput
             label="Nome"
