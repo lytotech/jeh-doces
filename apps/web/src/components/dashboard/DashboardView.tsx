@@ -1,26 +1,14 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
-import { TagBadge, StatusBadge } from '../ui/Badge';
+import { StatusBadge } from '../ui/Badge';
 import {
   formatCurrency,
   formatDateTime,
   formatDecimal,
-  ORDER_STATUS_MAP,
 } from '../../services/costEngine';
-import {
-  TrendingUp,
-  DollarSign,
-  ClipboardList,
-  AlertTriangle,
-  Calendar,
-  Sparkles,
-  Package,
-  Plus,
-  Cake,
-  CheckCircle2,
-} from 'lucide-react';
+import { AlertTriangle, Calendar, Plus } from 'lucide-react';
 import { Order } from '../../types';
 
 interface DashboardViewProps {
@@ -35,16 +23,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenSettings,
 }) => {
   const { orders, materials, products, ingredients, setActiveTab } = useApp();
+  const [period, setPeriod] = useState<'all' | '30' | '90'>('all');
+
+  const periodOrders = useMemo(() => {
+    const activeOrders = orders.filter((order) => order.status !== 'cancelado');
+    if (period === 'all') return activeOrders;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const end = new Date(today);
+    end.setDate(end.getDate() + Number(period));
+
+    return activeOrders.filter((order) => {
+      const deliveryDate = new Date(order.deliveryDate);
+      return deliveryDate >= today && deliveryDate <= end;
+    });
+  }, [orders, period]);
 
   // Metrics
-  const nonCancelledOrders = orders.filter((o) => o.status !== 'cancelado');
-  const totalRevenue = nonCancelledOrders.reduce((sum, o) => sum + o.totalCharged, 0);
-  const totalCost = nonCancelledOrders.reduce((sum, o) => sum + o.estimatedCost, 0);
-  const totalProfit = nonCancelledOrders.reduce((sum, o) => sum + o.estimatedProfit, 0);
+  const totalRevenue = periodOrders.reduce((sum, o) => sum + o.totalCharged, 0);
+  const totalCost = periodOrders.reduce((sum, o) => sum + o.estimatedCost, 0);
+  const totalProfit = periodOrders.reduce((sum, o) => sum + o.estimatedProfit, 0);
   const averageMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 
   // Total collected payments
-  const totalCollected = orders.reduce((sum, o) => {
+  const totalCollected = periodOrders.reduce((sum, o) => {
     return sum + (o.payments || []).reduce((pSum, p) => pSum + p.amount, 0);
   }, 0);
 
@@ -54,10 +57,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   );
 
   // Status breakdown
-  const ordersInProduction = orders.filter((o) => o.status === 'produzindo');
-  const ordersReady = orders.filter((o) => o.status === 'pronto');
-  const ordersConfirmed = orders.filter((o) => o.status === 'confirmado');
-  const ordersQuote = orders.filter((o) => o.status === 'orcamento');
+  const ordersInProduction = periodOrders.filter((o) => o.status === 'produzindo');
+  const ordersReady = periodOrders.filter((o) => o.status === 'pronto');
+  const ordersConfirmed = periodOrders.filter((o) => o.status === 'confirmado');
+  const ordersQuote = periodOrders.filter((o) => o.status === 'orcamento');
+  const overdueOrders = orders.filter((order) => {
+    if (['cancelado', 'entregue'].includes(order.status)) return false;
+    return new Date(order.deliveryDate).getTime() < Date.now();
+  });
+  const upcomingOrders = [...periodOrders].sort(
+    (first, second) =>
+      new Date(first.deliveryDate).getTime() - new Date(second.deliveryDate).getTime(),
+  );
 
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
@@ -72,6 +83,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       />
 
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[#302116]">Visão geral</p>
+            <p className="text-xs text-[#7A6453]">
+              Filtre os indicadores pela data de entrega das encomendas.
+            </p>
+          </div>
+          <div className="flex rounded-2xl border border-[#E5DACD] bg-white p-1 shadow-xs">
+            {[
+              ['all', 'Tudo'],
+              ['30', 'Próximos 30 dias'],
+              ['90', 'Próximos 90 dias'],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPeriod(value as 'all' | '30' | '90')}
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
+                  period === value
+                    ? 'bg-[#96315C] text-white'
+                    : 'text-[#7A6453] hover:bg-[#FAF1EC]'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {overdueOrders.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('orders')}
+            className="flex w-full items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm text-red-900 transition-colors hover:bg-red-100"
+          >
+            <span className="flex items-center gap-2 font-semibold">
+              <AlertTriangle className="h-4 w-4" />
+              {overdueOrders.length} encomenda{overdueOrders.length > 1 ? 's' : ''} com entrega atrasada
+            </span>
+            <span className="text-xs font-bold">Ver encomendas →</span>
+          </button>
+        )}
+
         {/* Top Summary Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Main Profit KPI Card */}
@@ -155,12 +209,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 onClick={() => setActiveTab('orders')}
                 className="text-xs font-semibold text-[#96642F] hover:underline"
               >
-                Ver todas ({nonCancelledOrders.length})
+                Ver todas ({periodOrders.length})
               </button>
             </div>
 
             <div className="space-y-2.5">
-              {nonCancelledOrders.slice(0, 5).map((ord) => (
+              {upcomingOrders.slice(0, 5).map((ord) => (
                 <div
                   key={ord.id}
                   onClick={() => onSelectOrder(ord)}
@@ -182,6 +236,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </span>
                 </div>
               ))}
+              {upcomingOrders.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-[#E5DACD] bg-white p-5 text-center text-sm text-[#7A6453]">
+                  Nenhuma entrega encontrada neste período.
+                </div>
+              )}
             </div>
           </div>
 
