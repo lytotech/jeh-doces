@@ -107,9 +107,9 @@ function mapOrder(row: OrderRow): Order {
   return {
     id: row.id,
     orderNumber: row.orderNumber,
-    clientName: row.customer?.name ?? 'Cliente não cadastrado',
-    clientPhone: row.customer?.phone ?? undefined,
-    clientAddress: row.customer?.address ?? undefined,
+    clientName: row.customer?.name ?? row.clientName ?? 'Cliente não cadastrado',
+    clientPhone: row.customer?.phone ?? row.clientPhone ?? undefined,
+    clientAddress: row.customer?.address ?? row.clientAddress ?? undefined,
     customerId: row.customerId ?? undefined,
     deliveryDate: iso(row.deliveryDate),
     status: row.status as OrderStatus,
@@ -164,6 +164,9 @@ const productFields = (data: Partial<Product>) => ({
 });
 const orderFields = (data: Partial<Order>, orderNumber: string) => ({
   orderNumber,
+  clientName: data.clientName?.trim() || null,
+  clientPhone: data.clientPhone?.trim() || null,
+  clientAddress: data.clientAddress?.trim() || null,
   deliveryDate: new Date(data.deliveryDate ?? Date.now()),
   status: (data.status ?? 'orcamento') as PrismaOrderStatus,
   subtotal: data.subtotal ?? 0,
