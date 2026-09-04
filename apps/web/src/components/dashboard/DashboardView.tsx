@@ -213,7 +213,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <div
                   key={ord.id}
                   onClick={() => onSelectOrder(ord)}
-                  className="bg-white p-4 rounded-2xl border border-[#E5DACD] shadow-xs cursor-pointer hover:bg-[#FAF6F0] flex items-center justify-between transition-all"
+                  className="bg-white p-4 rounded-2xl border border-[#E5DACD] shadow-xs cursor-pointer hover:bg-white hover:shadow-card flex items-center justify-between transition-shadow"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="grid grid-cols-2 gap-2 text-center text-xs">
                 <div
                   onClick={() => setActiveTab('orders')}
-                  className="p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] cursor-pointer hover:bg-purple-50"
+                  className="p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] cursor-pointer hover:bg-[#FAF7F2] hover:shadow-xs transition-shadow"
                 >
                   <span className="text-lg font-bold text-purple-600 block">
                     {ordersInProduction.length}
@@ -289,7 +289,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                 <div
                   onClick={() => setActiveTab('orders')}
-                  className="p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] cursor-pointer hover:bg-emerald-50"
+                  className="p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] cursor-pointer hover:bg-[#FAF7F2] hover:shadow-xs transition-shadow"
                 >
                   <span className="text-lg font-bold text-emerald-600 block">
                     {ordersReady.length}

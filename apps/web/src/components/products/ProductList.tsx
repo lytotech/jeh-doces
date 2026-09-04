@@ -101,7 +101,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
                 <div
                   key={prod.id}
                   onClick={() => onSelectProduct(prod)}
-                  className="bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#D7BC9B] shadow-xs hover:shadow-card cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] group"
+                  className="bg-white hover:bg-white p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#E5DACD] shadow-xs hover:shadow-card cursor-pointer transition-shadow flex items-center justify-between active:scale-[0.99] group"
                 >
                   <div className="flex items-center gap-3 flex-1 pr-2 min-w-0">
                     <div className="w-12 h-12 rounded-2xl bg-[#F6EFE6] border border-[#E8DACB] flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
@@ -110,7 +110,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
 
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-base text-[#302116] group-hover:text-[#96642F] transition-colors truncate">
+                        <span className="font-semibold text-base text-[#302116] truncate">
                           {prod.name}
                         </span>
                         {prod.category && <TagBadge>{prod.category}</TagBadge>}

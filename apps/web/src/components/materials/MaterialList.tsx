@@ -145,11 +145,11 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
                 <div
                   key={mat.id}
                   onClick={() => onSelectMaterial(mat)}
-                  className="bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#D7BC9B] shadow-xs hover:shadow-card cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] group"
+                  className="bg-white hover:bg-white p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#E5DACD] shadow-xs hover:shadow-card cursor-pointer transition-shadow flex items-center justify-between active:scale-[0.99] group"
                 >
                   <div className="space-y-1.5 flex-1 pr-2 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-base text-[#302116] group-hover:text-[#96642F] transition-colors truncate">
+                      <span className="font-semibold text-base text-[#302116] truncate">
                         {mat.name}
                       </span>
                       <TagBadge variant="material">{mat.category || 'Geral'}</TagBadge>
