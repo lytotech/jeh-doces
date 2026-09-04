@@ -3,15 +3,21 @@ import {
   ArrowRight,
   BarChart3,
   Cake,
+  CalendarDays,
   Check,
   CheckCircle2,
   ClipboardList,
+  Copy,
   Cookie,
   DollarSign,
+  FileText,
+  Link2,
   Menu,
   Package,
+  Search,
   ShieldCheck,
   Sparkles,
+  Tags,
   Users,
   X,
 } from 'lucide-react';
@@ -50,6 +56,36 @@ const features = [
     icon: Users,
     title: 'Sua equipe no mesmo ritmo',
     text: 'Convide funcionários e mantenha os dados de cada empresa separados e protegidos.',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Calendário de compromissos',
+    text: 'Visualize entregas e compromissos por mês, semana ou dia para nunca perder um prazo.',
+  },
+  {
+    icon: Search,
+    title: 'Busca rápida em tudo',
+    text: 'Encontre clientes, doces, receitas, ingredientes, materiais e embalagens em poucos toques.',
+  },
+  {
+    icon: Tags,
+    title: 'Categorias do seu jeito',
+    text: 'Organize produtos e estoque com categorias persistentes, editáveis e exclusivas da sua empresa.',
+  },
+  {
+    icon: Copy,
+    title: 'Duplique produtos',
+    text: 'Use uma receita como base e crie novas variações sem cadastrar tudo novamente.',
+  },
+  {
+    icon: Link2,
+    title: 'Pedidos compartilháveis',
+    text: 'Gere um link público do orçamento para enviar ao cliente pelo WhatsApp ou onde preferir.',
+  },
+  {
+    icon: FileText,
+    title: 'Orçamentos e comprovantes',
+    text: 'Exporte pedidos em PDF, registre pagamentos e mantenha o histórico financeiro organizado.',
   },
 ];
 
@@ -170,6 +206,9 @@ export function LandingPage() {
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 size={15} className="text-emerald-600" /> Dados separados por empresa
               </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 size={15} className="text-emerald-600" /> Backup e restauração dos dados
+              </span>
             </div>
           </div>
 
@@ -264,11 +303,11 @@ export function LandingPage() {
               Sistema de gestão para confeitaria
             </span>
             <h2 className="mt-3 font-serif text-4xl font-bold text-[#3D2A1C] sm:text-5xl">
-              Da receita à entrega, você no controle
+              Tudo o que sua confeitaria precisa para crescer
             </h2>
             <p className="mt-4 text-[#766252]">
-              As ferramentas essenciais para cuidar da operação sem perder a delicadeza do seu
-              negócio.
+              Da ficha técnica ao pedido compartilhado, o Confeiti conecta produção, estoque,
+              clientes e financeiro em um só lugar.
             </p>
           </div>
           <div className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -302,17 +341,17 @@ export function LandingPage() {
                 [
                   '01',
                   'Cadastre sua base',
-                  'Adicione ingredientes, embalagens e receitas com seus custos.',
+                  'Adicione ingredientes, materiais, embalagens e receitas com seus custos.',
                 ],
                 [
                   '02',
                   'Receba e acompanhe pedidos',
-                  'Crie orçamentos e mova cada encomenda pelo fluxo de produção.',
+                  'Crie orçamentos, compartilhe o pedido e mova cada encomenda pelo fluxo de produção.',
                 ],
                 [
                   '03',
                   'Decida com segurança',
-                  'Acompanhe recebimentos, margem, lucro e necessidades de estoque.',
+                  'Acompanhe recebimentos, margem, lucro, calendário e necessidades de estoque.',
                 ],
               ].map(([number, title, text]) => (
                 <div key={number} className="flex gap-4">
