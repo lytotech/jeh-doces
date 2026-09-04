@@ -67,7 +67,7 @@ export function AuthScreen() {
     <main className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/confeiti-mark.svg" alt="Confeiti" className="mx-auto mb-4 h-16 w-16 rounded-3xl shadow-lg" />
+          <img src="/confeiti-app-icon.png" alt="Confeiti" className="mx-auto mb-4 h-16 w-16 rounded-3xl shadow-lg" />
           <h1 className="font-sans text-3xl font-bold tracking-tight text-[#2E2A3D]">Confeiti</h1>
           <p className="text-[#8C7665] mt-1">Gestão simples para negócios doces</p>
         </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
-import { TextInput } from '../ui/Input';
+import { FormField, TextInput } from '../ui/Input';
 import { api } from '../../services/api';
 import {
   Download,
@@ -61,7 +61,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
       onClose={onClose}
       title="Configurações & Backup"
       subtitle="Personalize sua loja e faça cópias de segurança"
-      maxWidth="md"
+      maxWidth="lg"
     >
       <div className="space-y-6">
         {/* Form Configurações */}
@@ -85,11 +85,10 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
             placeholder="(11) 99999-9999"
           />
 
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <label className="block text-xs font-medium text-[#7A6453] mb-1">Tipo Chave</label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <FormField label="Tipo Chave">
               <select
-                className="w-full px-2 py-3 bg-[#FCFAF8] border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-xs font-semibold text-[#302116]"
+                className="w-full bg-transparent text-[#302116] font-medium text-base focus:outline-none"
                 value={pixKeyType}
                 onChange={(e) => setPixKeyType(e.target.value)}
               >
@@ -99,7 +98,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
                 <option value="CNPJ">CNPJ</option>
                 <option value="Aleatória">Aleatória</option>
               </select>
-            </div>
+            </FormField>
             <div className="col-span-2">
               <TextInput
                 label="Chave Pix para Pagamentos"

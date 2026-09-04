@@ -41,17 +41,17 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-black/50 backdrop-blur-xs animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-[#2E2A3D]/55 backdrop-blur-[2px] animate-fadeIn">
       <div
         className="fixed inset-0"
         onClick={onClose}
         aria-hidden="true"
       />
       <div
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-[#FAF7F2] rounded-3xl shadow-2xl border border-[#E8DECFC] overflow-hidden z-10 my-auto flex flex-col max-h-[92vh]`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-[#FFF8F2] rounded-[1.75rem] shadow-2xl border border-[#EADDE2] overflow-hidden z-10 my-auto flex flex-col max-h-[92vh]`}
       >
         {/* Header matching the caramel theme */}
-        <div className="bg-[#B57E44] px-6 py-4.5 text-white flex items-center justify-between shrink-0 shadow-sm">
+        <div className="bg-[#8D3157] px-5 sm:px-6 py-4 text-white flex items-center justify-between shrink-0 shadow-sm">
           <div>
             <h3 className="text-xl font-serif font-medium tracking-wide text-white drop-shadow-xs">
               {title}

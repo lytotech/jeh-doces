@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
       <div className="p-6 border-b border-[#E8DECFC] bg-[#B57E44] text-white">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-xl shadow-xs shrink-0">
-            <img src="/confeiti-mark.svg" alt="Confeiti" className="w-10 h-10 rounded-2xl shadow-xs shrink-0" />
+            <img src="/confeiti-app-icon.png" alt="Confeiti" className="w-10 h-10 rounded-2xl shadow-xs shrink-0" />
           </div>
           <div className="min-w-0">
             <h2 className="text-xl font-serif font-bold tracking-wide text-white truncate drop-shadow-xs">
