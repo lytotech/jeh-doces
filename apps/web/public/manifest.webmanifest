@@ -1,11 +1,11 @@
 {
-  "name": "Jeh Doces — Gestão para confeitaria",
-  "short_name": "Jeh Doces",
+  "name": "Confeiti — Gestão para confeitaria",
+  "short_name": "Confeiti",
   "description": "Gestão simples para sua confeitaria.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FAF7F2",
-  "theme_color": "#B57E44",
+  "background_color": "#FFFBF2",
+  "theme_color": "#8D3157",
   "lang": "pt-BR",
   "icons": [{ "src": "/pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
 }

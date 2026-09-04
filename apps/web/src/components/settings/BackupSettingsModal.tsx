@@ -32,7 +32,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
     updateSettingsAction({
-      storeName: storeName.trim() || 'Jeh Doces',
+      storeName: storeName.trim() || 'Confeiti',
       storePhone: storePhone.trim(),
       pixKey: pixKey.trim(),
       pixKeyType: pixKeyType.trim(),
@@ -74,7 +74,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
             label="Nome do Negócio"
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
-            placeholder="Ex: Jeh Doces"
+            placeholder="Ex: Confeiti"
             required
           />
 

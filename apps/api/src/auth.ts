@@ -88,7 +88,7 @@ function emailTemplate(options: { preheader: string; eyebrow: string; title: str
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;">
           <tr><td style="padding:0 8px 20px;text-align:center;">
             <div style="display:inline-block;width:52px;height:52px;line-height:52px;border-radius:18px;background:#a86f35;color:#fff;font-size:26px;text-align:center;">🧁</div>
-            <div style="margin-top:10px;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:bold;color:#4a3423;">Jeh Doces</div>
+            <div style="margin-top:10px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:bold;color:#8d3157;">Confeiti</div>
             <div style="margin-top:3px;font-size:11px;color:#8c7665;letter-spacing:.08em;text-transform:uppercase;">Gestão para confeitaria</div>
           </td></tr>
           <tr><td style="background:#fff;border:1px solid #e8decf;border-radius:24px;padding:36px 32px;box-shadow:0 10px 30px rgba(90,56,32,.08);">
@@ -103,7 +103,7 @@ function emailTemplate(options: { preheader: string; eyebrow: string; title: str
             <p style="margin:24px 0 8px;font-size:11px;line-height:1.5;color:#9a8674;">Se o botão não funcionar, copie e cole este endereço no navegador:</p>
             <p style="margin:0;word-break:break-all;font-size:11px;line-height:1.5;color:#96642f;"><a href="${safeUrl}" style="color:#96642f;">${safeUrl}</a></p>
           </td></tr>
-          <tr><td style="padding:22px 16px 0;text-align:center;font-size:11px;line-height:1.6;color:#9a8674;">Esta mensagem foi enviada automaticamente pelo Jeh Doces.<br>Se você não solicitou esta ação, pode ignorar este e-mail com segurança.</td></tr>
+          <tr><td style="padding:22px 16px 0;text-align:center;font-size:11px;line-height:1.6;color:#756878;">Esta mensagem foi enviada automaticamente pelo Confeiti.<br>Se você não solicitou esta ação, pode ignorar este e-mail com segurança.</td></tr>
         </table>
       </td></tr>
     </table>
@@ -135,10 +135,10 @@ async function sendVerificationEmail(user: { id: string; email: string; name: st
     expiresAt: new Date(Date.now() + VERIFICATION_HOURS * 60 * 60 * 1000),
   } });
   const link = `${appUrl()}/?verify=${encodeURIComponent(token)}`;
-  await sendMail(user.email, 'Confirme seu e-mail — Jeh Doces',
-    `Olá, ${user.name}! Confirme seu e-mail para acessar o Jeh Doces. Este link expira em ${VERIFICATION_HOURS} horas: ${link}`,
+  await sendMail(user.email, 'Confirme seu e-mail — Confeiti',
+    `Olá, ${user.name}! Confirme seu e-mail para acessar o Confeiti. Este link expira em ${VERIFICATION_HOURS} horas: ${link}`,
     emailTemplate({
-      preheader: 'Confirme seu e-mail para começar a usar o Jeh Doces.',
+      preheader: 'Confirme seu e-mail para começar a usar o Confeiti.',
       eyebrow: 'Só falta um passo', title: 'Confirme seu e-mail', greeting: `Olá, ${user.name}!`,
       body: 'Confirme que este endereço pertence a você para liberar seu acesso e proteger os dados da sua empresa.',
       buttonLabel: 'Confirmar meu e-mail', url: link, expires: `Este link expira em ${VERIFICATION_HOURS} horas e só pode ser usado uma vez.`,
@@ -303,7 +303,7 @@ authRouter.post('/forgot-password', asyncRoute(async (req, res) => {
     const token = randomToken();
     await prisma.passwordResetToken.create({ data: { userId: user.id, tokenHash: tokenHash(token), expiresAt: new Date(Date.now() + 60 * 60 * 1000) } });
     const link = `${appUrl()}/?reset=${encodeURIComponent(token)}`;
-    await sendMail(user.email, 'Redefina sua senha — Jeh Doces',
+    await sendMail(user.email, 'Redefina sua senha — Confeiti',
       `Olá, ${user.name}! Use este link para criar uma nova senha. Ele expira em 1 hora: ${link}`,
       emailTemplate({
         preheader: 'Use este link seguro para criar uma nova senha.',
@@ -339,12 +339,12 @@ authRouter.post('/invitations', requireAuth, requireRole('owner', 'admin'), asyn
   const token = randomToken();
   await prisma.invitation.create({ data: { email, role, companyId: req.auth!.companyId, tokenHash: tokenHash(token), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) } });
   const link = `${appUrl()}/?invite=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
-  await sendMail(email, 'Você recebeu um convite — Jeh Doces',
-    `${req.auth!.name} convidou você para fazer parte da equipe no Jeh Doces. Aceite em até 7 dias: ${link}`,
+  await sendMail(email, 'Você recebeu um convite — Confeiti',
+    `${req.auth!.name} convidou você para fazer parte da equipe no Confeiti. Aceite em até 7 dias: ${link}`,
     emailTemplate({
-      preheader: `${req.auth!.name} convidou você para uma equipe no Jeh Doces.`,
+      preheader: `${req.auth!.name} convidou você para uma equipe no Confeiti.`,
       eyebrow: 'Convite para a equipe', title: 'Vamos trabalhar juntos?', greeting: 'Olá!',
-      body: `${req.auth!.name} convidou você para acessar a empresa no Jeh Doces e colaborar na gestão de encomendas, receitas e estoque.`,
+      body: `${req.auth!.name} convidou você para acessar a empresa no Confeiti e colaborar na gestão de encomendas, receitas e estoque.`,
       buttonLabel: 'Aceitar convite', url: link, expires: 'Este convite expira em 7 dias e é válido somente para este e-mail.',
     }));
   res.status(201).json({ success: true });

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Cake, Eye, EyeOff, Mail, LockKeyhole, User, Store } from 'lucide-react';
+import { Eye, EyeOff, Mail, LockKeyhole, User, Store } from 'lucide-react';
 import { authRequest, useAuth } from '../../context/AuthContext';
 
 type Mode = 'login' | 'register' | 'forgot' | 'reset' | 'resend' | 'verify';
@@ -67,8 +67,8 @@ export function AuthScreen() {
     <main className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="mx-auto w-16 h-16 rounded-3xl bg-[#B57E44] text-white flex items-center justify-center shadow-lg mb-4"><Cake size={32} /></div>
-          <h1 className="font-serif text-3xl font-bold text-[#4A3423]">Jeh Doces</h1>
+          <img src="/confeiti-mark.svg" alt="Confeiti" className="mx-auto mb-4 h-16 w-16 rounded-3xl shadow-lg" />
+          <h1 className="font-sans text-3xl font-bold tracking-tight text-[#2E2A3D]">Confeiti</h1>
           <p className="text-[#8C7665] mt-1">Gestão simples para negócios doces</p>
         </div>
         <form onSubmit={submit} className="bg-white rounded-[2rem] border border-[#E8DECF] shadow-xl shadow-[#7A4B1D]/5 p-7 space-y-4">

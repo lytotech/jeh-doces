@@ -238,7 +238,7 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
 app.listen(Number(PORT), HOST, () => {
   const ips = getLocalIpAddress();
   console.log(`\n🧁 ===============================================`);
-  console.log(`✨ JEH DOCES • BACK-END & API SERVIDOR RODANDO`);
+  console.log(`✨ CONFEITI • BACK-END & API SERVIDOR RODANDO`);
   console.log(`📡 Porta: ${PORT}`);
   console.log(`🏠 Local:   http://localhost:${PORT}`);
   ips.forEach((ip) => {

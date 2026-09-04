@@ -14,7 +14,7 @@ function Root() {
   const { auth, loading } = useAuth();
   const publicMatch = window.location.pathname.match(/^\/pedido\/([^/]+)$/);
   if (publicMatch) return <PublicOrderPage token={publicMatch[1]} />;
-  if (loading) return <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center text-[#96642F] font-semibold">Carregando…</div>;
+  if (loading) return <div className="min-h-screen bg-[#FFFBF2] flex items-center justify-center text-[#8D3157] font-semibold">Carregando…</div>;
   const params = new URLSearchParams(window.location.search);
   const legal = params.get('legal');
   if (legal === 'terms' || legal === 'privacy' || legal === 'lgpd') return <LegalPage document={legal as LegalDocument} />;

@@ -22,7 +22,7 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) => {
-  const { activeTab, setActiveTab, setSelectedOrderId, settings, serverOnline, isSyncing } = useApp();
+  const { activeTab, setActiveTab, setSelectedOrderId, serverOnline, isSyncing } = useApp();
   const { auth, logout, switchCompany } = useAuth();
 
   const navItems = [
@@ -73,14 +73,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
       <div className="p-6 border-b border-[#E8DECFC] bg-[#B57E44] text-white">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-xl shadow-xs shrink-0">
-            🧁
+            <img src="/confeiti-mark.svg" alt="Confeiti" className="w-10 h-10 rounded-2xl shadow-xs shrink-0" />
           </div>
           <div className="min-w-0">
             <h2 className="text-xl font-serif font-bold tracking-wide text-white truncate drop-shadow-xs">
-              {settings.storeName}
+              Confeiti
             </h2>
             <p className="text-xs text-amber-100 font-sans truncate">
-              Confeitaria Artesanal
+              Gestão para confeitaria
             </p>
           </div>
         </div>

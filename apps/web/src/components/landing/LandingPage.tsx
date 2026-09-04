@@ -36,9 +36,9 @@ export function LandingPage() {
     <main className="min-h-screen overflow-hidden bg-[#FCF9F4] text-[#382B20]">
       <header className="relative z-20 border-b border-[#E9DDCE]/80 bg-[#FCF9F4]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 lg:px-8">
-          <a href="/" className="flex items-center gap-3" aria-label="Jeh Doces — início">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#A86F35] text-white shadow-lg shadow-[#7A4B1D]/15"><Cake size={22} /></span>
-            <span><strong className="block font-serif text-xl leading-none text-[#4A3423]">Jeh Doces</strong><span className="text-[11px] font-medium text-[#8C7665]">Gestão para confeitaria</span></span>
+          <a href="/" className="flex items-center gap-3" aria-label="Confeiti — início">
+            <img src="/confeiti-mark.svg" alt="" className="h-11 w-11 rounded-2xl shadow-lg" />
+            <span><strong className="block font-serif text-xl leading-none text-[#4A3423]">Confeiti</strong><span className="text-[11px] font-medium text-[#8C7665]">Gestão para confeitaria</span></span>
           </a>
           <nav className="hidden items-center gap-8 text-sm font-semibold text-[#6B5747] md:flex" aria-label="Navegação principal">
             <a href="#recursos" className="hover:text-[#96642F]">Recursos</a>
@@ -95,7 +95,7 @@ export function LandingPage() {
 
       <section className="px-5 pb-20 lg:px-8"><div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] bg-[#A86F35] px-6 py-12 text-center text-white shadow-2xl shadow-[#7A4B1D]/20 sm:px-12"><Cake className="mx-auto text-[#F5D7B5]" size={36}/><h2 className="mt-5 font-serif text-4xl font-bold">Pronta para adoçar a gestão?</h2><p className="mx-auto mt-3 max-w-xl text-[#F8E9D9]">Crie sua conta e transforme a rotina da sua confeitaria em um processo mais leve e lucrativo.</p><button onClick={() => goToAuth('register')} className="mt-7 inline-flex items-center gap-2 rounded-2xl bg-white px-7 py-4 font-bold text-[#7A4B1D] transition hover:-translate-y-0.5 hover:shadow-xl">Criar minha conta <ArrowRight size={18}/></button></div></section>
 
-      <footer className="border-t border-[#E9DDCE] bg-white"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-7 text-xs text-[#8A7565] sm:flex-row lg:px-8"><div className="flex items-center gap-2 font-serif text-base font-bold text-[#4A3423]"><Cake size={18} className="text-[#A86F35]"/> Jeh Doces</div><div className="flex flex-wrap justify-center gap-x-5 gap-y-2"><a href="/?legal=terms" className="hover:text-[#96642F]">Termos de Uso</a><a href="/?legal=privacy" className="hover:text-[#96642F]">Privacidade</a><a href="/?legal=lgpd" className="hover:text-[#96642F]">LGPD</a></div><button onClick={() => goToAuth('login')} className="font-bold text-[#96642F]">Acessar minha conta</button></div></footer>
+      <footer className="border-t border-[#E9DDCE] bg-white"><div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-7 text-xs text-[#8A7565] sm:flex-row lg:px-8"><div className="flex items-center gap-2 font-serif text-base font-bold text-[#4A3423]"><img src="/confeiti-mark.svg" alt="" className="h-6 w-6 rounded-lg"/> Confeiti</div><div className="flex flex-wrap justify-center gap-x-5 gap-y-2"><a href="/?legal=terms" className="hover:text-[#96642F]">Termos de Uso</a><a href="/?legal=privacy" className="hover:text-[#96642F]">Privacidade</a><a href="/?legal=lgpd" className="hover:text-[#96642F]">LGPD</a></div><button onClick={() => goToAuth('login')} className="font-bold text-[#96642F]">Acessar minha conta</button></div></footer>
     </main>
   );
 }

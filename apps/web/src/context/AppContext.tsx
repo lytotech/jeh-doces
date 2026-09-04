@@ -93,7 +93,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
-  const [settings, setSettings] = useState<AppSettings>({ storeName: 'Jeh Doces', storePhone: '', pixKey: '', pixKeyType: 'E-mail', defaultProfitMargin: 100, currencySymbol: 'R$' });
+  const [settings, setSettings] = useState<AppSettings>({ storeName: 'Confeiti', storePhone: '', pixKey: '', pixKeyType: 'E-mail', defaultProfitMargin: 100, currencySymbol: 'R$' });
 
   const [activeTab, setActiveTab] = useState<string>('orders');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);

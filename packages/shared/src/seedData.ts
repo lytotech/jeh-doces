@@ -1,7 +1,7 @@
 import { Ingredient, Material, Product, Order, AppSettings } from './types';
 
 export const initialSettings: AppSettings = {
-  storeName: 'Jeh Doces',
+  storeName: 'Confeiti',
   storePhone: '(11) 99876-5432',
   pixKey: 'jehdoces@exemplo.com.br',
   pixKeyType: 'E-mail',

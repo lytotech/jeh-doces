@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Confeiti">
+  <rect width="192" height="192" rx="42" fill="#8D3157"/>
+  <path d="M111 42c-5-14-22-20-36-11-12-8-30-1-31 15-16 0-24 17-15 29 4 5 9 8 16 8h11v54h61l-18-16H62V75H47c-10 0-14-14-4-19 5-3 11-2 15 2 1-10 14-15 22-8 8-7 23-3 25 8 7-5 18-2 21 6 5-9-1-18-15-22z" fill="#FFFBF2"/>
+  <path d="M72 67l35-28c4-3 9-2 12 2s2 9-2 12L82 81z" fill="#D69A88"/>
+  <path d="M77 78c-8 9-12 19-8 28 4 9 16 12 26 4 8-7 12-18 12-27M78 78c2 14 8 25 17 32M87 70c-2 15 0 27 8 38M95 64c-4 15-2 28 5 38" fill="none" stroke="#D69A88" stroke-width="5" stroke-linecap="round"/>
+  <path d="M54 130h75l18 17H54z" fill="#8D3157"/>
+</svg>
