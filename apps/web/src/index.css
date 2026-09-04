@@ -82,7 +82,7 @@ body { font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif; background:
 [class~="text-[#4A3423]"], [class~="text-[#4A3828]"], [class~="text-[#302116]"], [class~="text-[#382B20]"], [class~="text-[#3D2C1E]"] { color: #2E2A3D !important; }
 [class~="text-[#7A6453]"], [class~="text-[#8C7665]"], [class~="text-[#9B8878]"], [class~="text-[#A89484]"] { color: #756878 !important; }
 [class~="text-[#5C4533]"], [class~="text-[#7A4B1D]"], [class~="text-[#543015]"] { color: #63304B !important; }
-[class~="border-[#E5DACD]"], [class~="border-[#E8DECFC]"], [class~="border-[#E8DECF]"] { border-color: #EADDE2 !important; }
+[class~="border-[#E5DACD]"], [class~="border-[#E8DECF]"] { border-color: #EADDE2 !important; }
 [class~="border-[#D7BC9B]"], [class~="border-[#DFCFC0]"] { border-color: #D69A88 !important; }
 [class~="hover:bg-[#F2ECE1]"]:hover, [class~="hover:bg-[#F4ECE0]"]:hover, [class~="hover:bg-[#F5ECE0]"]:hover { background-color: #F7E5EA !important; }
 [class~="hover:bg-[#E8DAC6]"]:hover { background-color: #F0CBD6 !important; }

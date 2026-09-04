@@ -68,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
   };
 
   return (
-    <aside className="hidden md:flex flex-col w-64 lg:w-72 bg-[#FAF5EE] border-r border-[#E8DECFC] shrink-0 h-screen sticky top-0 select-none">
+    <aside className="hidden md:flex flex-col w-64 lg:w-72 bg-[#FAF5EE] border-r border-[#E8DECF] shrink-0 h-screen sticky top-0 select-none">
       {/* Brand Header */}
       <div className="p-6 border-b border-[#E8DECFC] bg-[#B57E44] text-white">
         <div className="flex items-center gap-3">
