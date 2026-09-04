@@ -16,3 +16,6 @@ CREATE TABLE "material_stock_movements" (
 
 CREATE INDEX "material_stock_movements_companyId_materialId_createdAt_idx"
   ON "material_stock_movements"("companyId", "materialId", "createdAt");
+
+ALTER TABLE "materials"
+  ADD CONSTRAINT "materials_stockQuantity_non_negative" CHECK ("stockQuantity" >= 0);
