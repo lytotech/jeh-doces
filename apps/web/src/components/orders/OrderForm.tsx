@@ -26,6 +26,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [clientPhone, setClientPhone] = useState(order?.clientPhone || '');
   const [clientAddress, setClientAddress] = useState(order?.clientAddress || '');
   const [customerId, setCustomerId] = useState(order?.customerId || '');
+  const selectedCustomer = customers.find((customer) => customer.id === customerId);
+  const isCustomerLinked = Boolean(customerId && selectedCustomer);
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerSuggestions, setCustomerSuggestions] = useState<typeof customers>([]);
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
@@ -359,12 +361,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                   )}
                 </div>
                 <TextInput
-                  label={customerId ? 'Nome do cliente (editar cadastro)' : 'Nome do cliente'}
+                  label={isCustomerLinked ? 'Nome do cliente (cadastro)' : 'Nome do cliente'}
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
                   placeholder="Ex: Diego banco"
                   required
                   autoFocus
+                  readOnly={isCustomerLinked}
+                  helpText={
+                    isCustomerLinked
+                      ? 'Este dado vem do cadastro do cliente.'
+                      : 'Cliente avulso: os dados ficam salvos somente nesta encomenda.'
+                  }
                 />
 
                 <TextInput
@@ -372,6 +380,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
                   placeholder="(11) 98765-4321"
+                  readOnly={isCustomerLinked}
                 />
               </div>
 
@@ -440,6 +449,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                 value={clientAddress}
                 onChange={(e) => setClientAddress(e.target.value)}
                 placeholder="Ex: Av. Paulista, 1000 - Apto 42"
+                readOnly={isCustomerLinked}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
