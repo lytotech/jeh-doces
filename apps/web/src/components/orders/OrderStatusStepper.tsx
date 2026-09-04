@@ -25,7 +25,7 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
           spread: 70,
           origin: { y: 0.6 },
         });
-      } catch (e) {
+      } catch {
         // silent fallback
       }
     }

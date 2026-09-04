@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Cake, ExternalLink, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Mail, ShieldCheck } from 'lucide-react';
 
 export type LegalDocument = 'terms' | 'privacy' | 'lgpd';
 

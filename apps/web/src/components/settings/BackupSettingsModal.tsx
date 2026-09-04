@@ -4,7 +4,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FormField, TextInput } from '../ui/Input';
 import { api } from '../../services/api';
-import { Download, Store, QrCode, Phone, ShieldCheck } from 'lucide-react';
+import { Download, Store, ShieldCheck } from 'lucide-react';
 
 interface BackupSettingsModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
   const [storePhone, setStorePhone] = useState(settings.storePhone);
   const [pixKey, setPixKey] = useState(settings.pixKey);
   const [pixKeyType, setPixKeyType] = useState(settings.pixKeyType);
-  const [defaultMargin, setDefaultMargin] = useState(settings.defaultProfitMargin.toString());
+  const [defaultMargin] = useState(settings.defaultProfitMargin.toString());
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { ChevronLeft, Edit3, Settings as SettingsIcon } from 'lucide-react';
+import { ChevronLeft, Settings as SettingsIcon } from 'lucide-react';
 
 interface AppHeaderProps {
   title?: string;

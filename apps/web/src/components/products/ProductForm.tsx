@@ -5,9 +5,8 @@ import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal, calculateProductCost } from '../../services/costEngine';
-import { Trash2, Plus, UtensilsCrossed, Package, DollarSign, Sparkles } from 'lucide-react';
+import { Trash2, Plus, UtensilsCrossed, Package } from 'lucide-react';
 
 interface ProductFormProps {
   product?: Product | null;
@@ -21,7 +20,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
 
   const [name, setName] = useState(product?.name || '');
   const [category, setCategory] = useState(product?.category || 'Doces');
-  const [description, setDescription] = useState(product?.description || '');
+  const [description] = useState(product?.description || '');
   const [icon, setIcon] = useState(product?.icon || '🧁');
   const [salePrice, setSalePrice] = useState(product ? product.salePrice.toString() : '0');
   const [recipeIngredients, setRecipeIngredients] = useState<ProductIngredient[]>(

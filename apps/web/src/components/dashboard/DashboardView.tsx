@@ -3,11 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
-import {
-  formatCurrency,
-  formatDateTime,
-  formatDecimal,
-} from '../../services/costEngine';
+import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
 import { AlertTriangle, Calendar, Plus } from 'lucide-react';
 import { Order } from '../../types';
 
@@ -101,9 +97,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 type="button"
                 onClick={() => setPeriod(value as 'all' | '30' | '90')}
                 className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
-                  period === value
-                    ? 'bg-[#96315C] text-white'
-                    : 'text-[#7A6453] hover:bg-[#FAF1EC]'
+                  period === value ? 'bg-[#96315C] text-white' : 'text-[#7A6453] hover:bg-[#FAF1EC]'
                 }`}
               >
                 {label}
@@ -120,7 +114,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           >
             <span className="flex items-center gap-2 font-semibold">
               <AlertTriangle className="h-4 w-4" />
-              {overdueOrders.length} encomenda{overdueOrders.length > 1 ? 's' : ''} com entrega atrasada
+              {overdueOrders.length} encomenda{overdueOrders.length > 1 ? 's' : ''} com entrega
+              atrasada
             </span>
             <span className="text-xs font-bold">Ver encomendas →</span>
           </button>

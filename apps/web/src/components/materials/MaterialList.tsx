@@ -5,7 +5,14 @@ import { Button } from '../ui/Button';
 import { TagBadge } from '../ui/Badge';
 import { Modal } from '../ui/Modal';
 import { formatCurrency, formatDecimal } from '../../services/costEngine';
-import { Plus, Search, Package, AlertTriangle, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Package,
+  AlertTriangle,
+  ChevronRight,
+  SlidersHorizontal,
+} from 'lucide-react';
 import { Material } from '../../types';
 
 interface MaterialListProps {
@@ -119,11 +126,11 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
             {filtered.map((mat) => {
               const isLowStock = mat.trackStock && mat.stockQuantity <= (mat.minStockAlert || 5);
               return (
-                  <div
+                <div
                   key={mat.id}
                   onClick={() => onSelectMaterial(mat)}
                   className="bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#D7BC9B] shadow-xs hover:shadow-card cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] group"
-                  >
+                >
                   <div className="space-y-1.5 flex-1 pr-2 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-base text-[#302116] group-hover:text-[#96642F] transition-colors truncate">

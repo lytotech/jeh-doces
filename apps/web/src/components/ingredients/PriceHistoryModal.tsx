@@ -5,7 +5,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { TextInput } from '../ui/Input';
 import { formatCurrency, formatDecimal, formatDateOnly } from '../../services/costEngine';
-import { TrendingUp, Plus, Calendar, DollarSign } from 'lucide-react';
+import { TrendingUp, Plus, Calendar } from 'lucide-react';
 
 interface PriceHistoryModalProps {
   ingredient: Ingredient;

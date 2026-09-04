@@ -3,9 +3,9 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
-import { formatCurrency, formatDateTime, ORDER_STATUS_MAP } from '../../services/costEngine';
-import { Plus, Search, ClipboardList, ChevronRight, Calendar, User } from 'lucide-react';
-import { Order, OrderStatus } from '../../types';
+import { formatCurrency, formatDateTime } from '../../services/costEngine';
+import { Plus, Search, ClipboardList, Calendar } from 'lucide-react';
+import { Order } from '../../types';
 
 interface OrderListProps {
   onSelectOrder: (order: Order) => void;

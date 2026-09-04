@@ -5,7 +5,7 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { TextInput } from '../ui/Input';
 import { formatCurrency } from '../../services/costEngine';
-import { DollarSign, QrCode, Banknote, CreditCard, Layers } from 'lucide-react';
+import { QrCode, Banknote, CreditCard, Layers } from 'lucide-react';
 
 interface PaymentModalProps {
   orderId: string;

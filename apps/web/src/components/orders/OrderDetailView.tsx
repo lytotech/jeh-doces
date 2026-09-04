@@ -14,22 +14,7 @@ import {
   formatDateTime,
   ORDER_STATUS_MAP,
 } from '../../services/costEngine';
-import {
-  FileText,
-  Edit3,
-  Plus,
-  Trash2,
-  Share2,
-  Package,
-  Cookie,
-  CreditCard,
-  QrCode,
-  Banknote,
-  Calendar,
-  User,
-  MapPin,
-  Phone,
-} from 'lucide-react';
+import { FileText, Edit3, Plus, Trash2, Package, Cookie } from 'lucide-react';
 
 interface OrderDetailViewProps {
   order: Order;

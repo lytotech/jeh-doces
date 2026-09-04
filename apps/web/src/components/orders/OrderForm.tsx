@@ -7,21 +7,8 @@ import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
-import {
-  Plus,
-  UserPlus,
-  Search,
-  Trash2,
-  Cookie,
-  Package,
-  Calendar,
-  User,
-  Phone,
-  MapPin,
-  FileText,
-} from 'lucide-react';
+import { Plus, UserPlus, Search, Trash2, Cookie, Package, User } from 'lucide-react';
 
 interface OrderFormProps {
   order?: Order | null;

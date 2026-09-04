@@ -4,7 +4,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal } from '../../services/costEngine';
-import { Plus, Search, Cake, ChevronRight, TrendingUp } from 'lucide-react';
+import { Plus, Search, Cake, ChevronRight } from 'lucide-react';
 import { Product } from '../../types';
 
 interface ProductListProps {
