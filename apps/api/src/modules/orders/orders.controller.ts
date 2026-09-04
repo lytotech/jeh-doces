@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -15,6 +16,24 @@ import {
 import { CompanyContextInterceptor } from '../../common/company-context.interceptor';
 import { DatabaseService } from '../../infrastructure/database/database.service';
 import { AuthGuard } from '../auth/auth.guard';
+import type { OrderStatus } from '@jeh-doces/shared';
+
+const orderStatuses = new Set([
+  'orcamento',
+  'confirmado',
+  'produzindo',
+  'pronto',
+  'entregue',
+  'cancelado',
+]);
+const paymentMethods = new Set([
+  'pix',
+  'dinheiro',
+  'cartao_credito',
+  'cartao_debito',
+  'transferencia',
+  'outro',
+]);
 
 @Controller('api/orders')
 @UseGuards(AuthGuard)
@@ -33,8 +52,10 @@ export class OrdersController {
   @Delete(':id') delete(@Param('id') id: string) {
     return this.database.database.deleteOrder(id).then((success) => ({ success }));
   }
-  @Patch(':id/status') async status(@Param('id') id: string, @Body('status') status: any) {
-    const updated = await this.database.database.updateOrderStatus(id, status);
+  @Patch(':id/status') async status(@Param('id') id: string, @Body('status') status: unknown) {
+    if (typeof status !== 'string' || !orderStatuses.has(status))
+      throw new BadRequestException('Status de encomenda inválido.');
+    const updated = await this.database.database.updateOrderStatus(id, status as OrderStatus);
     if (!updated) throw new NotFoundException('Order not found');
     return updated;
   }
@@ -44,7 +65,19 @@ export class OrdersController {
     return { token };
   }
   @Post(':id/payments') async payment(@Param('id') id: string, @Body() body: any) {
-    const updated = await this.database.database.addPayment(id, body);
+    const amount = Number(body?.amount);
+    const paidAt = new Date(body?.paidAt);
+    if (!Number.isFinite(amount) || amount <= 0)
+      throw new BadRequestException('O pagamento deve ter um valor maior que zero.');
+    if (typeof body?.method !== 'string' || !paymentMethods.has(body.method))
+      throw new BadRequestException('Método de pagamento inválido.');
+    if (Number.isNaN(paidAt.getTime()))
+      throw new BadRequestException('Data do pagamento inválida.');
+    const updated = await this.database.database.addPayment(id, {
+      ...body,
+      amount,
+      paidAt: paidAt.toISOString(),
+    });
     if (!updated) throw new NotFoundException('Order not found');
     return updated;
   }
