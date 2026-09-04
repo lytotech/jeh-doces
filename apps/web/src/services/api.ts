@@ -93,6 +93,9 @@ export const api = {
   async createPixPayment(plan: 'monthly' | 'annual'): Promise<PixPayment> {
     return request<PixPayment>('/billing/pix', { method: 'POST', body: JSON.stringify({ plan }) });
   },
+  async cancelBilling(): Promise<BillingStatus> {
+    return request<BillingStatus>('/billing/subscription', { method: 'DELETE' });
+  },
   async getCommitments(): Promise<Commitment[]> {
     return request<Commitment[]>('/commitments');
   },

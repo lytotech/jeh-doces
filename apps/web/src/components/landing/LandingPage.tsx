@@ -120,6 +120,9 @@ export function LandingPage() {
             <a href="#seguranca" className="hover:text-[#96642F]">
               Segurança
             </a>
+            <a href="#planos" className="hover:text-[#96642F]">
+              Planos
+            </a>
           </nav>
           <div className="hidden items-center gap-3 md:flex">
             <button
@@ -149,6 +152,7 @@ export function LandingPage() {
               <a href="#recursos">Recursos</a>
               <a href="#como-funciona">Como funciona</a>
               <a href="#seguranca">Segurança</a>
+              <a href="#planos">Planos</a>
               <button
                 onClick={() => goToAuth('login')}
                 className="rounded-xl border border-[#D7BC9B] py-3 text-[#7A4B1D]"
@@ -392,6 +396,49 @@ export function LandingPage() {
               ))}
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section id="planos" className="bg-white px-5 py-20 lg:px-8 lg:py-28">
+        <div className="mx-auto max-w-6xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <span className="text-xs font-bold uppercase tracking-[.22em] text-[#A86F35]">
+              Planos simples e transparentes
+            </span>
+            <h2 className="mt-3 font-serif text-4xl font-bold text-[#3D2A1C] sm:text-5xl">
+              Comece no seu ritmo
+            </h2>
+            <p className="mt-4 text-[#766252]">
+              Organize sua confeitaria gratuitamente e evolua para o Completo quando quiser mais
+              agilidade e controle.
+            </p>
+          </div>
+          <div className="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
+            <article className="rounded-3xl border border-[#E9DED2] bg-[#FCFAF7] p-7 sm:p-8">
+              <p className="text-sm font-bold uppercase tracking-wider text-[#7A6655]">Básico</p>
+              <h3 className="mt-3 font-serif text-3xl font-bold text-[#3D2A1C]">R$ 0</h3>
+              <p className="mt-1 text-sm text-[#7A6655]">Para começar a organizar</p>
+              <ul className="mt-7 space-y-3 text-sm text-[#5F4D3D]">
+                {['Painel e encomendas', 'Produtos e receitas', 'Clientes e calendário', 'Ingredientes e estoque', 'Banner para assinar quando precisar'].map((item) => (
+                  <li key={item} className="flex items-center gap-2"><Check size={16} className="shrink-0 text-emerald-600" />{item}</li>
+                ))}
+              </ul>
+              <button onClick={() => goToAuth('register')} className="mt-8 w-full rounded-2xl border border-[#D8C5B0] bg-white px-5 py-3.5 font-bold text-[#6B4930] transition hover:bg-[#F8F1E8]">Começar grátis</button>
+            </article>
+            <article className="relative rounded-3xl border-2 border-[#8D3157] bg-[#8D3157] p-7 text-white shadow-xl shadow-[#8D3157]/15 sm:p-8">
+              <span className="absolute right-6 top-6 rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Completo</span>
+              <p className="text-sm font-bold uppercase tracking-wider text-[#F8DCE5]">Tudo liberado</p>
+              <div className="mt-3 flex items-end gap-2"><h3 className="font-serif text-3xl font-bold">R$ 19,80</h3><span className="pb-1 text-sm text-[#F8DCE5]">/mês</span></div>
+              <p className="mt-1 text-sm text-[#F8DCE5]">ou R$ 179,80/ano via Pix</p>
+              <ul className="mt-7 space-y-3 text-sm text-[#FFF3F6]">
+                {['Todos os recursos do Confeiti', 'Custos, margem e lucro', 'Busca e categorias persistentes', 'Duplicação de produtos', 'Links públicos e PDF', 'Backup, equipe e relatórios'].map((item) => (
+                  <li key={item} className="flex items-center gap-2"><Check size={16} className="shrink-0 text-[#F8C5D4]" />{item}</li>
+                ))}
+              </ul>
+              <button onClick={() => goToAuth('register')} className="mt-8 w-full rounded-2xl bg-white px-5 py-3.5 font-bold text-[#7A2047] transition hover:-translate-y-0.5 hover:shadow-lg">Assinar Completo</button>
+            </article>
+          </div>
+          <p className="mt-6 text-center text-xs text-[#8A7565]">Pagamento mensal ou anual via Pix pelo Mercado Pago. Cancele quando quiser.</p>
         </div>
       </section>
 

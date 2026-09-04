@@ -5,7 +5,7 @@ import { prisma } from '../../infrastructure/database/client';
 import { env } from '../../config/env';
 import { AuthContext } from '../../common/auth.types';
 
-const PRICES: Record<'monthly' | 'annual', number> = { monthly: 9.9, annual: 89.9 };
+const PRICES: Record<'monthly' | 'annual', number> = { monthly: 19.8, annual: 179.8 };
 
 @Injectable()
 export class BillingService {
@@ -30,6 +30,17 @@ export class BillingService {
       });
     }
     return subscription;
+  }
+
+  async cancelRenewal(companyId: string) {
+    const subscription = await this.ensureSubscription(companyId);
+    if (subscription.plan === SubscriptionPlan.basic || !subscription.currentPeriodEnd || subscription.currentPeriodEnd <= new Date()) {
+      throw new BadRequestException('Não existe uma assinatura ativa para cancelar.');
+    }
+    return prisma.subscription.update({
+      where: { companyId },
+      data: { status: SubscriptionStatus.canceled },
+    });
   }
 
   async createPixPayment(auth: AuthContext, requestedPlan: string) {

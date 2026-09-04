@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Post, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Inject, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { CompanyContextInterceptor } from '../../common/company-context.interceptor';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthGuard } from '../auth/auth.guard';
@@ -23,5 +23,9 @@ export class BillingController {
   @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
   @Post('pix') createPix(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
     return this.billing.createPixPayment(auth, plan);
+  }
+
+  @Delete('subscription') cancel(@CurrentUser() auth: AuthContext) {
+    return this.billing.cancelRenewal(auth.companyId);
   }
 }
