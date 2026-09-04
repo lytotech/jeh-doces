@@ -15,11 +15,11 @@ CREATE INDEX "catalog_categories_companyId_type_name_idx" ON "catalog_categories
 ALTER TABLE "catalog_categories" ADD CONSTRAINT "catalog_categories_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 INSERT INTO "catalog_categories" ("id", "name", "type", "companyId", "updatedAt")
-SELECT 'cat-product-' || md5("companyId" || ':' || "category"), trim("category"), 'product', "companyId", CURRENT_TIMESTAMP
+SELECT 'cat-product-' || md5("companyId" || ':' || trim("category")), trim("category"), 'product', "companyId", CURRENT_TIMESTAMP
 FROM "products" WHERE trim("category") <> ''
 GROUP BY "companyId", trim("category");
 
 INSERT INTO "catalog_categories" ("id", "name", "type", "companyId", "updatedAt")
-SELECT 'cat-material-' || md5("companyId" || ':' || "category"), trim("category"), 'material', "companyId", CURRENT_TIMESTAMP
+SELECT 'cat-material-' || md5("companyId" || ':' || trim("category")), trim("category"), 'material', "companyId", CURRENT_TIMESTAMP
 FROM "materials" WHERE trim("category") <> ''
 GROUP BY "companyId", trim("category");
