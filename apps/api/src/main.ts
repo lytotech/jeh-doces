@@ -1,21 +1,16 @@
-import os from 'node:os';
-import { app } from './app';
+import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import { app as expressApp } from './app';
 import { env } from './config/env';
+import { AppModule } from './nest/app.module';
 
-function getLocalIpAddress() {
-  const addresses: string[] = [];
-  for (const interfaces of Object.values(os.networkInterfaces())) {
-    for (const address of interfaces || []) {
-      if (address.family === 'IPv4' && !address.internal) addresses.push(address.address);
-    }
-  }
-  return addresses;
-}
-
-export function startServer() {
-  app.listen(env.port, env.host, () => {
-    console.log(`\n🧁 CONFEITI • API rodando na porta ${env.port}`);
-    console.log(`🏠 Local: http://localhost:${env.port}`);
-    getLocalIpAddress().forEach(ip => console.log(`📱 Rede: http://${ip}:${env.port}`));
+export async function bootstrap() {
+  const nestApp = await NestFactory.create(AppModule, new ExpressAdapter(expressApp), {
+    bodyParser: false,
   });
+  await nestApp.listen(env.port, env.host);
+  console.log(`\n🧁 CONFEITI • API NestJS rodando na porta ${env.port}`);
+  console.log(`🏠 Local: http://localhost:${env.port}`);
+  return nestApp;
 }

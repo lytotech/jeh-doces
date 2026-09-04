@@ -1,3 +1,3 @@
-import { startServer } from './main';
+import { bootstrap } from './main';
 
-startServer();
+void bootstrap();
