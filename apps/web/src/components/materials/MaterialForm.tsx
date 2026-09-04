@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput, Switch } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { formatCurrency, calculateMaterialUnitCost } from '../../services/costEngine';
 import { Trash2 } from 'lucide-react';
@@ -90,99 +91,98 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
       />
 
       <div className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
-        <form
-          onSubmit={handleSave}
-          className="space-y-4 rounded-[2rem] bg-white p-5 shadow-sm sm:p-7"
-        >
-          {/* Nome */}
-          <TextInput
-            label="Nome"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ex: Caixa transporte"
-            required
-            autoFocus
-          />
-
-          <TextInput
-            label="Categoria"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="Ex: Caixas, Embalagens, Sacolas"
-            required
-          />
-
-          {/* Unidade e Quantidade base em grid lado a lado */}
-          <div className="grid grid-cols-2 gap-3">
+        <Card className="p-5 sm:p-7">
+          <form onSubmit={handleSave} className="space-y-4">
+            {/* Nome */}
             <TextInput
-              label="Unidade"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              placeholder="un"
+              label="Nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: Caixa transporte"
+              required
+              autoFocus
+            />
+
+            <TextInput
+              label="Categoria"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              placeholder="Ex: Caixas, Embalagens, Sacolas"
               required
             />
+
+            {/* Unidade e Quantidade base em grid lado a lado */}
+            <div className="grid grid-cols-2 gap-3">
+              <TextInput
+                label="Unidade"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="un"
+                required
+              />
+              <TextInput
+                label="Quantidade base"
+                type="number"
+                step="any"
+                value={baseQuantity}
+                onChange={(e) => setBaseQuantity(e.target.value)}
+                placeholder="10,00"
+                required
+              />
+            </div>
+
+            {/* Custo total (R$) */}
             <TextInput
-              label="Quantidade base"
+              label="Custo total (R$)"
               type="number"
-              step="any"
-              value={baseQuantity}
-              onChange={(e) => setBaseQuantity(e.target.value)}
-              placeholder="10,00"
+              step="0.01"
+              value={totalCost}
+              onChange={(e) => setTotalCost(e.target.value)}
+              placeholder="R$ 50,00"
+              helpText="Custo pago pela quantidade base acima."
               required
             />
-          </div>
 
-          {/* Custo total (R$) */}
-          <TextInput
-            label="Custo total (R$)"
-            type="number"
-            step="0.01"
-            value={totalCost}
-            onChange={(e) => setTotalCost(e.target.value)}
-            placeholder="R$ 50,00"
-            helpText="Custo pago pela quantidade base acima."
-            required
-          />
+            {/* Custo por unidade badge / card */}
+            <div className="p-4 bg-[#FFF1E8] rounded-2xl flex items-center justify-between shadow-sm">
+              <span className="text-sm font-medium text-[#543015]">
+                Custo por unidade ({unit || 'un'})
+              </span>
+              <span className="text-base font-bold text-[#845025]">{formatCurrency(unitCost)}</span>
+            </div>
 
-          {/* Custo por unidade badge / card */}
-          <div className="p-4 bg-[#FFF1E8] rounded-2xl flex items-center justify-between shadow-sm">
-            <span className="text-sm font-medium text-[#543015]">
-              Custo por unidade ({unit || 'un'})
-            </span>
-            <span className="text-base font-bold text-[#845025]">{formatCurrency(unitCost)}</span>
-          </div>
+            {/* Controlar estoque card */}
+            <div className="p-4 bg-white rounded-2xl border border-[#EADDE2] shadow-xs space-y-3">
+              <Switch
+                label="Controlar estoque"
+                sublabel="Quando ligado, o app desconta da quantidade ao usar em vendas."
+                checked={trackStock}
+                onChange={setTrackStock}
+              />
 
-          {/* Controlar estoque card */}
-          <div className="p-4 bg-white rounded-2xl border border-[#EADDE2] shadow-xs space-y-3">
-            <Switch
-              label="Controlar estoque"
-              sublabel="Quando ligado, o app desconta da quantidade ao usar em vendas."
-              checked={trackStock}
-              onChange={setTrackStock}
-            />
+              {trackStock && (
+                <div className="pt-2 animate-fadeIn border-t border-[#EFE8DE]">
+                  <TextInput
+                    label="Quantidade em estoque"
+                    type="number"
+                    step="any"
+                    value={stockQuantity}
+                    onChange={(e) => setStockQuantity(e.target.value)}
+                    placeholder="10,00"
+                    required
+                  />
+                </div>
+              )}
+            </div>
 
-            {trackStock && (
-              <div className="pt-2 animate-fadeIn border-t border-[#EFE8DE]">
-                <TextInput
-                  label="Quantidade em estoque"
-                  type="number"
-                  step="any"
-                  value={stockQuantity}
-                  onChange={(e) => setStockQuantity(e.target.value)}
-                  placeholder="10,00"
-                  required
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Botão Salvar alterações */}
-          <div className="pt-3">
-            <Button disabled={saving} type="submit" fullWidth size="lg">
-              {saving ? 'Salvando…' : 'Salvar alterações'}
-            </Button>
-          </div>
-        </form>
+            {/* Botão Salvar alterações */}
+            <div className="pt-3">
+              <Button disabled={saving} type="submit" fullWidth size="lg">
+                {saving ? 'Salvando…' : 'Salvar alterações'}
+              </Button>
+            </div>
+          </form>
+        </Card>
       </div>
       <ConfirmDialog
         isOpen={showDeleteConfirm}

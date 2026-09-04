@@ -16,6 +16,10 @@ interface OrderFormProps {
   onSaved: (orderId: string) => void;
 }
 
+type EditableOrderMaterial = OrderMaterialItem & {
+  source: 'automatic' | 'manual';
+};
+
 export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) => {
   const { products, materials, customers, saveOrderAction, deleteOrderAction, saveCustomerAction } =
     useApp();
@@ -80,7 +84,49 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
-  const [orderMaterials, setOrderMaterials] = useState<OrderMaterialItem[]>(order?.materials || []);
+  // Older orders do not persist the origin of a material. Treat their rows as
+  // manual so editing an existing order never silently removes user data.
+  const [orderMaterials, setOrderMaterials] = useState<EditableOrderMaterial[]>(
+    (order?.materials || []).map((material) => ({ ...material, source: 'manual' })),
+  );
+
+  const syncAutomaticMaterials = (
+    nextItems: OrderProductItem[],
+    currentMaterials: EditableOrderMaterial[],
+  ): EditableOrderMaterial[] => {
+    const automaticByMaterial = new Map<string, number>();
+
+    nextItems.forEach((item) => {
+      const product = products.find((candidate) => candidate.id === item.productId);
+      product?.materials.forEach((productMaterial) => {
+        automaticByMaterial.set(
+          productMaterial.materialId,
+          (automaticByMaterial.get(productMaterial.materialId) || 0) +
+            productMaterial.quantity * item.quantity,
+        );
+      });
+    });
+
+    const manualMaterials = currentMaterials.filter((material) => material.source === 'manual');
+    const automaticMaterials: EditableOrderMaterial[] = [];
+
+    automaticByMaterial.forEach((quantity, materialId) => {
+      const material = materials.find((candidate) => candidate.id === materialId);
+      if (!material || quantity <= 0) return;
+
+      automaticMaterials.push({
+        id: `auto-${material.id}`,
+        materialId: material.id,
+        materialName: material.name,
+        quantity,
+        unitCost: material.unitCost,
+        totalCost: quantity * material.unitCost,
+        source: 'automatic',
+      });
+    });
+
+    return [...manualMaterials, ...automaticMaterials];
+  };
 
   // Add Product Item
   const handleAddProduct = () => {
@@ -96,33 +142,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       unitCost: p.calculatedCost,
       totalCost: p.calculatedCost,
     };
-    setItems([...items, newItem]);
-
-    // Automatically add default materials of this product to order materials if not present
-    if (p.materials && p.materials.length > 0) {
-      const addedMaterials: OrderMaterialItem[] = [...orderMaterials];
-      p.materials.forEach((pMat) => {
-        const mat = materials.find((m) => m.id === pMat.materialId);
-        if (mat) {
-          const existingIdx = addedMaterials.findIndex((m) => m.materialId === mat.id);
-          if (existingIdx >= 0) {
-            addedMaterials[existingIdx].quantity += pMat.quantity;
-            addedMaterials[existingIdx].totalCost =
-              addedMaterials[existingIdx].quantity * addedMaterials[existingIdx].unitCost;
-          } else {
-            addedMaterials.push({
-              id: `ord-mat-${Date.now()}-${mat.id}`,
-              materialId: mat.id,
-              materialName: mat.name,
-              quantity: pMat.quantity,
-              unitCost: mat.unitCost,
-              totalCost: mat.unitCost * pMat.quantity,
-            });
-          }
-        }
-      });
-      setOrderMaterials(addedMaterials);
-    }
+    const nextItems = [...items, newItem];
+    setItems(nextItems);
+    setOrderMaterials(syncAutomaticMaterials(nextItems, orderMaterials));
   };
 
   const handleUpdateProduct = (
@@ -155,23 +177,27 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     }
 
     setItems(updated);
+    setOrderMaterials(syncAutomaticMaterials(updated, orderMaterials));
   };
 
   const handleRemoveProduct = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
+    const updated = items.filter((_, i) => i !== index);
+    setItems(updated);
+    setOrderMaterials(syncAutomaticMaterials(updated, orderMaterials));
   };
 
   // Add Material Item
   const handleAddMaterial = () => {
     if (materials.length === 0) return;
     const m = materials[0];
-    const newMat: OrderMaterialItem = {
+    const newMat: EditableOrderMaterial = {
       id: `ord-mat-${Date.now()}`,
       materialId: m.id,
       materialName: m.name,
       quantity: 1,
       unitCost: m.unitCost,
       totalCost: m.unitCost,
+      source: 'manual',
     };
     setOrderMaterials([...orderMaterials, newMat]);
   };
@@ -241,7 +267,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
         deliveryDate: new Date(deliveryDate).toISOString(),
         status,
         items,
-        materials: orderMaterials,
+        materials: orderMaterials.map(({ source: _, ...material }) => material),
         subtotal,
         discount: numDiscount,
         totalCharged,
