@@ -12,10 +12,7 @@ interface ProductListProps {
   onNewProduct: () => void;
 }
 
-export const ProductList: React.FC<ProductListProps> = ({
-  onSelectProduct,
-  onNewProduct,
-}) => {
+export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNewProduct }) => {
   const { products } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
@@ -26,8 +23,7 @@ export const ProductList: React.FC<ProductListProps> = ({
     const matchesSearch =
       prod.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (prod.category && prod.category.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory =
-      selectedCategory === 'todos' || prod.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'todos' || prod.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -86,7 +82,9 @@ export const ProductList: React.FC<ProductListProps> = ({
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-[#E5DACD] p-8 max-w-md mx-auto">
             <Cake className="w-12 h-12 text-[#D7BC9B] mx-auto mb-3" />
-            <p className="font-serif text-xl font-medium text-[#4A3828]">Nenhum produto cadastrado</p>
+            <p className="font-serif text-xl font-medium text-[#4A3828]">
+              Nenhum produto cadastrado
+            </p>
             <p className="text-xs text-[#8A7565] mt-1.5 mb-5">
               Monte suas receitas com custos automáticos de ingredientes e embalagens.
             </p>

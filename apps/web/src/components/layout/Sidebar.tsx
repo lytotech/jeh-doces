@@ -73,15 +73,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
       <div className="p-6 border-b border-[#E8DECFC] bg-[#B57E44] text-white">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-xl shadow-xs shrink-0">
-            <img src="/confeiti-app-icon.png" alt="Confeiti" className="w-10 h-10 rounded-2xl shadow-xs shrink-0" />
+            <img
+              src="/confeiti-app-icon.png"
+              alt="Confeiti"
+              className="w-10 h-10 rounded-2xl shadow-xs shrink-0"
+            />
           </div>
           <div className="min-w-0">
             <h2 className="text-xl font-serif font-bold tracking-wide text-white truncate drop-shadow-xs">
               Confeiti
             </h2>
-            <p className="text-xs text-amber-100 font-sans truncate">
-              Gestão para confeitaria
-            </p>
+            <p className="text-xs text-amber-100 font-sans truncate">Gestão para confeitaria</p>
           </div>
         </div>
       </div>
@@ -132,7 +134,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
         <div className="px-2 pb-1">
           <p className="text-xs font-bold text-[#5C4533] truncate">{auth?.user.name}</p>
           <p className="text-[10px] text-[#8C7665] truncate">{auth?.user.email}</p>
-          {auth && auth.companies.length > 1 && <select value={auth.activeCompanyId} onChange={e => void switchCompany(e.target.value)} className="mt-2 w-full rounded-lg border border-[#E5DACD] bg-white px-2 py-1 text-xs">{auth.companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select>}
+          {auth && auth.companies.length > 1 && (
+            <select
+              value={auth.activeCompanyId}
+              onChange={(e) => void switchCompany(e.target.value)}
+              className="mt-2 w-full rounded-lg border border-[#E5DACD] bg-white px-2 py-1 text-xs"
+            >
+              {auth.companies.map((company) => (
+                <option key={company.id} value={company.id}>
+                  {company.name}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex items-center justify-between px-2 text-xs text-[#7A6453]">
           <div className="flex items-center gap-1.5">
@@ -155,7 +169,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
         <button
           onClick={onOpenTeam}
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#5C4533] hover:bg-[#E8DAC6] transition-colors"
-        ><Users className="w-4 h-4 text-[#8C7665]"/><span>Equipe</span></button>
+        >
+          <Users className="w-4 h-4 text-[#8C7665]" />
+          <span>Equipe</span>
+        </button>
         <button
           onClick={onOpenSettings}
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#5C4533] hover:bg-[#E8DAC6] transition-colors"
@@ -163,7 +180,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
           <SettingsIcon className="w-4 h-4 text-[#8C7665]" />
           <span>Configurações & Backup</span>
         </button>
-        <button onClick={() => void logout()} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 hover:bg-rose-50"><LogOut className="w-4 h-4"/>Sair</button>
+        <button
+          onClick={() => void logout()}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 hover:bg-rose-50"
+        >
+          <LogOut className="w-4 h-4" />
+          Sair
+        </button>
       </div>
     </aside>
   );

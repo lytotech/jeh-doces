@@ -3,11 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
-import {
-  formatCurrency,
-  formatDateTime,
-  ORDER_STATUS_MAP,
-} from '../../services/costEngine';
+import { formatCurrency, formatDateTime, ORDER_STATUS_MAP } from '../../services/costEngine';
 import { Plus, Search, ClipboardList, ChevronRight, Calendar, User } from 'lucide-react';
 import { Order, OrderStatus } from '../../types';
 
@@ -97,7 +93,9 @@ export const OrderList: React.FC<OrderListProps> = ({
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-[#E5DACD] p-8 max-w-md mx-auto">
             <ClipboardList className="w-12 h-12 text-[#D7BC9B] mx-auto mb-3" />
-            <p className="font-serif text-xl font-medium text-[#4A3828]">Nenhuma encomenda encontrada</p>
+            <p className="font-serif text-xl font-medium text-[#4A3828]">
+              Nenhuma encomenda encontrada
+            </p>
             <p className="text-xs text-[#8A7565] mt-1.5 mb-5">
               Crie um novo orçamento ou encomenda para gerenciar produção e pagamentos.
             </p>
@@ -140,15 +138,27 @@ export const OrderList: React.FC<OrderListProps> = ({
                     {/* Items summary */}
                     <div className="text-xs text-[#5C4533] bg-[#FAF7F2] p-2.5 rounded-xl flex items-center justify-between">
                       <span className="truncate pr-2">
-                        {ord.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ') || 'Sem doces'}
+                        {ord.items.map((i) => `${i.quantity}x ${i.productName}`).join(', ') ||
+                          'Sem doces'}
                       </span>
-                      <span className="text-right shrink-0 leading-tight"><span className="block text-[10px] text-[#8C7665]">Cobrado</span><span className="font-bold text-sm text-[#96642F]">{formatCurrency(ord.totalCharged)}</span><span className="block text-[10px] text-[#7A6453]">Custo: {formatCurrency(ord.estimatedCost)}</span></span>
+                      <span className="text-right shrink-0 leading-tight">
+                        <span className="block text-[10px] text-[#8C7665]">Cobrado</span>
+                        <span className="font-bold text-sm text-[#96642F]">
+                          {formatCurrency(ord.totalCharged)}
+                        </span>
+                        <span className="block text-[10px] text-[#7A6453]">
+                          Custo: {formatCurrency(ord.estimatedCost)}
+                        </span>
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-[#F2ECE1] text-[11px] text-[#7A6453]">
                     <span>
-                      Lucro: <strong className="text-emerald-700">{formatCurrency(ord.estimatedProfit)}</strong>
+                      Lucro:{' '}
+                      <strong className="text-emerald-700">
+                        {formatCurrency(ord.estimatedProfit)}
+                      </strong>
                     </span>
                     {isPaid ? (
                       <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">

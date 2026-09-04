@@ -42,11 +42,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-[#2E2A3D]/55 backdrop-blur-[2px] animate-fadeIn">
-      <div
-        className="fixed inset-0"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
       <div
         className={`relative w-full ${maxWidthClasses[maxWidth]} bg-[#FFF8F2] rounded-[1.75rem] shadow-2xl overflow-hidden z-10 my-auto flex flex-col max-h-[92vh]`}
       >
@@ -56,9 +52,7 @@ export const Modal: React.FC<ModalProps> = ({
             <h3 className="text-xl font-serif font-medium tracking-wide text-white drop-shadow-xs">
               {title}
             </h3>
-            {subtitle && (
-              <p className="text-xs text-amber-100 font-sans mt-0.5">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-xs text-amber-100 font-sans mt-0.5">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}

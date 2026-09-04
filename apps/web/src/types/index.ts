@@ -70,13 +70,8 @@ export interface Product {
   updatedAt: string;
 }
 
-export type OrderStatus = 
-  | 'orcamento'
-  | 'confirmado'
-  | 'produzindo'
-  | 'pronto'
-  | 'entregue'
-  | 'cancelado';
+export type OrderStatus =
+  'orcamento' | 'confirmado' | 'produzindo' | 'pronto' | 'entregue' | 'cancelado';
 
 export interface OrderProductItem {
   id: string;
@@ -98,7 +93,8 @@ export interface OrderMaterialItem {
   totalCost: number;
 }
 
-export type PaymentMethod = 'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'outro';
+export type PaymentMethod =
+  'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'outro';
 
 export interface PaymentRecord {
   id: string;
@@ -145,7 +141,15 @@ export interface Customer {
   updatedAt: string;
 }
 
-export interface Commitment { id: string; title: string; description?: string; startsAt: string; endsAt?: string; createdAt: string; updatedAt: string; }
+export interface Commitment {
+  id: string;
+  title: string;
+  description?: string;
+  startsAt: string;
+  endsAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface AppSettings {
   storeName: string;

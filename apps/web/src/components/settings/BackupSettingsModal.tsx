@@ -4,23 +4,14 @@ import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { FormField, TextInput } from '../ui/Input';
 import { api } from '../../services/api';
-import {
-  Download,
-  Store,
-  QrCode,
-  Phone,
-  ShieldCheck,
-} from 'lucide-react';
+import { Download, Store, QrCode, Phone, ShieldCheck } from 'lucide-react';
 
 interface BackupSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
-  isOpen,
-  onClose,
-}) => {
+export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettingsAction, showToast } = useApp();
 
   const [storeName, setStoreName] = useState(settings.storeName);
@@ -53,7 +44,6 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
     document.body.removeChild(link);
     showToast('Backup exportado com sucesso!');
   };
-
 
   return (
     <Modal
@@ -130,7 +120,6 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
             >
               <Download className="w-4 h-4" /> Baixar Backup JSON
             </Button>
-
           </div>
         </div>
       </div>

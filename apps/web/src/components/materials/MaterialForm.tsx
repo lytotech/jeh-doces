@@ -12,10 +12,7 @@ interface MaterialFormProps {
   onBack: () => void;
 }
 
-export const MaterialForm: React.FC<MaterialFormProps> = ({
-  material,
-  onBack,
-}) => {
+export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) => {
   const { saveMaterialAction, deleteMaterialAction } = useApp();
 
   const isEditing = !!material?.id;
@@ -23,14 +20,12 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
   const [name, setName] = useState(material?.name || '');
   const [unit, setUnit] = useState(material?.unit || 'un');
   const [baseQuantity, setBaseQuantity] = useState(
-    material ? material.baseQuantity.toString() : '10'
+    material ? material.baseQuantity.toString() : '10',
   );
-  const [totalCost, setTotalCost] = useState(
-    material ? material.totalCost.toString() : '0'
-  );
+  const [totalCost, setTotalCost] = useState(material ? material.totalCost.toString() : '0');
   const [trackStock, setTrackStock] = useState(material ? material.trackStock : true);
   const [stockQuantity, setStockQuantity] = useState(
-    material ? material.stockQuantity.toString() : '10'
+    material ? material.stockQuantity.toString() : '10',
   );
 
   const numericTotalCost = parseFloat(totalCost.replace(',', '.')) || 0;
@@ -86,7 +81,10 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
       />
 
       <div className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
-        <form onSubmit={handleSave} className="space-y-4 rounded-[2rem] bg-white p-5 shadow-sm sm:p-7">
+        <form
+          onSubmit={handleSave}
+          className="space-y-4 rounded-[2rem] bg-white p-5 shadow-sm sm:p-7"
+        >
           {/* Nome */}
           <TextInput
             label="Nome"
@@ -134,9 +132,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
             <span className="text-sm font-medium text-[#543015]">
               Custo por unidade ({unit || 'un'})
             </span>
-            <span className="text-base font-bold text-[#845025]">
-              {formatCurrency(unitCost)}
-            </span>
+            <span className="text-base font-bold text-[#845025]">{formatCurrency(unitCost)}</span>
           </div>
 
           {/* Controlar estoque card */}

@@ -15,7 +15,8 @@ export const Button: React.FC<ButtonProps> = ({
   children,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
+  const baseStyles =
+    'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
 
   const sizeStyles = {
     sm: 'text-xs px-3 py-1.5 gap-1.5',
@@ -24,7 +25,8 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const variantStyles = {
-    primary: 'bg-[#96642F] hover:bg-[#835525] text-white shadow-sm hover:shadow active:bg-[#6E461D]',
+    primary:
+      'bg-[#96642F] hover:bg-[#835525] text-white shadow-sm hover:shadow active:bg-[#6E461D]',
     secondary: 'bg-[#F4ECE0] hover:bg-[#E8DAC6] text-[#7A4B1D] font-semibold',
     outline: 'border border-[#D7BC9B] bg-white text-[#7A4B1D] hover:bg-[#FAF5EE]',
     'caramel-outline': 'border border-[#96642F] text-[#96642F] bg-transparent hover:bg-[#FAF5EE]',

@@ -70,13 +70,8 @@ export interface Product {
   updatedAt: string;
 }
 
-export type OrderStatus = 
-  | 'orcamento'
-  | 'confirmado'
-  | 'produzindo'
-  | 'pronto'
-  | 'entregue'
-  | 'cancelado';
+export type OrderStatus =
+  'orcamento' | 'confirmado' | 'produzindo' | 'pronto' | 'entregue' | 'cancelado';
 
 export interface OrderProductItem {
   id: string;
@@ -98,7 +93,8 @@ export interface OrderMaterialItem {
   totalCost: number;
 }
 
-export type PaymentMethod = 'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'outro';
+export type PaymentMethod =
+  'pix' | 'dinheiro' | 'cartao_credito' | 'cartao_debito' | 'transferencia' | 'outro';
 
 export interface PaymentRecord {
   id: string;

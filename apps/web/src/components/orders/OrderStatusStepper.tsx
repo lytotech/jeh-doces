@@ -60,13 +60,15 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
                     isCurrent
                       ? 'bg-[#8D3157] text-white'
                       : isPast
-                      ? 'bg-[#F0CBD6] text-[#63304B]'
-                      : 'bg-[#F1E7EC] text-[#756878]'
+                        ? 'bg-[#F0CBD6] text-[#63304B]'
+                        : 'bg-[#F1E7EC] text-[#756878]'
                   }`}
                 >
                   {isPast ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : stepNum}
                 </div>
-                <span className={`text-sm ${isCurrent ? 'text-[#4A280F] font-bold' : 'text-[#4A3828]'}`}>
+                <span
+                  className={`text-sm ${isCurrent ? 'text-[#4A280F] font-bold' : 'text-[#4A3828]'}`}
+                >
                   {config.label}
                 </span>
                 {isCurrent && (

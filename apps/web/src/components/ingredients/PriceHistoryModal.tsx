@@ -57,7 +57,8 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
           <div>
             <span className="text-xs text-[#7A6453] uppercase font-semibold">Custo Atual</span>
             <p className="text-lg font-bold text-[#96642F]">
-              {formatCurrency(ingredient.unitCost)} <span className="text-xs font-normal text-[#7A6453]">/{ingredient.unit}</span>
+              {formatCurrency(ingredient.unitCost)}{' '}
+              <span className="text-xs font-normal text-[#7A6453]">/{ingredient.unit}</span>
             </p>
           </div>
           <Button
@@ -65,12 +66,21 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
             variant={showAddForm ? 'outline' : 'primary'}
             onClick={() => setShowAddForm(!showAddForm)}
           >
-            {showAddForm ? 'Cancelar' : <><Plus className="w-4 h-4" /> Novo Registro</>}
+            {showAddForm ? (
+              'Cancelar'
+            ) : (
+              <>
+                <Plus className="w-4 h-4" /> Novo Registro
+              </>
+            )}
           </Button>
         </div>
 
         {showAddForm && (
-          <form onSubmit={handleAddPrice} className="p-4 bg-[#F7F2EB] rounded-2xl border border-[#DFCFC0] space-y-3 animate-fadeIn">
+          <form
+            onSubmit={handleAddPrice}
+            className="p-4 bg-[#F7F2EB] rounded-2xl border border-[#DFCFC0] space-y-3 animate-fadeIn"
+          >
             <h4 className="text-sm font-semibold text-[#543015] flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-[#96642F]" /> Registrar novo preço pago
             </h4>
@@ -126,12 +136,12 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
                       ({formatDecimal(record.packageQuantity)} {ingredient.unit})
                     </span>
                   </p>
-                  {record.notes && (
-                    <p className="text-xs text-[#8A7565] italic">{record.notes}</p>
-                  )}
+                  {record.notes && <p className="text-xs text-[#8A7565] italic">{record.notes}</p>}
                 </div>
                 <div className="text-right">
-                  <span className="text-[11px] text-[#7A6453] uppercase font-medium">Custo Unitário</span>
+                  <span className="text-[11px] text-[#7A6453] uppercase font-medium">
+                    Custo Unitário
+                  </span>
                   <p className="text-sm font-bold text-[#96642F]">
                     {formatCurrency(record.unitCost)}/{ingredient.unit}
                   </p>

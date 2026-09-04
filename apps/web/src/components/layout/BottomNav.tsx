@@ -1,6 +1,15 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { ClipboardList, Cookie, Package, Cake, BarChart3, Users, LogOut, CalendarDays } from 'lucide-react';
+import {
+  ClipboardList,
+  Cookie,
+  Package,
+  Cake,
+  BarChart3,
+  Users,
+  LogOut,
+  CalendarDays,
+} from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const BottomNav: React.FC = () => {
@@ -76,7 +85,9 @@ export const BottomNav: React.FC = () => {
           className="flex flex-col items-center justify-center py-1.5 px-2 rounded-2xl transition-all duration-200 min-w-[58px] text-rose-700 hover:text-rose-800"
           aria-label="Sair"
         >
-          <div className="p-1 rounded-xl"><LogOut className="w-5 h-5" /></div>
+          <div className="p-1 rounded-xl">
+            <LogOut className="w-5 h-5" />
+          </div>
           <span className="text-[11px] mt-0.5 tracking-tight">Sair</span>
         </button>
       </div>

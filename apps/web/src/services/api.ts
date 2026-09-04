@@ -43,9 +43,18 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  async getCommitments(): Promise<Commitment[]> { return request<Commitment[]>('/commitments'); },
-  async saveCommitment(data: Partial<Commitment>): Promise<Commitment> { return request<Commitment>(data.id ? `/commitments/${data.id}` : '/commitments', { method: data.id ? 'PUT' : 'POST', body: JSON.stringify(data) }); },
-  async deleteCommitment(id: string): Promise<{ success: boolean }> { return request<{ success: boolean }>(`/commitments/${id}`, { method: 'DELETE' }); },
+  async getCommitments(): Promise<Commitment[]> {
+    return request<Commitment[]>('/commitments');
+  },
+  async saveCommitment(data: Partial<Commitment>): Promise<Commitment> {
+    return request<Commitment>(data.id ? `/commitments/${data.id}` : '/commitments', {
+      method: data.id ? 'PUT' : 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  async deleteCommitment(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/commitments/${id}`, { method: 'DELETE' });
+  },
   // === Customers ===
   async getCustomers(includeArchived = false, search = ''): Promise<Customer[]> {
     const params = new URLSearchParams();
@@ -57,7 +66,10 @@ export const api = {
 
   async saveCustomer(data: Partial<Customer>): Promise<Customer> {
     if (data.id) {
-      return request<Customer>(`/customers/${data.id}`, { method: 'PUT', body: JSON.stringify(data) });
+      return request<Customer>(`/customers/${data.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
     }
     return request<Customer>('/customers', { method: 'POST', body: JSON.stringify(data) });
   },
@@ -95,7 +107,7 @@ export const api = {
 
   async addPriceHistory(
     ingredientId: string,
-    historyData: Omit<PriceHistoryRecord, 'id'>
+    historyData: Omit<PriceHistoryRecord, 'id'>,
   ): Promise<Ingredient> {
     return request<Ingredient>(`/ingredients/${ingredientId}/history`, {
       method: 'POST',

@@ -14,10 +14,7 @@ interface IngredientFormProps {
   onBack: () => void;
 }
 
-export const IngredientForm: React.FC<IngredientFormProps> = ({
-  ingredient,
-  onBack,
-}) => {
+export const IngredientForm: React.FC<IngredientFormProps> = ({ ingredient, onBack }) => {
   const { ingredients, saveIngredientAction, deleteIngredientAction } = useApp();
 
   const isEditing = !!ingredient?.id;
@@ -26,16 +23,14 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
   const [isComposite, setIsComposite] = useState(ingredient?.isComposite || false);
   const [unit, setUnit] = useState<IngredientUnit>(ingredient?.unit || 'g');
   const [packageQuantity, setPackageQuantity] = useState(
-    ingredient ? ingredient.packageQuantity.toString() : '1000'
+    ingredient ? ingredient.packageQuantity.toString() : '1000',
   );
-  const [paidPrice, setPaidPrice] = useState(
-    ingredient ? ingredient.paidPrice.toString() : '0'
-  );
+  const [paidPrice, setPaidPrice] = useState(ingredient ? ingredient.paidPrice.toString() : '0');
   const [yieldQuantity, setYieldQuantity] = useState(
-    ingredient?.yieldQuantity ? ingredient.yieldQuantity.toString() : '600'
+    ingredient?.yieldQuantity ? ingredient.yieldQuantity.toString() : '600',
   );
   const [subIngredients, setSubIngredients] = useState<SubIngredientItem[]>(
-    ingredient?.subIngredients || []
+    ingredient?.subIngredients || [],
   );
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -57,9 +52,16 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
       isComposite,
       subIngredients,
       ingredients,
-      numericYieldQty
+      numericYieldQty,
     );
-  }, [numericPaidPrice, numericPackageQty, isComposite, subIngredients, ingredients, numericYieldQty]);
+  }, [
+    numericPaidPrice,
+    numericPackageQty,
+    isComposite,
+    subIngredients,
+    ingredients,
+    numericYieldQty,
+  ]);
 
   // Sub-ingredient handlers
   const handleAddSubIngredient = () => {
@@ -78,7 +80,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
   const handleUpdateSubIngredient = (
     index: number,
     field: 'ingredientId' | 'quantity',
-    val: string | number
+    val: string | number,
   ) => {
     const updated = [...subIngredients];
     if (field === 'ingredientId') {
@@ -216,7 +218,9 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                                 handleUpdateSubIngredient(index, 'quantity', e.target.value)
                               }
                             />
-                            <span className="text-[11px] text-[#7A6453] w-6">{ing?.unit || 'g'}</span>
+                            <span className="text-[11px] text-[#7A6453] w-6">
+                              {ing?.unit || 'g'}
+                            </span>
                           </div>
                           <span className="text-xs font-bold text-[#96642F] w-16 text-right">
                             {formatCurrency(subCost)}
@@ -250,7 +254,9 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
           <div className="md:col-span-5 space-y-4">
             {/* Unidade: g, ml, un */}
             <div className="space-y-1">
-              <label className="block text-xs font-medium text-[#7A6453] px-1">Unidade de Medida</label>
+              <label className="block text-xs font-medium text-[#7A6453] px-1">
+                Unidade de Medida
+              </label>
               <SegmentedControl
                 options={[
                   { value: 'g', label: 'g (gramas)' },
@@ -293,7 +299,8 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({
                 Custo Calculado por {unit}
               </span>
               <span className="text-2xl font-bold text-[#96642F] block">
-                {formatCurrency(computedUnitCost)} <span className="text-sm font-normal text-[#7A4B1D]">/ {unit}</span>
+                {formatCurrency(computedUnitCost)}{' '}
+                <span className="text-sm font-normal text-[#7A4B1D]">/ {unit}</span>
               </span>
             </div>
 

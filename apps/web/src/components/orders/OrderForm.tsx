@@ -1,10 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import {
-  Order,
-  OrderProductItem,
-  OrderMaterialItem,
-  OrderStatus,
-} from '../../types';
+import { Order, OrderProductItem, OrderMaterialItem, OrderStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
 import { AppHeader } from '../layout/AppHeader';
@@ -12,11 +7,7 @@ import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { TagBadge } from '../ui/Badge';
-import {
-  formatCurrency,
-  formatDecimal,
-  ORDER_STATUS_MAP,
-} from '../../services/costEngine';
+import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
 import {
   Plus,
   UserPlus,
@@ -37,12 +28,9 @@ interface OrderFormProps {
   onSaved: (orderId: string) => void;
 }
 
-export const OrderForm: React.FC<OrderFormProps> = ({
-  order,
-  onBack,
-  onSaved,
-}) => {
-  const { products, materials, customers, saveOrderAction, deleteOrderAction, saveCustomerAction } = useApp();
+export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) => {
+  const { products, materials, customers, saveOrderAction, deleteOrderAction, saveCustomerAction } =
+    useApp();
 
   const isEditing = !!order?.id;
 
@@ -72,7 +60,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({
 
   useEffect(() => {
     if (!customerPickerOpen) return;
-    const timer = window.setTimeout(() => { void api.getCustomers(false, customerSearch).then(setCustomerSuggestions).catch(() => setCustomerSuggestions([])); }, 250);
+    const timer = window.setTimeout(() => {
+      void api
+        .getCustomers(false, customerSearch)
+        .then(setCustomerSuggestions)
+        .catch(() => setCustomerSuggestions([]));
+    }, 250);
     return () => window.clearTimeout(timer);
   }, [customerSearch, customerPickerOpen]);
 
@@ -88,16 +81,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const [deliveryDate, setDeliveryDate] = useState(
     order?.deliveryDate
       ? order.deliveryDate.slice(0, 16)
-      : new Date(Date.now() + 86400000).toISOString().slice(0, 16)
+      : new Date(Date.now() + 86400000).toISOString().slice(0, 16),
   );
   const [status, setStatus] = useState<OrderStatus>(order?.status || 'orcamento');
   const [discount, setDiscount] = useState(order ? order.discount.toString() : '0');
   const [notes, setNotes] = useState(order?.notes || '');
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
-  const [orderMaterials, setOrderMaterials] = useState<OrderMaterialItem[]>(
-    order?.materials || []
-  );
+  const [orderMaterials, setOrderMaterials] = useState<OrderMaterialItem[]>(order?.materials || []);
 
   // Add Product Item
   const handleAddProduct = () => {
@@ -145,7 +136,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const handleUpdateProduct = (
     index: number,
     field: 'productId' | 'quantity' | 'unitPrice',
-    val: any
+    val: any,
   ) => {
     const updated = [...items];
     const current = updated[index];
@@ -196,7 +187,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
   const handleUpdateMaterial = (
     index: number,
     field: 'materialId' | 'quantity' | 'unitCost',
-    val: any
+    val: any,
   ) => {
     const updated = [...orderMaterials];
     const current = updated[index];
@@ -319,7 +310,72 @@ export const OrderForm: React.FC<OrderFormProps> = ({
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:[&>div:first-child]:col-span-2">
-                <div ref={customerPickerRef} className="relative"><label className="block text-xs font-medium text-[#7A6453] mb-1">Selecionar cliente cadastrado</label><div className="flex gap-2"><div className="relative min-w-0 flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A89484]" /><input className="w-full min-w-0 pl-9 pr-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]" value={customerSearch} placeholder="Buscar por nome..." onFocus={() => { setCustomerPickerOpen(true); setCustomerSearch(customerId ? (customers.find(c => c.id === customerId)?.name || '') : ''); }} onChange={e => { setCustomerSearch(e.target.value); setCustomerId(''); setClientName(''); setClientPhone(''); setClientAddress(''); setCustomerPickerOpen(true); }} /></div><button type="button" onClick={() => setShowQuickCustomer(true)} className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-xs font-semibold whitespace-nowrap" title="Cadastrar novo cliente"><UserPlus className="w-4 h-4 inline mr-1" />Novo</button></div>{customerPickerOpen && customerSuggestions.length > 0 && <div className="absolute left-0 right-0 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">{customerSuggestions.map(c => <button type="button" key={c.id} className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]" onClick={() => { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setCustomerPickerOpen(false); }}><span className="block text-xs font-semibold text-[#302116]">{c.name}</span><span className="block text-[11px] text-[#7A6453]">{c.phone || c.email || 'Sem contato'}</span></button>)}</div>}</div>
+                <div ref={customerPickerRef} className="relative">
+                  <label className="block text-xs font-medium text-[#7A6453] mb-1">
+                    Selecionar cliente cadastrado
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="relative min-w-0 flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A89484]" />
+                      <input
+                        className="w-full min-w-0 pl-9 pr-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]"
+                        value={customerSearch}
+                        placeholder="Buscar por nome..."
+                        onFocus={() => {
+                          setCustomerPickerOpen(true);
+                          setCustomerSearch(
+                            customerId
+                              ? customers.find((c) => c.id === customerId)?.name || ''
+                              : '',
+                          );
+                        }}
+                        onChange={(e) => {
+                          setCustomerSearch(e.target.value);
+                          setCustomerId('');
+                          setClientName('');
+                          setClientPhone('');
+                          setClientAddress('');
+                          setCustomerPickerOpen(true);
+                        }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickCustomer(true)}
+                      className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-xs font-semibold whitespace-nowrap"
+                      title="Cadastrar novo cliente"
+                    >
+                      <UserPlus className="w-4 h-4 inline mr-1" />
+                      Novo
+                    </button>
+                  </div>
+                  {customerPickerOpen && customerSuggestions.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">
+                      {customerSuggestions.map((c) => (
+                        <button
+                          type="button"
+                          key={c.id}
+                          className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]"
+                          onClick={() => {
+                            setCustomerId(c.id);
+                            setCustomerSearch(c.name);
+                            setClientName(c.name);
+                            setClientPhone(c.phone || '');
+                            setClientAddress(c.address || '');
+                            setCustomerPickerOpen(false);
+                          }}
+                        >
+                          <span className="block text-xs font-semibold text-[#302116]">
+                            {c.name}
+                          </span>
+                          <span className="block text-[11px] text-[#7A6453]">
+                            {c.phone || c.email || 'Sem contato'}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <TextInput
                   label={customerId ? 'Nome do cliente (editar cadastro)' : 'Nome do cliente'}
                   value={clientName}
@@ -337,7 +393,65 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                 />
               </div>
 
-              <Modal isOpen={showQuickCustomer} onClose={() => setShowQuickCustomer(false)} title="Novo cliente" subtitle="Cadastre e selecione na encomenda"><div className="space-y-3"><TextInput label="Nome" value={quickCustomerName} onChange={e => setQuickCustomerName(e.target.value)} autoFocus required /><TextInput label="Telefone / WhatsApp" value={quickCustomerPhone} onChange={e => setQuickCustomerPhone(e.target.value)} /><TextInput label="Endereço" value={quickCustomerAddress} onChange={e => setQuickCustomerAddress(e.target.value)} /><div className="flex justify-end gap-2 pt-2"><Button type="button" variant="secondary" onClick={() => setShowQuickCustomer(false)}>Cancelar</Button><Button type="button" onClick={async () => { if (!quickCustomerName.trim()) return; const c = await saveCustomerAction({ name: quickCustomerName, phone: quickCustomerPhone, address: quickCustomerAddress }); if (c) { setCustomerId(c.id); setCustomerSearch(c.name); setClientName(c.name); setClientPhone(c.phone || ''); setClientAddress(c.address || ''); setQuickCustomerName(''); setQuickCustomerPhone(''); setQuickCustomerAddress(''); setShowQuickCustomer(false); } }}>Cadastrar cliente</Button></div></div></Modal>
+              <Modal
+                isOpen={showQuickCustomer}
+                onClose={() => setShowQuickCustomer(false)}
+                title="Novo cliente"
+                subtitle="Cadastre e selecione na encomenda"
+              >
+                <div className="space-y-3">
+                  <TextInput
+                    label="Nome"
+                    value={quickCustomerName}
+                    onChange={(e) => setQuickCustomerName(e.target.value)}
+                    autoFocus
+                    required
+                  />
+                  <TextInput
+                    label="Telefone / WhatsApp"
+                    value={quickCustomerPhone}
+                    onChange={(e) => setQuickCustomerPhone(e.target.value)}
+                  />
+                  <TextInput
+                    label="Endereço"
+                    value={quickCustomerAddress}
+                    onChange={(e) => setQuickCustomerAddress(e.target.value)}
+                  />
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setShowQuickCustomer(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={async () => {
+                        if (!quickCustomerName.trim()) return;
+                        const c = await saveCustomerAction({
+                          name: quickCustomerName,
+                          phone: quickCustomerPhone,
+                          address: quickCustomerAddress,
+                        });
+                        if (c) {
+                          setCustomerId(c.id);
+                          setCustomerSearch(c.name);
+                          setClientName(c.name);
+                          setClientPhone(c.phone || '');
+                          setClientAddress(c.address || '');
+                          setQuickCustomerName('');
+                          setQuickCustomerPhone('');
+                          setQuickCustomerAddress('');
+                          setShowQuickCustomer(false);
+                        }
+                      }}
+                    >
+                      Cadastrar cliente
+                    </Button>
+                  </div>
+                </div>
+              </Modal>
 
               <TextInput
                 label="Endereço de entrega"
@@ -356,7 +470,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                 />
 
                 <div>
-                  <label className="block text-xs font-medium text-[#7A6453] mb-1">Status Inicial</label>
+                  <label className="block text-xs font-medium text-[#7A6453] mb-1">
+                    Status Inicial
+                  </label>
                   <select
                     className="w-full px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-xs font-bold text-[#302116]"
                     value={status}
@@ -423,13 +539,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                             step="any"
                             className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-lg font-bold text-center"
                             value={item.quantity}
-                            onChange={(e) =>
-                              handleUpdateProduct(index, 'quantity', e.target.value)
-                            }
+                            onChange={(e) => handleUpdateProduct(index, 'quantity', e.target.value)}
                           />
                         </div>
                         <div>
-                          <span className="text-[10px] text-[#7A6453] uppercase block">Preço Un (R$)</span>
+                          <span className="text-[10px] text-[#7A6453] uppercase block">
+                            Preço Un (R$)
+                          </span>
                           <input
                             type="number"
                             step="0.01"
@@ -493,9 +609,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({
                           step="any"
                           className="w-14 px-1.5 py-1 text-xs font-bold text-center bg-white border border-[#DFCFC0] rounded-lg"
                           value={mat.quantity}
-                          onChange={(e) =>
-                            handleUpdateMaterial(index, 'quantity', e.target.value)
-                          }
+                          onChange={(e) => handleUpdateMaterial(index, 'quantity', e.target.value)}
                         />
                         <span className="text-[11px] text-[#7A6453]">un</span>
                       </div>

@@ -42,7 +42,7 @@ interface AppContextType {
   setEditingOrder: (ord: Order | null) => void;
   editingCustomer: Customer | null;
   setEditingCustomer: (customer: Customer | null) => void;
-  
+
   // Sync state
   isSyncing: boolean;
   serverOnline: boolean;
@@ -54,7 +54,10 @@ interface AppContextType {
   // Ingredient Actions
   saveIngredientAction: (ing: Partial<Ingredient>) => Promise<void>;
   deleteIngredientAction: (id: string) => Promise<void>;
-  addPriceHistoryAction: (ingredientId: string, history: Omit<PriceHistoryRecord, 'id'>) => Promise<void>;
+  addPriceHistoryAction: (
+    ingredientId: string,
+    history: Omit<PriceHistoryRecord, 'id'>,
+  ) => Promise<void>;
 
   // Material Actions
   saveMaterialAction: (mat: Partial<Material>) => Promise<void>;
@@ -93,7 +96,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [orders, setOrders] = useState<Order[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [commitments, setCommitments] = useState<Commitment[]>([]);
-  const [settings, setSettings] = useState<AppSettings>({ storeName: 'Confeiti', storePhone: '', pixKey: '', pixKeyType: 'E-mail', defaultProfitMargin: 100, currencySymbol: 'R$' });
+  const [settings, setSettings] = useState<AppSettings>({
+    storeName: 'Confeiti',
+    storePhone: '',
+    pixKey: '',
+    pixKeyType: 'E-mail',
+    defaultProfitMargin: 100,
+    currencySymbol: 'R$',
+  });
 
   const [activeTab, setActiveTab] = useState<string>('orders');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -109,7 +119,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshInFlight = useRef<Promise<void> | null>(null);
   const lastRefreshAt = useRef(0);
 
-  const showToast = (message: string, type: 'success' | 'info' | 'warning' | 'error' = 'success') => {
+  const showToast = (
+    message: string,
+    type: 'success' | 'info' | 'warning' | 'error' = 'success',
+  ) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
@@ -124,15 +137,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const refresh = (async () => {
       try {
         setIsSyncing(true);
-        const [ingRes, matRes, prodRes, ordRes, custRes, commitmentRes, settRes] = await Promise.all([
-          api.getIngredients(),
-          api.getMaterials(),
-          api.getProducts(),
-          api.getOrders(),
-          api.getCustomers(true),
-          api.getCommitments(),
-          api.getSettings(),
-        ]);
+        const [ingRes, matRes, prodRes, ordRes, custRes, commitmentRes, settRes] =
+          await Promise.all([
+            api.getIngredients(),
+            api.getMaterials(),
+            api.getProducts(),
+            api.getOrders(),
+            api.getCustomers(true),
+            api.getCommitments(),
+            api.getSettings(),
+          ]);
 
         setIngredients(ingRes);
         setMaterials(matRes);
@@ -170,7 +184,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((p) => {
         const calculatedCost = calculateProductCost(p, ingredients, materials);
         return { ...p, calculatedCost };
-      })
+      }),
     );
   }, [ingredients, materials]);
 
@@ -205,7 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addPriceHistoryAction = async (
     ingredientId: string,
-    historyData: Omit<PriceHistoryRecord, 'id'>
+    historyData: Omit<PriceHistoryRecord, 'id'>,
   ) => {
     try {
       const updated = await api.addPriceHistory(ingredientId, historyData);
@@ -359,8 +373,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const saveCustomerAction = async (data: Partial<Customer>): Promise<Customer | null> => {
     try {
       const saved = await api.saveCustomer(data);
-      setCustomers((prev) => prev.some((c) => c.id === saved.id) ? prev.map((c) => c.id === saved.id ? saved : c) : [saved, ...prev]);
-      api.getOrders().then(setOrders).catch(() => undefined);
+      setCustomers((prev) =>
+        prev.some((c) => c.id === saved.id)
+          ? prev.map((c) => (c.id === saved.id ? saved : c))
+          : [saved, ...prev],
+      );
+      api
+        .getOrders()
+        .then(setOrders)
+        .catch(() => undefined);
       showToast('Cliente salvo com sucesso!');
       return saved;
     } catch (e) {
@@ -373,8 +394,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const archiveCustomerAction = async (id: string, archived = true) => {
     try {
       const updated = await api.archiveCustomer(id, archived);
-      setCustomers((prev) => prev.map((c) => c.id === id ? updated : c));
-      api.getOrders().then(setOrders).catch(() => undefined);
+      setCustomers((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      api
+        .getOrders()
+        .then(setOrders)
+        .catch(() => undefined);
       showToast(archived ? 'Cliente arquivado.' : 'Cliente restaurado.');
     } catch (e) {
       console.error(e);
@@ -382,8 +406,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const saveCommitmentAction = async (data: Partial<Commitment>) => { try { const saved = await api.saveCommitment(data); setCommitments(prev => prev.some(c => c.id === saved.id) ? prev.map(c => c.id === saved.id ? saved : c) : [...prev, saved]); showToast('Compromisso salvo com sucesso!'); } catch { showToast('Erro ao salvar compromisso.', 'error'); } };
-  const deleteCommitmentAction = async (id: string) => { try { await api.deleteCommitment(id); setCommitments(prev => prev.filter(c => c.id !== id)); showToast('Compromisso removido com sucesso.', 'info'); } catch { showToast('Erro ao remover compromisso.', 'error'); } };
+  const saveCommitmentAction = async (data: Partial<Commitment>) => {
+    try {
+      const saved = await api.saveCommitment(data);
+      setCommitments((prev) =>
+        prev.some((c) => c.id === saved.id)
+          ? prev.map((c) => (c.id === saved.id ? saved : c))
+          : [...prev, saved],
+      );
+      showToast('Compromisso salvo com sucesso!');
+    } catch {
+      showToast('Erro ao salvar compromisso.', 'error');
+    }
+  };
+  const deleteCommitmentAction = async (id: string) => {
+    try {
+      await api.deleteCommitment(id);
+      setCommitments((prev) => prev.filter((c) => c.id !== id));
+      showToast('Compromisso removido com sucesso.', 'info');
+    } catch {
+      showToast('Erro ao remover compromisso.', 'error');
+    }
+  };
 
   // === Settings & Reset ===
   const updateSettingsAction = async (newSettings: Partial<AppSettings>) => {

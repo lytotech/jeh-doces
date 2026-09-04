@@ -10,7 +10,9 @@ before(async () => {
   app = await createApplication();
 });
 
-after(async () => { await app.close(); });
+after(async () => {
+  await app.close();
+});
 
 test('recusa acesso sem sessão em endpoint protegido', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/auth/me' });

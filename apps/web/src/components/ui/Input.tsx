@@ -18,9 +18,7 @@ export const FormField: React.FC<FormFieldProps> = ({
   return (
     <div className={`relative ${className}`}>
       <div className="relative border border-[#EADDE2] focus-within:border-[#D69A88] focus-within:ring-2 focus-within:ring-[#D69A88]/15 rounded-2xl bg-[#FFFCF8] p-3 transition-colors shadow-xs">
-        <label className="block text-xs font-medium text-[#7A6453] mb-1">
-          {label}
-        </label>
+        <label className="block text-xs font-medium text-[#7A6453] mb-1">{label}</label>
         {children}
       </div>
       {helpText && <p className="text-xs text-[#8A7565] mt-1.5 px-1">{helpText}</p>}
@@ -83,9 +81,7 @@ export const Switch: React.FC<SwitchProps> = ({
     >
       <div className="pr-4 flex-1">
         <span className="text-base font-semibold text-[#302116] block">{label}</span>
-        {sublabel && (
-          <p className="text-xs text-[#7A6453] mt-0.5 leading-relaxed">{sublabel}</p>
-        )}
+        {sublabel && <p className="text-xs text-[#7A6453] mt-0.5 leading-relaxed">{sublabel}</p>}
       </div>
       <div
         className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out ${

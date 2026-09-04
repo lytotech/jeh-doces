@@ -28,7 +28,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [amount, setAmount] = useState(remaining > 0 ? remaining.toFixed(2) : '0.00');
   const [method, setMethod] = useState<PaymentMethod>('pix');
   const [paidAt, setPaidAt] = useState(
-    new Date().toISOString().slice(0, 16) // format for datetime-local
+    new Date().toISOString().slice(0, 16), // format for datetime-local
   );
   const [notes, setNotes] = useState('');
 

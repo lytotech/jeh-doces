@@ -12,11 +12,7 @@ interface ShareBudgetModalProps {
   onClose: () => void;
 }
 
-export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({
-  order,
-  isOpen,
-  onClose,
-}) => {
+export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({ order, isOpen, onClose }) => {
   const { settings, showToast } = useApp();
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
@@ -43,7 +39,9 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({
       setShareUrl(url);
       await navigator.clipboard.writeText(url);
       showToast('Link do pedido copiado!');
-    } catch { showToast('Não foi possível gerar o link.', 'error'); }
+    } catch {
+      showToast('Não foi possível gerar o link.', 'error');
+    }
   };
 
   return (
@@ -61,9 +59,48 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({
             <p>Orçamento da sua encomenda</p>
             <p>Entrega: {new Date(order.deliveryDate).toLocaleString('pt-BR')}</p>
           </header>
-          <section className="print-quote-section"><h2>Dados do cliente</h2><p>{order.clientName}</p>{order.clientPhone && <p>{order.clientPhone}</p>}{order.clientAddress && <p>{order.clientAddress}</p>}</section>
-          <section className="print-quote-section"><h2>Itens</h2>{order.items.map(item => <div className="print-quote-row" key={item.id}><span>{item.productName}</span><span>{item.quantity}× {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} &nbsp; {item.totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span></div>)}</section>
-          <section className="print-quote-totals"><div><span>Subtotal</span><strong>{order.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></div>{order.discount > 0 && <div><span>Desconto</span><strong>- {order.discount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></div>}<div className="print-quote-total"><span>Total cobrado</span><strong>{order.totalCharged.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</strong></div></section>
+          <section className="print-quote-section">
+            <h2>Dados do cliente</h2>
+            <p>{order.clientName}</p>
+            {order.clientPhone && <p>{order.clientPhone}</p>}
+            {order.clientAddress && <p>{order.clientAddress}</p>}
+          </section>
+          <section className="print-quote-section">
+            <h2>Itens</h2>
+            {order.items.map((item) => (
+              <div className="print-quote-row" key={item.id}>
+                <span>{item.productName}</span>
+                <span>
+                  {item.quantity}×{' '}
+                  {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}{' '}
+                  &nbsp;{' '}
+                  {item.totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+              </div>
+            ))}
+          </section>
+          <section className="print-quote-totals">
+            <div>
+              <span>Subtotal</span>
+              <strong>
+                {order.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </strong>
+            </div>
+            {order.discount > 0 && (
+              <div>
+                <span>Desconto</span>
+                <strong>
+                  - {order.discount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </strong>
+              </div>
+            )}
+            <div className="print-quote-total">
+              <span>Total cobrado</span>
+              <strong>
+                {order.totalCharged.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </strong>
+            </div>
+          </section>
           <footer>Gerado por {settings.storeName || 'Confeiti'}</footer>
         </article>
         {/* Preview Container */}
@@ -91,7 +128,16 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({
             <Printer className="w-4 h-4" /> Imprimir / PDF
           </Button>
         </div>
-        <div className="border-t border-[#E5DACD] pt-3 space-y-2"><Button variant="outline" fullWidth onClick={handleCreateLink}><Share2 className="w-4 h-4" /> Gerar link para o cliente</Button>{shareUrl && <div className="text-xs text-[#7A6453] break-all bg-white border border-[#E5DACD] rounded-xl p-3">{shareUrl}</div>}</div>
+        <div className="border-t border-[#E5DACD] pt-3 space-y-2">
+          <Button variant="outline" fullWidth onClick={handleCreateLink}>
+            <Share2 className="w-4 h-4" /> Gerar link para o cliente
+          </Button>
+          {shareUrl && (
+            <div className="text-xs text-[#7A6453] break-all bg-white border border-[#E5DACD] rounded-xl p-3">
+              {shareUrl}
+            </div>
+          )}
+        </div>
       </div>
     </Modal>
   );

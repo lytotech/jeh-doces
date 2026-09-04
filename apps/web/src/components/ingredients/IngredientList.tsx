@@ -20,7 +20,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
 
   const filtered = ingredients.filter((ing) =>
-    ing.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ing.name.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -57,7 +57,9 @@ export const IngredientList: React.FC<IngredientListProps> = ({
         {filtered.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-[#E5DACD] p-8 max-w-md mx-auto">
             <Cookie className="w-12 h-12 text-[#D7BC9B] mx-auto mb-3" />
-            <p className="font-serif text-xl font-medium text-[#4A3828]">Nenhum ingrediente encontrado</p>
+            <p className="font-serif text-xl font-medium text-[#4A3828]">
+              Nenhum ingrediente encontrado
+            </p>
             <p className="text-xs text-[#8A7565] mt-1.5 mb-5">
               Cadastre seus insumos para calcular o custo exato das receitas.
             </p>
@@ -95,7 +97,9 @@ export const IngredientList: React.FC<IngredientListProps> = ({
 
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
-                    <span className="text-[11px] text-[#7A6453] uppercase block">Custo Unitário</span>
+                    <span className="text-[11px] text-[#7A6453] uppercase block">
+                      Custo Unitário
+                    </span>
                     <span className="text-base font-bold text-[#96642F]">
                       {formatCurrency(ing.unitCost)}
                       <span className="text-xs font-normal text-[#7A6453]">/{ing.unit}</span>

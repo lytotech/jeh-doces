@@ -64,7 +64,7 @@ export const calculateIngredientUnitCost = (
   isComposite: boolean,
   subIngredients?: { ingredientId: string; quantity: number }[],
   allIngredients: Ingredient[] = [],
-  yieldQuantity = 1
+  yieldQuantity = 1,
 ): number => {
   if (isComposite && subIngredients && subIngredients.length > 0) {
     let totalSubCost = 0;
@@ -82,10 +82,7 @@ export const calculateIngredientUnitCost = (
   return paidPrice / packageQuantity;
 };
 
-export const calculateMaterialUnitCost = (
-  totalCost: number,
-  baseQuantity: number
-): number => {
+export const calculateMaterialUnitCost = (totalCost: number, baseQuantity: number): number => {
   if (baseQuantity <= 0) return 0;
   return totalCost / baseQuantity;
 };
@@ -93,7 +90,7 @@ export const calculateMaterialUnitCost = (
 export const calculateProductCost = (
   product: Product,
   ingredients: Ingredient[],
-  materials: Material[]
+  materials: Material[],
 ): number => {
   let cost = 0;
 

@@ -9,5 +9,16 @@ import { CustomersModule } from '../modules/customers/customers.module';
 import { SettingsModule } from '../modules/settings/settings.module';
 
 /** Root module. Feature modules are migrated here incrementally. */
-@Module({ imports: [DatabaseModule, AuthModule, HealthModule, PublicOrdersModule, CatalogModule, OrdersModule, CustomersModule, SettingsModule] })
+@Module({
+  imports: [
+    DatabaseModule,
+    AuthModule,
+    HealthModule,
+    PublicOrdersModule,
+    CatalogModule,
+    OrdersModule,
+    CustomersModule,
+    SettingsModule,
+  ],
+})
 export class AppModule {}

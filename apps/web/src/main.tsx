@@ -14,23 +14,38 @@ function Root() {
   const { auth, loading } = useAuth();
   const publicMatch = window.location.pathname.match(/^\/pedido\/([^/]+)$/);
   if (publicMatch) return <PublicOrderPage token={publicMatch[1]} />;
-  if (loading) return <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center text-[#8D3157] font-semibold">Carregando…</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center text-[#8D3157] font-semibold">
+        Carregando…
+      </div>
+    );
   const params = new URLSearchParams(window.location.search);
   const legal = params.get('legal');
-  if (legal === 'terms' || legal === 'privacy' || legal === 'lgpd') return <LegalPage document={legal as LegalDocument} />;
+  if (legal === 'terms' || legal === 'privacy' || legal === 'lgpd')
+    return <LegalPage document={legal as LegalDocument} />;
   if (!auth) {
-    const requiresAuthScreen = ['auth', 'invite', 'reset', 'verify'].some(key => params.has(key));
+    const requiresAuthScreen = ['auth', 'invite', 'reset', 'verify'].some((key) => params.has(key));
     return requiresAuthScreen ? <AuthScreen /> : <LandingPage />;
   }
-  return <AppProvider><App /><InstallAppPrompt /></AppProvider>;
+  return (
+    <AppProvider>
+      <App />
+      <InstallAppPrompt />
+    </AppProvider>
+  );
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider><Root /></AuthProvider>
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
   </React.StrictMode>,
 );
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => undefined));
+  window.addEventListener('load', () =>
+    navigator.serviceWorker.register('/sw.js').catch(() => undefined),
+  );
 }

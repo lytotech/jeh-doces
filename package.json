@@ -1,6 +1,7 @@
 {
   "name": "jeh-doces-monorepo",
   "private": true,
+  "type": "module",
   "engines": {
     "node": "22.x",
     "npm": "10.x"
@@ -16,11 +17,18 @@
   "scripts": {
     "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev -w @jeh-doces/api\" \"npm run dev -w @jeh-doces/web -- --host\"",
     "build": "npm run build -w @jeh-doces/shared && npm run build -w @jeh-doces/web && npm run build -w @jeh-doces/api",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"*.{js,json}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"*.{js,json}\"",
     "dev:web": "npm run dev -w @jeh-doces/web -- --host",
     "dev:api": "npm run dev -w @jeh-doces/api",
     "start": "npm run start -w @jeh-doces/api"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.6",
+    "typescript-eslint": "^8.69.0"
   }
 }

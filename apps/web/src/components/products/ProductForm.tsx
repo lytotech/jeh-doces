@@ -13,10 +13,7 @@ interface ProductFormProps {
   onBack: () => void;
 }
 
-export const ProductForm: React.FC<ProductFormProps> = ({
-  product,
-  onBack,
-}) => {
+export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => {
   const { ingredients, materials, saveProductAction, deleteProductAction } = useApp();
 
   const isEditing = !!product?.id;
@@ -25,14 +22,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   const [category, setCategory] = useState(product?.category || 'Doces');
   const [description, setDescription] = useState(product?.description || '');
   const [icon, setIcon] = useState(product?.icon || '🧁');
-  const [salePrice, setSalePrice] = useState(
-    product ? product.salePrice.toString() : '0'
-  );
+  const [salePrice, setSalePrice] = useState(product ? product.salePrice.toString() : '0');
   const [recipeIngredients, setRecipeIngredients] = useState<ProductIngredient[]>(
-    product?.ingredients || []
+    product?.ingredients || [],
   );
   const [recipeMaterials, setRecipeMaterials] = useState<ProductMaterial[]>(
-    product?.materials || []
+    product?.materials || [],
   );
 
   const numericSalePrice = parseFloat(salePrice.replace(',', '.')) || 0;
@@ -59,13 +54,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   // Ingredient list handlers
   const handleAddIngredient = () => {
     if (ingredients.length === 0) return;
-    setRecipeIngredients([
-      ...recipeIngredients,
-      { ingredientId: ingredients[0].id, quantity: 50 },
-    ]);
+    setRecipeIngredients([...recipeIngredients, { ingredientId: ingredients[0].id, quantity: 50 }]);
   };
 
-  const handleUpdateIngredient = (index: number, field: 'ingredientId' | 'quantity', val: string | number) => {
+  const handleUpdateIngredient = (
+    index: number,
+    field: 'ingredientId' | 'quantity',
+    val: string | number,
+  ) => {
     const updated = [...recipeIngredients];
     if (field === 'ingredientId') {
       updated[index].ingredientId = val as string;
@@ -82,13 +78,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({
   // Material list handlers
   const handleAddMaterial = () => {
     if (materials.length === 0) return;
-    setRecipeMaterials([
-      ...recipeMaterials,
-      { materialId: materials[0].id, quantity: 1 },
-    ]);
+    setRecipeMaterials([...recipeMaterials, { materialId: materials[0].id, quantity: 1 }]);
   };
 
-  const handleUpdateMaterial = (index: number, field: 'materialId' | 'quantity', val: string | number) => {
+  const handleUpdateMaterial = (
+    index: number,
+    field: 'materialId' | 'quantity',
+    val: string | number,
+  ) => {
     const updated = [...recipeMaterials];
     if (field === 'materialId') {
       updated[index].materialId = val as string;
@@ -191,12 +188,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <span className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1">
                 <UtensilsCrossed className="w-3.5 h-3.5 text-[#96642F]" /> Ingredientes da Receita
               </span>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={handleAddIngredient}
-              >
+              <Button type="button" size="sm" variant="secondary" onClick={handleAddIngredient}>
                 <Plus className="w-3.5 h-3.5" /> Adicionar
               </Button>
             </div>
@@ -263,12 +255,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
               <span className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1">
                 <Package className="w-3.5 h-3.5 text-[#96642F]" /> Embalagens & Materiais
               </span>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={handleAddMaterial}
-              >
+              <Button type="button" size="sm" variant="secondary" onClick={handleAddMaterial}>
                 <Plus className="w-3.5 h-3.5" /> Adicionar
               </Button>
             </div>
@@ -290,9 +277,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                       <select
                         className="w-full sm:flex-1 min-w-0 bg-transparent text-xs font-semibold text-[#302116] border-none focus:outline-none truncate"
                         value={item.materialId}
-                        onChange={(e) =>
-                          handleUpdateMaterial(index, 'materialId', e.target.value)
-                        }
+                        onChange={(e) => handleUpdateMaterial(index, 'materialId', e.target.value)}
                       >
                         {materials.map((opt) => (
                           <option key={opt.id} value={opt.id}>
@@ -306,9 +291,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({
                           step="any"
                           className="w-14 px-1.5 py-1 text-xs font-bold text-right bg-[#FAF7F2] border border-[#DFCFC0] rounded-lg focus:outline-none"
                           value={item.quantity}
-                          onChange={(e) =>
-                            handleUpdateMaterial(index, 'quantity', e.target.value)
-                          }
+                          onChange={(e) => handleUpdateMaterial(index, 'quantity', e.target.value)}
                         />
                         <span className="text-[11px] text-[#7A6453] w-6">{mat?.unit || 'un'}</span>
                       </div>
@@ -378,14 +361,22 @@ export const ProductForm: React.FC<ProductFormProps> = ({
           {numericSalePrice > 0 && (
             <div className="grid grid-cols-2 gap-3 p-3 bg-white rounded-2xl border border-[#E5DACD] text-center">
               <div>
-                <span className="text-[11px] text-[#7A6453] uppercase font-bold block">Lucro Bruto</span>
-                <span className={`text-base font-bold ${estimatedProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                <span className="text-[11px] text-[#7A6453] uppercase font-bold block">
+                  Lucro Bruto
+                </span>
+                <span
+                  className={`text-base font-bold ${estimatedProfit >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}
+                >
                   {formatCurrency(estimatedProfit)}
                 </span>
               </div>
               <div>
-                <span className="text-[11px] text-[#7A6453] uppercase font-bold block">Margem Líquida</span>
-                <span className={`text-base font-bold ${marginPercent >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
+                <span className="text-[11px] text-[#7A6453] uppercase font-bold block">
+                  Margem Líquida
+                </span>
+                <span
+                  className={`text-base font-bold ${marginPercent >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}
+                >
                   {formatDecimal(marginPercent, 1)}%
                 </span>
               </div>

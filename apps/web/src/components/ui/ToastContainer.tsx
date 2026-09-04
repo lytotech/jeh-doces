@@ -14,9 +14,13 @@ export const ToastContainer: React.FC = () => {
           key={toast.id}
           className="pointer-events-auto bg-[#362517] text-[#FAF5EE] px-4 py-3 rounded-2xl shadow-xl border border-[#523A25] flex items-center gap-3 animate-slideUp text-sm"
         >
-          {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
+          {toast.type === 'success' && (
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          )}
           {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
-          {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />}
+          {toast.type === 'warning' && (
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+          )}
           {toast.type === 'info' && <Info className="w-5 h-5 text-blue-400 shrink-0" />}
           <span className="font-medium">{toast.message}</span>
         </div>

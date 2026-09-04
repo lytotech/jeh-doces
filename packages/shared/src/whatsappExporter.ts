@@ -61,5 +61,7 @@ export const getWhatsAppUrl = (phone: string | undefined, message: string): stri
     cleanPhone = '55' + cleanPhone;
   }
   const encoded = encodeURIComponent(message);
-  return cleanPhone ? `https://wa.me/${cleanPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`;
+  return cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encoded}`
+    : `https://wa.me/?text=${encoded}`;
 };

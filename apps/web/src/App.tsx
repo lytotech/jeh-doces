@@ -61,7 +61,15 @@ export const App: React.FC = () => {
   // Cada tela começa no topo; evita herdar a posição de rolagem da tela anterior.
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, [activeTab, selectedOrderId, editingIngredient, editingMaterial, editingProduct, editingOrder, editingCustomer]);
+  }, [
+    activeTab,
+    selectedOrderId,
+    editingIngredient,
+    editingMaterial,
+    editingProduct,
+    editingOrder,
+    editingCustomer,
+  ]);
 
   // Render content according to active tab and active detail/form views
   const renderContent = () => {
@@ -114,21 +122,11 @@ export const App: React.FC = () => {
 
       case 'products': {
         if (isCreatingNewProduct) {
-          return (
-            <ProductForm
-              product={null}
-              onBack={() => setIsCreatingNewProduct(false)}
-            />
-          );
+          return <ProductForm product={null} onBack={() => setIsCreatingNewProduct(false)} />;
         }
 
         if (editingProduct) {
-          return (
-            <ProductForm
-              product={editingProduct}
-              onBack={() => setEditingProduct(null)}
-            />
-          );
+          return <ProductForm product={editingProduct} onBack={() => setEditingProduct(null)} />;
         }
 
         return (
@@ -142,10 +140,7 @@ export const App: React.FC = () => {
       case 'ingredients': {
         if (isCreatingNewIngredient) {
           return (
-            <IngredientForm
-              ingredient={null}
-              onBack={() => setIsCreatingNewIngredient(false)}
-            />
+            <IngredientForm ingredient={null} onBack={() => setIsCreatingNewIngredient(false)} />
           );
         }
 
@@ -168,20 +163,12 @@ export const App: React.FC = () => {
 
       case 'materials': {
         if (isCreatingNewMaterial) {
-          return (
-            <MaterialForm
-              material={null}
-              onBack={() => setIsCreatingNewMaterial(false)}
-            />
-          );
+          return <MaterialForm material={null} onBack={() => setIsCreatingNewMaterial(false)} />;
         }
 
         if (editingMaterial) {
           return (
-            <MaterialForm
-              material={editingMaterial}
-              onBack={() => setEditingMaterial(null)}
-            />
+            <MaterialForm material={editingMaterial} onBack={() => setEditingMaterial(null)} />
           );
         }
 
@@ -210,13 +197,29 @@ export const App: React.FC = () => {
       }
 
       case 'customers': {
-        if (isCreatingNewCustomer) return <CustomerForm customer={null} onBack={() => setIsCreatingNewCustomer(false)} />;
-        if (editingCustomer) return <CustomerForm customer={editingCustomer} onBack={() => setEditingCustomer(null)} />;
-        return <CustomerList onSelectCustomer={setEditingCustomer} onNewCustomer={() => setIsCreatingNewCustomer(true)} />;
+        if (isCreatingNewCustomer)
+          return <CustomerForm customer={null} onBack={() => setIsCreatingNewCustomer(false)} />;
+        if (editingCustomer)
+          return (
+            <CustomerForm customer={editingCustomer} onBack={() => setEditingCustomer(null)} />
+          );
+        return (
+          <CustomerList
+            onSelectCustomer={setEditingCustomer}
+            onNewCustomer={() => setIsCreatingNewCustomer(true)}
+          />
+        );
       }
 
       case 'calendar':
-        return <CalendarView onSelectOrder={(order) => { setActiveTab('orders'); setSelectedOrderId(order.id); }} />;
+        return (
+          <CalendarView
+            onSelectOrder={(order) => {
+              setActiveTab('orders');
+              setSelectedOrderId(order.id);
+            }}
+          />
+        );
 
       default:
         return null;
@@ -226,7 +229,10 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-row">
       {/* Sidebar on desktop */}
-      <Sidebar onOpenSettings={() => setShowSettingsModal(true)} onOpenTeam={() => setShowTeamModal(true)} />
+      <Sidebar
+        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenTeam={() => setShowTeamModal(true)}
+      />
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FAF7F2] min-h-screen relative">
@@ -245,7 +251,9 @@ export const App: React.FC = () => {
           onClose={() => setShowSettingsModal(false)}
         />
       )}
-      {showTeamModal && <TeamModal isOpen={showTeamModal} onClose={() => setShowTeamModal(false)} />}
+      {showTeamModal && (
+        <TeamModal isOpen={showTeamModal} onClose={() => setShowTeamModal(false)} />
+      )}
     </div>
   );
 };

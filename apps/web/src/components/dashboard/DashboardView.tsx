@@ -50,7 +50,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Low stock materials
   const lowStockMaterials = materials.filter(
-    (m) => m.trackStock && m.stockQuantity <= (m.minStockAlert || 5)
+    (m) => m.trackStock && m.stockQuantity <= (m.minStockAlert || 5),
   );
 
   // Status breakdown

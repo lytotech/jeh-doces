@@ -24,7 +24,15 @@ interface AuthContextValue {
   loading: boolean;
   refresh: () => Promise<void>;
   login: (email: string, password: string, invitationToken?: string) => Promise<void>;
-  register: (data: { name: string; email: string; password: string; companyName: string; invitationToken?: string; acceptedTerms: boolean; acceptedPrivacy: boolean }) => Promise<{ message: string }>;
+  register: (data: {
+    name: string;
+    email: string;
+    password: string;
+    companyName: string;
+    invitationToken?: string;
+    acceptedTerms: boolean;
+    acceptedPrivacy: boolean;
+  }) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   switchCompany: (companyId: string) => Promise<void>;
 }
@@ -35,24 +43,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [auth, setAuth] = useState<AuthState | null>(null);
   const [loading, setLoading] = useState(true);
   const refresh = async () => {
-    try { setAuth(await authRequest<AuthState>('/me')); }
-    catch { setAuth(null); }
-    finally { setLoading(false); }
+    try {
+      setAuth(await authRequest<AuthState>('/me'));
+    } catch {
+      setAuth(null);
+    } finally {
+      setLoading(false);
+    }
   };
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => {
+    void refresh();
+  }, []);
   const login = async (email: string, password: string, invitationToken?: string) => {
-    await authRequest('/login', { method: 'POST', body: JSON.stringify({ email, password, invitationToken }) });
+    await authRequest('/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, invitationToken }),
+    });
     await refresh();
   };
-  const register = async (data: { name: string; email: string; password: string; companyName: string; invitationToken?: string; acceptedTerms: boolean; acceptedPrivacy: boolean }) => {
-    return authRequest<{ message: string }>('/register', { method: 'POST', body: JSON.stringify(data) });
+  const register = async (data: {
+    name: string;
+    email: string;
+    password: string;
+    companyName: string;
+    invitationToken?: string;
+    acceptedTerms: boolean;
+    acceptedPrivacy: boolean;
+  }) => {
+    return authRequest<{ message: string }>('/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   };
-  const logout = async () => { await authRequest('/logout', { method: 'POST' }); setAuth(null); };
+  const logout = async () => {
+    await authRequest('/logout', { method: 'POST' });
+    setAuth(null);
+  };
   const switchCompany = async (companyId: string) => {
     await authRequest('/switch-company', { method: 'POST', body: JSON.stringify({ companyId }) });
     window.location.reload();
   };
-  return <AuthContext.Provider value={{ auth, loading, refresh, login, register, logout, switchCompany }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{ auth, loading, refresh, login, register, logout, switchCompany }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
