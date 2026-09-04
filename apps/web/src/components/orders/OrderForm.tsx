@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { DateTimePicker } from '../ui/DateTimePicker';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
 import { Plus, UserPlus, Search, Trash2, Cookie, Package, User } from 'lucide-react';
 
@@ -492,11 +493,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <TextInput
+                  <DateTimePicker
                     label="Data e hora da entrega"
-                    type="datetime-local"
                     value={deliveryDate}
-                    onChange={(e) => setDeliveryDate(e.target.value)}
+                    onChange={setDeliveryDate}
                     required
                   />
 

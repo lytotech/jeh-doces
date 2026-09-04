@@ -276,7 +276,13 @@ export const CalendarView: React.FC<{ onSelectOrder: (order: Order) => void }> =
           calendário.
         </div>
       </div>
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Novo compromisso">
+      <Modal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        title="Novo compromisso"
+        maxWidth="lg"
+        className="min-h-[600px]"
+      >
         <div className="space-y-3">
           <TextInput
             label="Título"

@@ -8,6 +8,7 @@ interface ModalProps {
   subtitle?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+  className?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -17,6 +18,7 @@ export const Modal: React.FC<ModalProps> = ({
   subtitle,
   children,
   maxWidth = 'md',
+  className = '',
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -44,7 +46,7 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto bg-[#2E2A3D]/55 backdrop-blur-[2px] animate-fadeIn">
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
       <div
-        className={`relative w-full ${maxWidthClasses[maxWidth]} bg-[#FFF8F2] rounded-[1.75rem] shadow-2xl overflow-hidden z-10 my-auto flex flex-col max-h-[92vh]`}
+        className={`relative w-full ${maxWidthClasses[maxWidth]} ${className} bg-[#FFF8F2] rounded-[1.75rem] shadow-2xl overflow-hidden z-10 my-auto flex flex-col max-h-[92vh]`}
       >
         {/* Header matching the caramel theme */}
         <div className="bg-[#8D3157] px-5 sm:px-6 py-4 text-white flex items-center justify-between shrink-0 shadow-sm">

@@ -100,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
               onClick={() => handleTabClick(item.id)}
               className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 group ${
                 isActive
-                  ? 'bg-[#96642F] text-white shadow-sm'
+                  ? 'bg-[#72203F] text-white shadow-sm'
                   : 'text-[#5C4533] hover:bg-[#F2ECE1] hover:text-[#362517]'
               }`}
             >
