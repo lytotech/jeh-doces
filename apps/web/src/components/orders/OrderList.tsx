@@ -116,17 +116,17 @@ export const OrderList: React.FC<OrderListProps> = ({
                 <div
                   key={ord.id}
                   onClick={() => onSelectOrder(ord)}
-                  className={`bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border shadow-xs hover:shadow-card cursor-pointer transition-all space-y-3 flex flex-col justify-between group ${
+                  className={`bg-white hover:bg-white p-4 sm:p-5 rounded-3xl border shadow-xs hover:shadow-card cursor-pointer transition-shadow space-y-3 flex flex-col justify-between group ${
                     isOverdue
-                      ? 'border-red-200 hover:border-red-300'
-                      : 'border-[#E5DACD] hover:border-[#D7BC9B]'
+                      ? 'border-red-200 hover:border-red-200'
+                      : 'border-[#E5DACD] hover:border-[#E5DACD]'
                   }`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-0.5 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-base text-[#302116] truncate group-hover:text-[#96642F] transition-colors">
+                          <h3 className="font-bold text-base text-[#302116] truncate">
                             {ord.clientName}
                           </h3>
                           <span className="text-xs font-semibold text-[#8C7665] shrink-0">
