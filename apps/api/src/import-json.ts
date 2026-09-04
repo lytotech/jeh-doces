@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { DatabaseSchema } from '@jeh-doces/shared';
-import { db, runForCompany } from './db';
+import { db, runForCompany } from './infrastructure/database';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const source = process.argv[2] || path.resolve(currentDir, '../data/database.json');

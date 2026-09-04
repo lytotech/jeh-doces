@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 import { CompanyRole } from '@prisma/client';
 import { NextFunction, Request, Response, Router } from 'express';
 import nodemailer from 'nodemailer';
-import { prisma } from './db';
+import { prisma } from './infrastructure/database';
 
 const scrypt = promisify(crypto.scrypt);
 const SESSION_COOKIE = 'jeh_session';

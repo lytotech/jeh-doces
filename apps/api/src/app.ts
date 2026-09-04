@@ -4,7 +4,7 @@ import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { runForCompany } from './db';
+import { runForCompany } from './infrastructure/database';
 import { authRouter, requireAuth } from './auth';
 import { env } from './config/env';
 import { healthRouter } from './modules/health/health.routes';

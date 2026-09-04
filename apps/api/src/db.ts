@@ -1,15 +1,13 @@
-import { OrderStatus as PrismaOrderStatus, Prisma, PrismaClient } from '@prisma/client';
-import { AsyncLocalStorage } from 'node:async_hooks';
+import { OrderStatus as PrismaOrderStatus, Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import {
   AppSettings, DatabaseSchema, Ingredient, Material, Order, OrderStatus,
   PaymentRecord, PriceHistoryRecord, Product, Customer, Commitment, initialIngredients, initialMaterials,
   initialOrders, initialProducts, initialSettings,
 } from '@jeh-doces/shared';
+import { getCompanyId, prisma, runForCompany } from './infrastructure/database/client';
 
-export const prisma = new PrismaClient();
-const companyContext = new AsyncLocalStorage<string>();
-export const runForCompany = <T>(companyId: string, callback: () => T) => companyContext.run(companyId, callback);
+export { prisma, runForCompany };
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
 const ingredientInclude = { priceHistory: { orderBy: { date: 'desc' as const } }, subIngredients: true };
 const productInclude = { ingredients: true, materials: true };
@@ -105,9 +103,7 @@ const orderFields = (data: Partial<Order>, orderNumber: string) => ({
 
 class Database {
   private companyId() {
-    const companyId = companyContext.getStore();
-    if (!companyId) throw new Error('Empresa não definida para esta operação.');
-    return companyId;
+    return getCompanyId();
   }
   connect = () => prisma.$connect();
   disconnect = () => prisma.$disconnect();

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../../db';
+import { db } from '../../infrastructure/database';
 import { requireRole } from '../../auth';
 
 export const settingsRouter = Router();
