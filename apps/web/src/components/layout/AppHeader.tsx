@@ -21,7 +21,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-[#B57E44] text-white shadow-md">
-      <div className="w-full max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between gap-3">
+      <div className="w-full max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           {showBack && (
             <button
