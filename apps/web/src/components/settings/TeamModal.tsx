@@ -15,6 +15,8 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
   const [message, setMessage] = useState('');
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [memberBusyId, setMemberBusyId] = useState<string | null>(null);
   const canManage = auth?.role === 'owner' || auth?.role === 'admin';
   const load = () =>
     authRequest<Member[]>('/members')
@@ -26,6 +28,8 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
 
   const invite = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (inviteBusy) return;
+    setInviteBusy(true);
     setMessage('');
     try {
       await authRequest('/invitations', { method: 'POST', body: JSON.stringify({ email, role }) });
@@ -33,19 +37,33 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
       setMessage('Convite enviado por e-mail.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Erro ao convidar.');
+    } finally {
+      setInviteBusy(false);
     }
   };
   const changeRole = async (member: Member, nextRole: 'admin' | 'employee') => {
-    await authRequest(`/members/${member.id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ role: nextRole }),
-    });
-    await load();
+    if (memberBusyId) return;
+    setMemberBusyId(member.id);
+    try {
+      await authRequest(`/members/${member.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: nextRole }),
+      });
+      await load();
+    } finally {
+      setMemberBusyId(null);
+    }
   };
   const remove = async (member: Member) => {
     if (!confirm(`Remover ${member.user.name} da empresa?`)) return;
-    await authRequest(`/members/${member.id}`, { method: 'DELETE' });
-    await load();
+    if (memberBusyId) return;
+    setMemberBusyId(member.id);
+    try {
+      await authRequest(`/members/${member.id}`, { method: 'DELETE' });
+      await load();
+    } finally {
+      setMemberBusyId(null);
+    }
   };
 
   return (
@@ -79,6 +97,7 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={inviteBusy}
                 placeholder="funcionario@email.com"
                 aria-label="E-mail do funcionário"
                 className="min-w-0 rounded-xl border border-[#E5DACD] bg-white px-3.5 py-2.5 text-sm text-[#2E2A3D] placeholder:text-[#A894A0] focus:border-[#8D3157] focus:outline-none focus:ring-2 focus:ring-[#8D3157]/10"
@@ -86,6 +105,7 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as 'admin' | 'employee')}
+                disabled={inviteBusy}
                 aria-label="Perfil de acesso"
                 className="rounded-xl border border-[#E5DACD] bg-white px-3 py-2.5 text-sm text-[#2E2A3D] focus:border-[#8D3157] focus:outline-none focus:ring-2 focus:ring-[#8D3157]/10"
               >
@@ -93,8 +113,11 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 <option value="admin">Administrador</option>
               </select>
             </div>
-            <button className="w-full rounded-xl bg-[#8D3157] py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#6B3157]">
-              Enviar convite
+            <button
+              disabled={inviteBusy}
+              className="w-full rounded-xl bg-[#8D3157] py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#6B3157] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {inviteBusy ? 'Enviando convite…' : 'Enviar convite'}
             </button>
             {message && (
               <p className="rounded-xl bg-white px-3 py-2 text-sm text-[#63304B]">{message}</p>
@@ -130,6 +153,7 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 ) : auth?.role === 'owner' ? (
                   <select
                     value={member.role}
+                    disabled={memberBusyId === member.id}
                     onChange={(e) =>
                       void changeRole(member, e.target.value as 'admin' | 'employee')
                     }
@@ -146,6 +170,7 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 )}
                 {canManage && member.role !== 'owner' && member.user.id !== auth?.user.id && (
                   <button
+                    disabled={memberBusyId === member.id}
                     onClick={() => void remove(member)}
                     aria-label={`Remover ${member.user.name}`}
                     title="Remover acesso"

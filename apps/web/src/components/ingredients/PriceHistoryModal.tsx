@@ -23,23 +23,29 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
   const [newPaidPrice, setNewPaidPrice] = useState(ingredient.paidPrice.toString());
   const [newPackageQty, setNewPackageQty] = useState(ingredient.packageQuantity.toString());
   const [newNotes, setNewNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleAddPrice = (e: React.FormEvent) => {
+  const handleAddPrice = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
+    setSaving(true);
     const paid = parseFloat(newPaidPrice.replace(',', '.')) || 0;
     const qty = parseFloat(newPackageQty.replace(',', '.')) || 1;
     const unitCost = paid / (qty > 0 ? qty : 1);
 
-    addPriceHistoryAction(ingredient.id, {
-      date: new Date().toISOString(),
-      paidPrice: paid,
-      packageQuantity: qty,
-      unitCost,
-      notes: newNotes.trim() || undefined,
-    });
-
-    setShowAddForm(false);
-    setNewNotes('');
+    try {
+      await addPriceHistoryAction(ingredient.id, {
+        date: new Date().toISOString(),
+        paidPrice: paid,
+        packageQuantity: qty,
+        unitCost,
+        notes: newNotes.trim() || undefined,
+      });
+      setShowAddForm(false);
+      setNewNotes('');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const history = ingredient.priceHistory || [];
@@ -108,8 +114,8 @@ export const PriceHistoryModal: React.FC<PriceHistoryModalProps> = ({
               onChange={(e) => setNewNotes(e.target.value)}
               placeholder="Opcional..."
             />
-            <Button type="submit" fullWidth size="sm">
-              Salvar novo valor
+            <Button disabled={saving} type="submit" fullWidth size="sm">
+              {saving ? 'Salvando…' : 'Salvar novo valor'}
             </Button>
           </form>
         )}

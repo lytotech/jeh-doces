@@ -29,6 +29,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
   const [recipeMaterials, setRecipeMaterials] = useState<ProductMaterial[]>(
     product?.materials || [],
   );
+  const [saving, setSaving] = useState(false);
 
   const numericSalePrice = parseFloat(salePrice.replace(',', '.')) || 0;
 
@@ -104,24 +105,27 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
     setSalePrice(suggested.toFixed(2));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-
-    saveProductAction({
-      id: product?.id,
-      name: name.trim(),
-      category: category.trim() || 'Doces',
-      description: description.trim(),
-      icon,
-      salePrice: numericSalePrice,
-      calculatedCost,
-      profitMargin: markupPercent,
-      ingredients: recipeIngredients,
-      materials: recipeMaterials,
-    });
-
-    onBack();
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try {
+      await saveProductAction({
+        id: product?.id,
+        name: name.trim(),
+        category: category.trim() || 'Doces',
+        description: description.trim(),
+        icon,
+        salePrice: numericSalePrice,
+        calculatedCost,
+        profitMargin: markupPercent,
+        ingredients: recipeIngredients,
+        materials: recipeMaterials,
+      });
+      onBack();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -385,8 +389,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
 
           {/* Botão Salvar */}
           <div className="pt-2">
-            <Button type="submit" fullWidth size="lg">
-              Salvar produto
+            <Button disabled={saving} type="submit" fullWidth size="lg">
+              {saving ? 'Salvando…' : 'Salvar produto'}
             </Button>
           </div>
         </form>

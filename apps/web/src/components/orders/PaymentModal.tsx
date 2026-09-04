@@ -31,6 +31,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     new Date().toISOString().slice(0, 16), // format for datetime-local
   );
   const [notes, setNotes] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const paymentMethods: { value: PaymentMethod; label: string; icon: any }[] = [
     { value: 'pix', label: 'Pix', icon: QrCode },
@@ -40,19 +41,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     { value: 'transferencia', label: 'Transferência', icon: Layers },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     const numAmount = parseFloat(amount.replace(',', '.')) || 0;
     if (numAmount <= 0) return;
 
-    addPaymentAction(orderId, {
-      amount: numAmount,
-      method,
-      paidAt: new Date(paidAt).toISOString(),
-      notes: notes.trim() || undefined,
-    });
-
-    onClose();
+    setSaving(true);
+    try {
+      await addPaymentAction(orderId, {
+        amount: numAmount,
+        method,
+        paidAt: new Date(paidAt).toISOString(),
+        notes: notes.trim() || undefined,
+      });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -145,8 +151,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           <Button type="button" variant="outline" fullWidth onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" fullWidth>
-            Confirmar Pagamento
+          <Button disabled={saving} type="submit" fullWidth>
+            {saving ? 'Salvando…' : 'Confirmar Pagamento'}
           </Button>
         </div>
       </form>

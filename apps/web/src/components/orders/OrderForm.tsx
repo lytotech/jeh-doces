@@ -86,6 +86,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [status, setStatus] = useState<OrderStatus>(order?.status || 'orcamento');
   const [discount, setDiscount] = useState(order ? order.discount.toString() : '0');
   const [notes, setNotes] = useState(order?.notes || '');
+  const [saving, setSaving] = useState(false);
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
   const [orderMaterials, setOrderMaterials] = useState<OrderMaterialItem[]>(order?.materials || []);
@@ -236,41 +237,46 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientName.trim()) return;
+    if (!clientName.trim() || saving) return;
+    setSaving(true);
 
-    // The order form is also a convenient place to keep the selected customer's
-    // contact data current. Orders reference the customer directly, so updates
-    // are reflected everywhere after saving.
-    if (customerId) {
-      const updatedCustomer = await saveCustomerAction({
-        id: customerId,
-        name: clientName.trim(),
-        phone: clientPhone.trim() || undefined,
-        address: clientAddress.trim() || undefined,
+    try {
+      // The order form is also a convenient place to keep the selected customer's
+      // contact data current. Orders reference the customer directly, so updates
+      // are reflected everywhere after saving.
+      if (customerId) {
+        const updatedCustomer = await saveCustomerAction({
+          id: customerId,
+          name: clientName.trim(),
+          phone: clientPhone.trim() || undefined,
+          address: clientAddress.trim() || undefined,
+        });
+        if (!updatedCustomer) return;
+      }
+
+      const savedId = await saveOrderAction({
+        id: order?.id,
+        clientName: clientName.trim(),
+        clientPhone: clientPhone.trim() || undefined,
+        clientAddress: clientAddress.trim() || undefined,
+        customerId: customerId || undefined,
+        deliveryDate: new Date(deliveryDate).toISOString(),
+        status,
+        items,
+        materials: orderMaterials,
+        subtotal,
+        discount: numDiscount,
+        totalCharged,
+        estimatedCost,
+        estimatedProfit,
+        profitMarginPercent,
+        notes: notes.trim() || undefined,
       });
-      if (!updatedCustomer) return;
+
+      onSaved(savedId);
+    } finally {
+      setSaving(false);
     }
-
-    const savedId = await saveOrderAction({
-      id: order?.id,
-      clientName: clientName.trim(),
-      clientPhone: clientPhone.trim() || undefined,
-      clientAddress: clientAddress.trim() || undefined,
-      customerId: customerId || undefined,
-      deliveryDate: new Date(deliveryDate).toISOString(),
-      status,
-      items,
-      materials: orderMaterials,
-      subtotal,
-      discount: numDiscount,
-      totalCharged,
-      estimatedCost,
-      estimatedProfit,
-      profitMarginPercent,
-      notes: notes.trim() || undefined,
-    });
-
-    onSaved(savedId);
   };
 
   const handleDelete = () => {
@@ -678,8 +684,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
               placeholder="Ex: Entregar na portaria, cartão personalizado..."
             />
 
-            <Button type="submit" fullWidth size="lg" className="py-4 font-bold shadow-md">
-              Salvar Encomenda
+            <Button
+              disabled={saving}
+              type="submit"
+              fullWidth
+              size="lg"
+              className="py-4 font-bold shadow-md"
+            >
+              {saving ? 'Salvando…' : 'Salvar Encomenda'}
             </Button>
           </div>
         </form>

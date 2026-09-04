@@ -27,6 +27,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
   const [stockQuantity, setStockQuantity] = useState(
     material ? material.stockQuantity.toString() : '10',
   );
+  const [saving, setSaving] = useState(false);
 
   const numericTotalCost = parseFloat(totalCost.replace(',', '.')) || 0;
   const numericBaseQty = parseFloat(baseQuantity.replace(',', '.')) || 1;
@@ -36,22 +37,25 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
     return calculateMaterialUnitCost(numericTotalCost, numericBaseQty);
   }, [numericTotalCost, numericBaseQty]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-
-    saveMaterialAction({
-      id: material?.id,
-      name: name.trim(),
-      unit: unit.trim() || 'un',
-      baseQuantity: numericBaseQty,
-      totalCost: numericTotalCost,
-      unitCost,
-      trackStock,
-      stockQuantity: trackStock ? numericStockQty : 0,
-    });
-
-    onBack();
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try {
+      await saveMaterialAction({
+        id: material?.id,
+        name: name.trim(),
+        unit: unit.trim() || 'un',
+        baseQuantity: numericBaseQty,
+        totalCost: numericTotalCost,
+        unitCost,
+        trackStock,
+        stockQuantity: trackStock ? numericStockQty : 0,
+      });
+      onBack();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -161,8 +165,8 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
 
           {/* Botão Salvar alterações */}
           <div className="pt-3">
-            <Button type="submit" fullWidth size="lg">
-              Salvar alterações
+            <Button disabled={saving} type="submit" fullWidth size="lg">
+              {saving ? 'Salvando…' : 'Salvar alterações'}
             </Button>
           </div>
         </form>

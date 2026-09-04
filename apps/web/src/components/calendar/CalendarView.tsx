@@ -164,6 +164,7 @@ export const CalendarView: React.FC<{ onSelectOrder: (order: Order) => void }> =
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 16));
+  const [saving, setSaving] = useState(false);
   const events = useMemo<CalendarEvent[]>(
     () => [
       ...orders.map((order) => ({
@@ -190,10 +191,15 @@ export const CalendarView: React.FC<{ onSelectOrder: (order: Order) => void }> =
         : addDays(previous, view === 'week' ? amount * 7 : amount),
     );
   const save = async () => {
-    if (!title.trim()) return;
-    await saveCommitmentAction({ title, startsAt: new Date(startsAt).toISOString() });
-    setTitle('');
-    setShowForm(false);
+    if (!title.trim() || saving) return;
+    setSaving(true);
+    try {
+      await saveCommitmentAction({ title, startsAt: new Date(startsAt).toISOString() });
+      setTitle('');
+      setShowForm(false);
+    } finally {
+      setSaving(false);
+    }
   };
   const label =
     view === 'month'
@@ -286,7 +292,9 @@ export const CalendarView: React.FC<{ onSelectOrder: (order: Order) => void }> =
             <Button variant="secondary" onClick={() => setShowForm(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => void save()}>Salvar compromisso</Button>
+            <Button disabled={saving} onClick={() => save()}>
+              {saving ? 'Salvando…' : 'Salvar compromisso'}
+            </Button>
           </div>
         </div>
       </Modal>

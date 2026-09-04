@@ -8,7 +8,28 @@ export interface AuthState {
   companies: { id: string; name: string; role: CompanyRole }[];
 }
 
+const inFlightAuthRequests = new Map<string, Promise<unknown>>();
+
 async function authRequest<T>(path: string, options?: RequestInit): Promise<T> {
+  const method = options?.method || 'GET';
+  const key = `${method}:${path}:${options?.body || ''}`;
+  const existing = inFlightAuthRequests.get(key);
+  if (existing) return existing as Promise<T>;
+
+  const pending = authRequestOnce<T>(path, options);
+  inFlightAuthRequests.set(key, pending);
+  void pending
+    .then(
+      () => undefined,
+      () => undefined,
+    )
+    .then(() => {
+      if (inFlightAuthRequests.get(key) === pending) inFlightAuthRequests.delete(key);
+    });
+  return pending;
+}
+
+async function authRequestOnce<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`/api/auth${path}`, {
     credentials: 'include',
     headers: { 'Content-Type': 'application/json', ...options?.headers },

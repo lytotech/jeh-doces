@@ -19,30 +19,45 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
   const [pixKey, setPixKey] = useState(settings.pixKey);
   const [pixKeyType, setPixKeyType] = useState(settings.pixKeyType);
   const [defaultMargin, setDefaultMargin] = useState(settings.defaultProfitMargin.toString());
+  const [saving, setSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettingsAction({
-      storeName: storeName.trim() || 'Confeiti',
-      storePhone: storePhone.trim(),
-      pixKey: pixKey.trim(),
-      pixKeyType: pixKeyType.trim(),
-      defaultProfitMargin: parseFloat(defaultMargin) || 100,
-    });
-    onClose();
+    if (saving) return;
+    setSaving(true);
+    try {
+      await updateSettingsAction({
+        storeName: storeName.trim() || 'Confeiti',
+        storePhone: storePhone.trim(),
+        pixKey: pixKey.trim(),
+        pixKeyType: pixKeyType.trim(),
+        defaultProfitMargin: parseFloat(defaultMargin) || 100,
+      });
+      onClose();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleExport = async () => {
-    const jsonStr = JSON.stringify(await api.getBackup(), null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `jeh_doces_backup_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Backup exportado com sucesso!');
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const jsonStr = JSON.stringify(await api.getBackup(), null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `jeh_doces_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showToast('Backup exportado com sucesso!');
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -99,8 +114,8 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
             </div>
           </div>
 
-          <Button type="submit" fullWidth size="md">
-            Salvar Configurações
+          <Button disabled={saving} type="submit" fullWidth size="md">
+            {saving ? 'Salvando…' : 'Salvar Configurações'}
           </Button>
         </form>
 
@@ -115,10 +130,11 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
               type="button"
               variant="outline"
               size="sm"
+              disabled={exporting}
               onClick={handleExport}
               className="flex items-center gap-1.5"
             >
-              <Download className="w-4 h-4" /> Baixar Backup JSON
+              <Download className="w-4 h-4" /> {exporting ? 'Preparando…' : 'Baixar Backup JSON'}
             </Button>
           </div>
         </div>

@@ -17,13 +17,33 @@ const getApiBase = (): string => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // In dev with Vite proxy or production with Express
+  // In dev with Vite proxy or in production behind the Nest API
   return '/api';
 };
 
 const API_BASE = getApiBase();
+const inFlightRequests = new Map<string, Promise<unknown>>();
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const method = options?.method || 'GET';
+  const key = `${method}:${endpoint}:${options?.body || ''}`;
+  const existing = inFlightRequests.get(key);
+  if (existing) return existing as Promise<T>;
+
+  const pending = requestOnce<T>(endpoint, options);
+  inFlightRequests.set(key, pending);
+  void pending
+    .then(
+      () => undefined,
+      () => undefined,
+    )
+    .then(() => {
+      if (inFlightRequests.get(key) === pending) inFlightRequests.delete(key);
+    });
+  return pending;
+}
+
+async function requestOnce<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
   const response = await fetch(url, {
     credentials: 'include',

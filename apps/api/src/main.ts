@@ -8,6 +8,7 @@ import fastifyStatic from '@fastify/static';
 import { AppModule } from './nest/app.module';
 import { env } from './config/env';
 import { LegacyHttpExceptionFilter } from './common/legacy-http-exception.filter';
+import { RateLimitGuard } from './common/rate-limit.guard';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,10 +17,11 @@ const distPath = path.resolve(__dirname, '../../web/dist');
 export async function createApplication() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
-    new FastifyAdapter({ bodyLimit: 10 * 1024 * 1024 }),
+    new FastifyAdapter({ bodyLimit: 10 * 1024 * 1024, trustProxy: env.trustProxy }),
     { logger: process.env.NODE_ENV === 'test' ? false : undefined },
   );
   app.useGlobalFilters(new LegacyHttpExceptionFilter());
+  app.useGlobalGuards(new RateLimitGuard());
   app.enableCors({ origin: env.corsOrigins.length ? env.corsOrigins : true, credentials: true });
   const fastify = app.getHttpAdapter().getInstance();
   await fastify.register(fastifyCookie as any);

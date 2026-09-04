@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'caramel-outline';
@@ -13,8 +13,11 @@ export const Button: React.FC<ButtonProps> = ({
   fullWidth = false,
   className = '',
   children,
+  onClick,
+  disabled = false,
   ...props
 }) => {
+  const [pending, setPending] = useState(false);
   const baseStyles =
     'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]';
 
@@ -40,6 +43,18 @@ export const Button: React.FC<ButtonProps> = ({
         fullWidth ? 'w-full' : ''
       } ${className}`}
       {...props}
+      disabled={disabled || pending}
+      onClick={async (event) => {
+        if (!onClick || pending) return;
+        const result = onClick(event) as unknown;
+        if (!result || typeof (result as PromiseLike<unknown>).then !== 'function') return;
+        setPending(true);
+        try {
+          await result;
+        } finally {
+          setPending(false);
+        }
+      }}
     >
       {children}
     </button>

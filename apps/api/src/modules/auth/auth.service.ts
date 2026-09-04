@@ -10,9 +10,9 @@ import {
 } from '@nestjs/common';
 import { CompanyRole } from '@prisma/client';
 import { FastifyReply } from 'fastify';
-import nodemailer from 'nodemailer';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AuthContext, AuthenticatedRequest } from '../../common/auth.types';
+import { EmailService } from './email.service';
 
 const scrypt = promisify(crypto.scrypt);
 const SESSION_COOKIE = 'jeh_session';
@@ -42,7 +42,10 @@ async function verifyPassword(password: string, stored: string) {
 
 @Injectable()
 export class AuthService {
-  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(EmailService) private readonly email: EmailService,
+  ) {}
 
   private cookieValue(request: AuthenticatedRequest) {
     const cookies = request.headers.cookie?.split(';') ?? [];
@@ -227,30 +230,18 @@ export class AuthService {
         }
       }
       await tx.membership.create({ data: { userId: user.id, companyId, role } });
-      return { id: user.id, email: user.email, name: user.name };
+      return { id: user.id, email: user.email, name: user.name, companyId };
     });
     await this.sendVerificationEmail(result);
     return { success: true, message: 'Enviamos um link de confirmação para seu e-mail.' };
   }
 
-  private async sendMail(to: string, subject: string, text: string) {
-    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM } = process.env;
-    if (!SMTP_HOST || !SMTP_FROM) {
-      if (process.env.NODE_ENV !== 'production') console.log(`[DEV EMAIL] ${to}: ${text}`);
-      else throw new Error('SMTP não configurado; e-mail não enviado.');
-      return;
-    }
-    await nodemailer
-      .createTransport({
-        host: SMTP_HOST,
-        port: Number(SMTP_PORT || 587),
-        secure: Number(SMTP_PORT) === 465,
-        auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASSWORD } : undefined,
-      })
-      .sendMail({ from: SMTP_FROM, to, subject, text });
-  }
-
-  private async sendVerificationEmail(user: { id: string; email: string; name: string }) {
+  private async sendVerificationEmail(user: {
+    id: string;
+    email: string;
+    name: string;
+    companyId: string;
+  }) {
     await this.prisma.client.emailVerificationToken.deleteMany({
       where: { userId: user.id, usedAt: null },
     });
@@ -263,11 +254,7 @@ export class AuthService {
       },
     });
     const link = `${process.env.APP_URL || 'http://localhost:5173'}/?verify=${encodeURIComponent(token)}`;
-    await this.sendMail(
-      user.email,
-      'Confirme seu e-mail — Confeiti',
-      `Olá, ${user.name}! Confirme seu e-mail para acessar o Confeiti. Este link expira em ${VERIFICATION_HOURS} horas: ${link}`,
-    );
+    await this.email.sendVerification(user.email, user.name, link, user.companyId);
   }
 
   async verifyEmail(token: string, reply: FastifyReply) {
@@ -302,14 +289,20 @@ export class AuthService {
 
   async resendVerification(emailValue: unknown) {
     const email = normalizeEmail(emailValue);
-    const user = await this.prisma.client.user.findUnique({ where: { email } });
+    const user = await this.prisma.client.user.findUnique({
+      where: { email },
+      include: { memberships: { orderBy: { createdAt: 'asc' } } },
+    });
     if (user && !user.emailVerifiedAt) {
       const latest = await this.prisma.client.emailVerificationToken.findFirst({
         where: { userId: user.id },
         orderBy: { createdAt: 'desc' },
       });
-      if (!latest || latest.createdAt <= new Date(Date.now() - 60000))
-        await this.sendVerificationEmail(user);
+      if (!latest || latest.createdAt <= new Date(Date.now() - 60000)) {
+        const membership = user.memberships[0];
+        if (membership)
+          await this.sendVerificationEmail({ ...user, companyId: membership.companyId });
+      }
     }
     return {
       success: true,
@@ -345,6 +338,7 @@ export class AuthService {
   async forgotPassword(emailValue: unknown) {
     const user = await this.prisma.client.user.findUnique({
       where: { email: normalizeEmail(emailValue) },
+      include: { memberships: { orderBy: { createdAt: 'asc' } } },
     });
     if (user) {
       await this.prisma.client.passwordResetToken.deleteMany({
@@ -359,10 +353,11 @@ export class AuthService {
         },
       });
       const link = `${process.env.APP_URL || 'http://localhost:5173'}/?reset=${encodeURIComponent(token)}`;
-      await this.sendMail(
+      await this.email.sendPasswordReset(
         user.email,
-        'Redefina sua senha — Confeiti',
-        `Olá, ${user.name}! Use este link para criar uma nova senha. Ele expira em 1 hora: ${link}`,
+        user.name,
+        link,
+        user.memberships[0]?.companyId,
       );
     }
     return { success: true, message: 'Se o e-mail existir, enviaremos as instruções.' };
@@ -413,11 +408,7 @@ export class AuthService {
       },
     });
     const link = `${process.env.APP_URL || 'http://localhost:5173'}/?invite=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
-    await this.sendMail(
-      email,
-      'Você recebeu um convite — Confeiti',
-      `${auth.name} convidou você para fazer parte da equipe no Confeiti. Aceite em até 7 dias: ${link}`,
-    );
+    await this.email.sendInvitation(email, auth.name, link, auth.companyId);
     return { success: true };
   }
   async changeMember(auth: AuthContext, id: string, roleValue: unknown) {

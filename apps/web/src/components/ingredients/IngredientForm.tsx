@@ -34,6 +34,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ ingredient, onBa
   );
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Available ingredients for composite recipe (excluding self)
   const availableSubIngredients = useMemo(() => {
@@ -97,21 +98,24 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ ingredient, onBa
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
-
-    await saveIngredientAction({
-      id: ingredient?.id,
-      name: name.trim(),
-      isComposite,
-      unit,
-      packageQuantity: numericPackageQty,
-      paidPrice: isComposite ? computedUnitCost * numericYieldQty : numericPaidPrice,
-      unitCost: computedUnitCost,
-      yieldQuantity: isComposite ? numericYieldQty : undefined,
-      subIngredients: isComposite ? subIngredients : [],
-    });
-
-    onBack();
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try {
+      await saveIngredientAction({
+        id: ingredient?.id,
+        name: name.trim(),
+        isComposite,
+        unit,
+        packageQuantity: numericPackageQty,
+        paidPrice: isComposite ? computedUnitCost * numericYieldQty : numericPaidPrice,
+        unitCost: computedUnitCost,
+        yieldQuantity: isComposite ? numericYieldQty : undefined,
+        subIngredients: isComposite ? subIngredients : [],
+      });
+      onBack();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -305,8 +309,14 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ ingredient, onBa
             </div>
 
             {/* Botão Salvar */}
-            <Button type="submit" fullWidth size="lg" className="py-4 font-bold shadow-md">
-              Salvar Ingrediente
+            <Button
+              disabled={saving}
+              type="submit"
+              fullWidth
+              size="lg"
+              className="py-4 font-bold shadow-md"
+            >
+              {saving ? 'Salvando…' : 'Salvar Ingrediente'}
             </Button>
 
             {/* Botão Histórico de Preço */}
