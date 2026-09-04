@@ -4,7 +4,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal } from '../../services/costEngine';
-import { Plus, Search, Cake, ChevronRight } from 'lucide-react';
+import { Plus, Search, Cake, ChevronRight, Copy } from 'lucide-react';
 import { Product } from '../../types';
 
 interface ProductListProps {
@@ -13,7 +13,7 @@ interface ProductListProps {
 }
 
 export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNewProduct }) => {
-  const { products } = useApp();
+  const { products, saveProductAction } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
 
@@ -26,6 +26,21 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
     const matchesCategory = selectedCategory === 'todos' || prod.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleDuplicate = async (event: React.MouseEvent, product: Product) => {
+    event.stopPropagation();
+    await saveProductAction({
+      name: `Cópia de ${product.name}`,
+      category: product.category,
+      description: product.description,
+      icon: product.icon,
+      salePrice: product.salePrice,
+      calculatedCost: product.calculatedCost,
+      profitMargin: product.profitMargin,
+      ingredients: product.ingredients.map((ingredient) => ({ ...ingredient })),
+      materials: product.materials.map((material) => ({ ...material })),
+    });
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
@@ -132,6 +147,15 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
                         {formatCurrency(prod.salePrice)}
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      title={`Duplicar ${prod.name}`}
+                      aria-label={`Duplicar ${prod.name}`}
+                      onClick={(event) => void handleDuplicate(event, prod)}
+                      className="rounded-xl p-2 text-[#8C7665] transition-colors hover:bg-[#F7E5EA] hover:text-[#8D3157]"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
                     <ChevronRight className="w-5 h-5 text-[#C4B2A0] group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </div>
