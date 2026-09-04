@@ -19,6 +19,9 @@ test('recusa acesso sem sessão em endpoint protegido', async () => {
   const response = await app.inject({ method: 'GET', url: '/api/auth/me' });
   assert.equal(response.statusCode, 401);
   assert.deepEqual(response.json(), { error: 'Não autenticado.' });
+  assert.equal(response.headers['x-content-type-options'], 'nosniff');
+  assert.equal(response.headers['x-frame-options'], 'SAMEORIGIN');
+  assert.equal(response.headers['cache-control'], 'no-store');
 });
 
 test('retorna 404 JSON para endpoint inexistente da API', async () => {
