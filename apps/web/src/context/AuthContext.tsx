@@ -102,7 +102,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
   const logout = async () => {
-    await authRequest('/logout', { method: 'POST' });
+    // Fastify rejects a JSON content type without a body (415). Sending an
+    // empty JSON object keeps the request contract explicit for the API.
+    await authRequest('/logout', { method: 'POST', body: JSON.stringify({}) });
     setAuth(null);
   };
   const switchCompany = async (companyId: string) => {
