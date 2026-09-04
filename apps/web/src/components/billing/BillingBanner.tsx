@@ -6,7 +6,13 @@ export function BillingBanner() {
   const [billing, setBilling] = React.useState<BillingStatus | null>(null);
   const [payment, setPayment] = React.useState<PixPayment | null>(null);
   const [loading, setLoading] = React.useState(false);
-  React.useEffect(() => { void api.getBilling().then(setBilling).catch(() => undefined); }, []);
+  React.useEffect(() => {
+    let mounted = true;
+    const refresh = () => { void api.getBilling().then((value) => { if (mounted) setBilling(value); }).catch(() => undefined); };
+    refresh();
+    const interval = window.setInterval(refresh, 5000);
+    return () => { mounted = false; window.clearInterval(interval); };
+  }, []);
   const createPayment = async (plan: 'monthly' | 'annual') => {
     setLoading(true);
     try { setPayment(await api.createPixPayment(plan)); } finally { setLoading(false); }
