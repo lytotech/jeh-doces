@@ -12,6 +12,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { APP_VERSION } from '../../version';
 
 interface SidebarProps {
   onOpenSettings: () => void;
@@ -160,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
             )}
             {isSyncing && <span className="text-[10px] text-amber-700">(sincronizando)</span>}
           </div>
-          <span className="text-[11px] text-[#8C7665]">v1.0.0</span>
+          <span className="text-[11px] text-[#8C7665]">v{APP_VERSION}</span>
         </div>
 
         <button
