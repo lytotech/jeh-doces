@@ -17,7 +17,7 @@ export const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className={`relative ${className}`}>
-      <div className="relative border border-[#E5DACD] focus-within:border-[#96642F] focus-within:ring-1 focus-within:ring-[#96642F] rounded-2xl bg-[#FCFAF8] p-3 transition-colors shadow-xs">
+      <div className="relative border border-[#EADDE2] focus-within:border-[#D69A88] focus-within:ring-2 focus-within:ring-[#D69A88]/15 rounded-2xl bg-[#FFFCF8] p-3 transition-colors shadow-xs">
         <label className="block text-xs font-medium text-[#7A6453] mb-1">
           {label}
         </label>
@@ -55,7 +55,7 @@ export const TextInput: React.FC<TextInputProps> = ({
 
   return (
     <input
-      className={`w-full px-4 py-3 bg-[#FCFAF8] border border-[#E5DACD] focus:border-[#96642F] focus:ring-1 focus:ring-[#96642F] rounded-2xl text-[#302116] font-medium placeholder-[#B0A294] transition-colors ${className}`}
+      className={`w-full px-4 py-3 bg-[#FFFCF8] border border-[#EADDE2] focus:border-[#D69A88] focus:ring-2 focus:ring-[#D69A88]/15 rounded-2xl text-[#302116] font-medium placeholder-[#B0A294] transition-colors ${className}`}
       {...props}
     />
   );

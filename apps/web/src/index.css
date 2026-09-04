@@ -25,8 +25,15 @@
 }
 
 @layer base {
+  :root {
+    --confeiti-creme: #FFF8F2;
+    --confeiti-creme-claro: #FFFCF8;
+    --confeiti-creme-medio: #FFF1E8;
+    --confeiti-rosa-suave: #FFF0F4;
+  }
+
   body {
-    background-color: #FFF8F2;
+    background-color: var(--confeiti-creme);
     color: #382B20;
     -webkit-tap-highlight-color: transparent;
   }
@@ -57,7 +64,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* Confeiti brand system */
-body { font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif; background: #FFF8F2; color: #2E2A3D; }
+body { font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif; background: var(--confeiti-creme); color: #2E2A3D; }
 .font-serif { font-family: 'Poppins', ui-sans-serif, system-ui, sans-serif; }
 [class~="bg-[#FAF7F2]"] { background-color: #FFF8F2 !important; }
 [class~="bg-[#FAF5EE]"] { background-color: #FFF7FA !important; }

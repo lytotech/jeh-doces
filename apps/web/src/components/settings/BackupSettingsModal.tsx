@@ -88,7 +88,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({
           <div className="grid gap-2 sm:grid-cols-3">
             <FormField label="Tipo Chave">
               <select
-                className="w-full bg-transparent text-[#302116] font-medium text-base focus:outline-none"
+                className="w-full rounded-lg bg-[#FFFCF8] text-[#302116] font-medium text-base focus:outline-none"
                 value={pixKeyType}
                 onChange={(e) => setPixKeyType(e.target.value)}
               >
