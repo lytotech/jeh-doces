@@ -18,6 +18,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
   const isEditing = !!material?.id;
 
   const [name, setName] = useState(material?.name || '');
+  const [category, setCategory] = useState(material?.category || 'Geral');
   const [unit, setUnit] = useState(material?.unit || 'un');
   const [baseQuantity, setBaseQuantity] = useState(
     material ? material.baseQuantity.toString() : '10',
@@ -45,6 +46,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
       await saveMaterialAction({
         id: material?.id,
         name: name.trim(),
+        category: category.trim() || 'Geral',
         unit: unit.trim() || 'un',
         baseQuantity: numericBaseQty,
         totalCost: numericTotalCost,
@@ -97,6 +99,14 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
             placeholder="Ex: Caixa transporte"
             required
             autoFocus
+          />
+
+          <TextInput
+            label="Categoria"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            placeholder="Ex: Caixas, Embalagens, Sacolas"
+            required
           />
 
           {/* Unidade e Quantidade base em grid lado a lado */}

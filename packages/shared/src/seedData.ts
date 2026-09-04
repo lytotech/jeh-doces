@@ -164,6 +164,7 @@ export const initialMaterials: Material[] = [
   {
     id: 'mat-1',
     name: 'Caixa transporte',
+    category: 'Caixas',
     unit: 'un',
     baseQuantity: 10.0,
     totalCost: 50.0,
@@ -177,6 +178,7 @@ export const initialMaterials: Material[] = [
   {
     id: 'mat-2',
     name: 'embalagem barrinha',
+    category: 'Embalagens',
     unit: 'un',
     baseQuantity: 100.0,
     totalCost: 9.0,
@@ -190,6 +192,7 @@ export const initialMaterials: Material[] = [
   {
     id: 'mat-3',
     name: 'etiqueta validade',
+    category: 'Etiquetas',
     unit: 'un',
     baseQuantity: 100.0,
     totalCost: 4.0,
@@ -203,6 +206,7 @@ export const initialMaterials: Material[] = [
   {
     id: 'mat-4',
     name: 'sacola',
+    category: 'Sacolas',
     unit: 'un',
     baseQuantity: 50.0,
     totalCost: 30.0,
@@ -216,6 +220,7 @@ export const initialMaterials: Material[] = [
   {
     id: 'mat-5',
     name: 'Fita de cetim dourada',
+    category: 'Fitas e acabamentos',
     unit: 'm',
     baseQuantity: 50.0,
     totalCost: 25.0,

@@ -34,6 +34,7 @@ export interface Ingredient {
 export interface Material {
   id: string;
   name: string;
+  category: string;
   unit: string; // e.g. 'un'
   baseQuantity: number; // e.g. 10.00
   totalCost: number; // e.g. 50.00

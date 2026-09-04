@@ -73,6 +73,7 @@ function mapMaterial(row: Prisma.MaterialGetPayload<object>): Material {
   return {
     id: row.id,
     name: row.name,
+    category: row.category || 'Geral',
     unit: row.unit,
     baseQuantity: row.baseQuantity,
     totalCost: row.totalCost,
@@ -143,6 +144,7 @@ const ingredientFields = (data: Partial<Ingredient>) => ({
 });
 const materialFields = (data: Partial<Material>) => ({
   name: data.name ?? 'Novo Material',
+  category: data.category?.trim() || 'Geral',
   unit: data.unit ?? 'un',
   baseQuantity: data.baseQuantity ?? 1,
   totalCost: data.totalCost ?? 0,

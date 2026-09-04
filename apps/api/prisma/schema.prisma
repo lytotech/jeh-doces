@@ -170,6 +170,7 @@ model SubIngredient {
 model Material {
   id            String          @id @default(cuid())
   name          String
+  category      String          @default("Geral")
   unit          String          @default("un")
   baseQuantity  Float           @default(1)
   totalCost     Float           @default(0)
