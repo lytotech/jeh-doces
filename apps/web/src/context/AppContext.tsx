@@ -62,7 +62,7 @@ interface AppContextType {
   // Material Actions
   saveMaterialAction: (mat: Partial<Material>) => Promise<void>;
   deleteMaterialAction: (id: string) => Promise<void>;
-  adjustMaterialStockAction: (id: string, newStock: number) => Promise<void>;
+  adjustMaterialStockAction: (id: string, newStock: number, reason?: string) => Promise<void>;
 
   // Product Actions
   saveProductAction: (prod: Partial<Product>) => Promise<void>;
@@ -261,9 +261,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const adjustMaterialStockAction = async (id: string, newStock: number) => {
+  const adjustMaterialStockAction = async (id: string, newStock: number, reason?: string) => {
     try {
-      const updated = await api.adjustMaterialStock(id, newStock);
+      const updated = await api.adjustMaterialStock(id, newStock, reason);
       setMaterials((prev) => prev.map((m) => (m.id === id ? updated : m)));
       showToast('Estoque atualizado com sucesso!');
     } catch (e) {

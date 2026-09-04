@@ -27,6 +27,7 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [stockMaterial, setStockMaterial] = useState<Material | null>(null);
   const [stockDraft, setStockDraft] = useState('');
+  const [stockReason, setStockReason] = useState('Ajuste manual');
   const [savingStock, setSavingStock] = useState(false);
   const [stockHistory, setStockHistory] = useState<StockMovement[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -51,6 +52,7 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
   const openStockAdjust = (material: Material) => {
     setStockMaterial(material);
     setStockDraft(String(material.stockQuantity));
+    setStockReason('Ajuste manual');
     setStockHistory([]);
   };
 
@@ -69,7 +71,7 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
     const nextStock = Number(stockDraft.replace(',', '.'));
     if (!Number.isFinite(nextStock) || nextStock < 0) return;
     setSavingStock(true);
-    await adjustMaterialStockAction(stockMaterial.id, nextStock);
+    await adjustMaterialStockAction(stockMaterial.id, nextStock, stockReason);
     setSavingStock(false);
     setStockMaterial(null);
   };
@@ -221,6 +223,17 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
               onChange={(event) => setStockDraft(event.target.value)}
               className="mt-1 w-full rounded-2xl border border-[#E5DACD] bg-[#FCFAF8] px-3 py-3 text-sm text-[#302116] outline-none transition-colors focus:border-[#96642F]"
               autoFocus
+            />
+          </label>
+          <label className="block text-xs font-medium text-[#7A6453]">
+            Motivo do ajuste
+            <input
+              type="text"
+              maxLength={120}
+              value={stockReason}
+              onChange={(event) => setStockReason(event.target.value)}
+              placeholder="Ex.: Compra de caixas"
+              className="mt-1 w-full rounded-2xl border border-[#E5DACD] bg-[#FCFAF8] px-3 py-3 text-sm text-[#302116] outline-none transition-colors focus:border-[#96642F]"
             />
           </label>
           <div>

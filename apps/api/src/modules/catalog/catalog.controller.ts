@@ -56,7 +56,11 @@ export class CatalogController {
     const stockQuantity = Number(body?.stockQuantity);
     if (!Number.isFinite(stockQuantity) || stockQuantity < 0)
       throw new BadRequestException('A quantidade em estoque deve ser um número não negativo.');
-    const updated = await this.database.database.adjustMaterialStock(id, stockQuantity);
+    const updated = await this.database.database.adjustMaterialStock(
+      id,
+      stockQuantity,
+      typeof body?.reason === 'string' ? body.reason.slice(0, 120) : 'Ajuste manual',
+    );
     if (!updated) throw new NotFoundException('Material not found');
     return updated;
   }

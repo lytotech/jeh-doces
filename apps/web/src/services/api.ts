@@ -166,10 +166,14 @@ export const api = {
     });
   },
 
-  async adjustMaterialStock(id: string, stockQuantity: number): Promise<Material> {
+  async adjustMaterialStock(
+    id: string,
+    stockQuantity: number,
+    reason = 'Ajuste manual',
+  ): Promise<Material> {
     return request<Material>(`/materials/${id}/stock`, {
       method: 'PATCH',
-      body: JSON.stringify({ stockQuantity }),
+      body: JSON.stringify({ stockQuantity, reason }),
     });
   },
 

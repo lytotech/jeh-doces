@@ -337,7 +337,7 @@ class Database {
       (await prisma.material.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0
     );
   }
-  async adjustMaterialStock(id: string, stockQuantity: number) {
+  async adjustMaterialStock(id: string, stockQuantity: number, reason = 'Ajuste manual') {
     const companyId = this.companyId();
     return prisma.$transaction(async (tx) => {
       const material = await tx.material.findFirst({ where: { id, companyId } });
@@ -350,7 +350,7 @@ class Database {
           quantityDelta: stockQuantity - material.stockQuantity,
           stockBefore: material.stockQuantity,
           stockAfter: stockQuantity,
-          reason: 'Ajuste manual',
+          reason: reason.trim() || 'Ajuste manual',
         },
       });
       return mapMaterial(updated);
