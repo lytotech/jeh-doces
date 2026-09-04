@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /pedido/
+Sitemap: https://confeiti.com.br/sitemap.xml

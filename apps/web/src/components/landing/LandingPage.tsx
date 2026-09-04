@@ -261,7 +261,7 @@ export function LandingPage() {
         <div className="mx-auto max-w-7xl px-5 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
             <span className="text-xs font-bold uppercase tracking-[.22em] text-[#A86F35]">
-              Tudo no lugar certo
+              Sistema de gestão para confeitaria
             </span>
             <h2 className="mt-3 font-serif text-4xl font-bold text-[#3D2A1C] sm:text-5xl">
               Da receita à entrega, você no controle
