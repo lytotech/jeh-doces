@@ -29,8 +29,39 @@ model Company {
   commitments Commitment[]
   stockMovements MaterialStockMovement[]
   catalogCategories CatalogCategory[]
+  subscription Subscription?
 
   @@map("companies")
+}
+
+enum SubscriptionPlan {
+  basic
+  monthly
+  annual
+}
+
+enum SubscriptionStatus {
+  active
+  pending
+  past_due
+  canceled
+}
+
+model Subscription {
+  id                String             @id @default(cuid())
+  companyId         String             @unique
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan              SubscriptionPlan  @default(basic)
+  status            SubscriptionStatus @default(active)
+  currentPeriodEnd  DateTime?
+  mercadoPagoId     String?
+  pendingPaymentId  String?
+  pendingPlan       SubscriptionPlan?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
 }
 
 enum CatalogCategoryType {

@@ -30,6 +30,22 @@ export interface CatalogCategorySummary {
   itemCount: number;
 }
 
+export interface BillingStatus {
+  plan: 'basic' | 'monthly' | 'annual';
+  status: 'active' | 'pending' | 'past_due' | 'canceled';
+  currentPeriodEnd: string | null;
+}
+
+export interface PixPayment {
+  id: string;
+  plan: 'monthly' | 'annual';
+  amount: number;
+  status: string;
+  qrCode: string | null;
+  qrCodeBase64: string | null;
+  ticketUrl: string | null;
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -71,6 +87,12 @@ async function requestOnce<T>(endpoint: string, options?: RequestInit): Promise<
 }
 
 export const api = {
+  async getBilling(): Promise<BillingStatus> {
+    return request<BillingStatus>('/billing');
+  },
+  async createPixPayment(plan: 'monthly' | 'annual'): Promise<PixPayment> {
+    return request<PixPayment>('/billing/pix', { method: 'POST', body: JSON.stringify({ plan }) });
+  },
   async getCommitments(): Promise<Commitment[]> {
     return request<Commitment[]>('/commitments');
   },

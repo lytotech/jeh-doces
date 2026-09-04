@@ -7,6 +7,7 @@ import { CatalogModule } from '../modules/catalog/catalog.module';
 import { OrdersModule } from '../modules/orders/orders.module';
 import { CustomersModule } from '../modules/customers/customers.module';
 import { SettingsModule } from '../modules/settings/settings.module';
+import { BillingModule } from '../modules/billing/billing.module';
 
 /** Root module. Feature modules are migrated here incrementally. */
 @Module({
@@ -19,6 +20,7 @@ import { SettingsModule } from '../modules/settings/settings.module';
     OrdersModule,
     CustomersModule,
     SettingsModule,
+    BillingModule,
   ],
 })
 export class AppModule {}

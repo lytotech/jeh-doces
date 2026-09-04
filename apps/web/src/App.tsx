@@ -5,6 +5,7 @@ import { BottomNav } from './components/layout/BottomNav';
 import { ToastContainer } from './components/ui/ToastContainer';
 import { BackupSettingsModal } from './components/settings/BackupSettingsModal';
 import { TeamModal } from './components/settings/TeamModal';
+import { BillingBanner } from './components/billing/BillingBanner';
 
 // Orders
 import { OrderList } from './components/orders/OrderList';
@@ -236,6 +237,7 @@ export const App: React.FC = () => {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FAF7F2] min-h-screen relative">
+        <BillingBanner />
         <main className="flex-1 w-full pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
           {renderContent()}
         </main>

@@ -14,4 +14,7 @@ export const env = {
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean),
+  appUrl: process.env.APP_URL || 'http://localhost:5173',
+  mercadoPagoAccessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
+  mercadoPagoWebhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || '',
 };
