@@ -3,8 +3,9 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { TagBadge } from '../ui/Badge';
+import { Modal } from '../ui/Modal';
 import { formatCurrency, formatDecimal } from '../../services/costEngine';
-import { Plus, Search, Package, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Plus, Search, Package, AlertTriangle, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { Material } from '../../types';
 
 interface MaterialListProps {
@@ -13,9 +14,12 @@ interface MaterialListProps {
 }
 
 export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, onNewMaterial }) => {
-  const { materials } = useApp();
+  const { materials, adjustMaterialStockAction } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [stockMaterial, setStockMaterial] = useState<Material | null>(null);
+  const [stockDraft, setStockDraft] = useState('');
+  const [savingStock, setSavingStock] = useState(false);
 
   const categories = [
     'Todos',
@@ -33,6 +37,21 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
 
     return matchesSearch && matchesCategory;
   });
+
+  const openStockAdjust = (material: Material) => {
+    setStockMaterial(material);
+    setStockDraft(String(material.stockQuantity));
+  };
+
+  const saveStockAdjust = async () => {
+    if (!stockMaterial || savingStock) return;
+    const nextStock = Number(stockDraft.replace(',', '.'));
+    if (!Number.isFinite(nextStock) || nextStock < 0) return;
+    setSavingStock(true);
+    await adjustMaterialStockAction(stockMaterial.id, nextStock);
+    setSavingStock(false);
+    setStockMaterial(null);
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
@@ -100,11 +119,11 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
             {filtered.map((mat) => {
               const isLowStock = mat.trackStock && mat.stockQuantity <= (mat.minStockAlert || 5);
               return (
-                <div
+                  <div
                   key={mat.id}
                   onClick={() => onSelectMaterial(mat)}
                   className="bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#D7BC9B] shadow-xs hover:shadow-card cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] group"
-                >
+                  >
                   <div className="space-y-1.5 flex-1 pr-2 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-base text-[#302116] group-hover:text-[#96642F] transition-colors truncate">
@@ -134,6 +153,19 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
+                    {mat.trackStock && (
+                      <button
+                        type="button"
+                        title="Ajustar estoque"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openStockAdjust(mat);
+                        }}
+                        className="rounded-xl border border-[#E5DACD] p-2 text-[#96642F] transition-colors hover:bg-[#F5ECE0]"
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                      </button>
+                    )}
                     <div className="text-right">
                       <span className="text-[11px] text-[#7A6453] uppercase block">
                         Custo Unitário
@@ -151,6 +183,40 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
           </div>
         )}
       </div>
+      <Modal
+        isOpen={!!stockMaterial}
+        onClose={() => !savingStock && setStockMaterial(null)}
+        title="Ajustar estoque"
+        subtitle={stockMaterial?.name}
+      >
+        <div className="space-y-4">
+          <label className="block text-xs font-medium text-[#7A6453]">
+            Quantidade atual ({stockMaterial?.unit})
+            <input
+              type="number"
+              min="0"
+              step="any"
+              value={stockDraft}
+              onChange={(event) => setStockDraft(event.target.value)}
+              className="mt-1 w-full rounded-2xl border border-[#E5DACD] bg-[#FCFAF8] px-3 py-3 text-sm text-[#302116] outline-none transition-colors focus:border-[#96642F]"
+              autoFocus
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setStockMaterial(null)}
+              disabled={savingStock}
+            >
+              Cancelar
+            </Button>
+            <Button type="button" onClick={() => void saveStockAdjust()} disabled={savingStock}>
+              {savingStock ? 'Salvando...' : 'Salvar estoque'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
