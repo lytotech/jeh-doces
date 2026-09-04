@@ -178,5 +178,6 @@ export interface DatabaseSchema {
   materials: Material[];
   products: Product[];
   orders: Order[];
+  stockMovements?: StockMovement[];
   settings: AppSettings;
 }

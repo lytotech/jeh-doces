@@ -772,8 +772,16 @@ class Database {
       materials: await this.getMaterials(),
       products: await this.getProducts(),
       orders: await this.getOrders(),
+      stockMovements: await this.getAllStockMovements(),
       settings: await this.getSettings(),
     };
+  }
+  private async getAllStockMovements() {
+    const rows = await prisma.materialStockMovement.findMany({
+      where: { companyId: this.companyId() },
+      orderBy: { createdAt: 'asc' },
+    });
+    return rows.map(mapStockMovement);
   }
   private async clearAll() {
     const companyId = this.companyId();
@@ -807,6 +815,22 @@ class Database {
     for (const item of data.materials) await this.saveMaterial(item);
     for (const item of data.products) await this.saveProduct(item);
     for (const item of data.orders) await this.saveOrder(item);
+    if (data.stockMovements) {
+      const companyId = this.companyId();
+      await prisma.materialStockMovement.deleteMany({ where: { companyId } });
+      await prisma.materialStockMovement.createMany({
+        data: data.stockMovements.map((movement) => ({
+          id: movement.id,
+          materialId: movement.materialId,
+          companyId,
+          quantityDelta: movement.quantityDelta,
+          stockBefore: movement.stockBefore,
+          stockAfter: movement.stockAfter,
+          reason: movement.reason,
+          createdAt: new Date(movement.createdAt),
+        })),
+      });
+    }
     await this.saveSettings(data.settings);
     return true;
   }
@@ -818,6 +842,7 @@ class Database {
       materials: initialMaterials,
       products: initialProducts,
       orders: initialOrders,
+      stockMovements: [],
       settings: initialSettings,
     });
   }
