@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from './context/AppContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
@@ -57,6 +57,11 @@ export const App: React.FC = () => {
   const [showTeamModal, setShowTeamModal] = useState(false);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
+
+  // Cada tela começa no topo; evita herdar a posição de rolagem da tela anterior.
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [activeTab, selectedOrderId, editingIngredient, editingMaterial, editingProduct, editingOrder, editingCustomer]);
 
   // Render content according to active tab and active detail/form views
   const renderContent = () => {
@@ -225,7 +230,7 @@ export const App: React.FC = () => {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FAF7F2] min-h-screen relative">
-        <main className="flex-1 w-full pb-20 md:pb-8">
+        <main className="flex-1 w-full pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
           {renderContent()}
         </main>
       </div>
