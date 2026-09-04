@@ -108,7 +108,7 @@ Variáveis adicionais de produção:
 
 ```env
 APP_URL=https://seu-dominio.example
-CORS_ORIGINS=https://seu-dominio.example
+CORS_ORIGINS=https://confeiti.com.br,https://www.confeiti.com.br
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=usuario

@@ -7,7 +7,10 @@ export const env = {
     authPerWindow: Number(process.env.RATE_LIMIT_AUTH || 5),
     invitePerHour: Number(process.env.RATE_LIMIT_INVITE || 3),
   },
-  corsOrigins: (process.env.CORS_ORIGINS || '')
+  corsOrigins: (
+    process.env.CORS_ORIGINS ||
+    'http://localhost:5173,https://confeiti.com.br,https://www.confeiti.com.br'
+  )
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean),
