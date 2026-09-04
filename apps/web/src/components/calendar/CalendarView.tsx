@@ -5,6 +5,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { TextInput } from '../ui/Input';
+import { DateTimePicker } from '../ui/DateTimePicker';
 import { formatCurrency, ORDER_STATUS_MAP } from '../../services/costEngine';
 import { Commitment, Order } from '../../types';
 
@@ -26,6 +27,10 @@ const addDays = (date: Date, amount: number) =>
 const startOfWeek = (date: Date) => addDays(startOfDay(date), -((date.getDay() + 6) % 7));
 const eventDate = (event: CalendarEvent) =>
   event.start.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+const localDateTimeValue = (date: Date) => {
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
 
 const CalendarEventChip: React.FC<{
   event: CalendarEvent;
@@ -163,7 +168,7 @@ export const CalendarView: React.FC<{ onSelectOrder: (order: Order) => void }> =
   const [view, setView] = useState<CalendarViewMode>('month');
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
-  const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 16));
+  const [startsAt, setStartsAt] = useState(() => localDateTimeValue(new Date()));
   const [saving, setSaving] = useState(false);
   const events = useMemo<CalendarEvent[]>(
     () => [
@@ -281,13 +286,7 @@ export const CalendarView: React.FC<{ onSelectOrder: (order: Order) => void }> =
             autoFocus
             required
           />
-          <TextInput
-            label="Data e hora"
-            type="datetime-local"
-            value={startsAt}
-            onChange={(e) => setStartsAt(e.target.value)}
-            required
-          />
+          <DateTimePicker label="Data e hora" value={startsAt} onChange={setStartsAt} required />
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setShowForm(false)}>
               Cancelar
