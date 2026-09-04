@@ -10,7 +10,8 @@
     "apps/*"
   ],
   "overrides": {
-    "deepmerge-ts": "8.0.0"
+    "deepmerge-ts": "8.0.0",
+    "qs": "6.16.0"
   },
   "scripts": {
     "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev -w @jeh-doces/api\" \"npm run dev -w @jeh-doces/web -- --host\"",
