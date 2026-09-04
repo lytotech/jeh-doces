@@ -1,4 +1,4 @@
-# 🧁 Jeh Doces • Monorepo de Gestão para Confeitaria Artesanal
+# 🧁 Confeiti • Monorepo de Gestão para Confeitaria Artesanal
 
 Sistema completo e moderno para confeitaria artesanal gerenciar encomendas, orçamentos, fichas técnicas, insumos e embalagens com cálculos automáticos de CMV e lucros.
 
