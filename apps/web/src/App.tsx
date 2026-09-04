@@ -242,7 +242,10 @@ export const App: React.FC = () => {
       </div>
 
       {/* Bottom Nav on mobile */}
-      <BottomNav />
+      <BottomNav
+        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenTeam={() => setShowTeamModal(true)}
+      />
       <ToastContainer />
 
       {showSettingsModal && (
