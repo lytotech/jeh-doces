@@ -60,6 +60,9 @@ export class CatalogController {
     if (!updated) throw new NotFoundException('Material not found');
     return updated;
   }
+  @Get('materials/:id/stock-history') history(@Param('id') id: string) {
+    return this.database.database.getMaterialStockHistory(id);
+  }
 
   @Get('products') getProducts() {
     return this.database.database.getProducts();

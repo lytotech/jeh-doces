@@ -27,6 +27,7 @@ model Company {
   setting     Setting?
   customers   Customer[]
   commitments Commitment[]
+  stockMovements MaterialStockMovement[]
 
   @@map("companies")
 }
@@ -185,9 +186,26 @@ model Material {
 
   productItems  ProductMaterial[]
   orderItems    OrderMaterial[]
+  stockMovements MaterialStockMovement[]
 
   @@map("materials")
   @@index([companyId])
+}
+
+model MaterialStockMovement {
+  id             String   @id @default(cuid())
+  materialId     String
+  material       Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  quantityDelta  Float
+  stockBefore    Float
+  stockAfter     Float
+  reason         String
+  createdAt      DateTime @default(now())
+
+  @@index([companyId, materialId, createdAt])
+  @@map("material_stock_movements")
 }
 
 model Product {

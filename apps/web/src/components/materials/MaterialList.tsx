@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
@@ -13,7 +13,8 @@ import {
   ChevronRight,
   SlidersHorizontal,
 } from 'lucide-react';
-import { Material } from '../../types';
+import { Material, StockMovement } from '../../types';
+import { api } from '../../services/api';
 
 interface MaterialListProps {
   onSelectMaterial: (material: Material) => void;
@@ -27,6 +28,8 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
   const [stockMaterial, setStockMaterial] = useState<Material | null>(null);
   const [stockDraft, setStockDraft] = useState('');
   const [savingStock, setSavingStock] = useState(false);
+  const [stockHistory, setStockHistory] = useState<StockMovement[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const categories = [
     'Todos',
@@ -48,7 +51,18 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
   const openStockAdjust = (material: Material) => {
     setStockMaterial(material);
     setStockDraft(String(material.stockQuantity));
+    setStockHistory([]);
   };
+
+  useEffect(() => {
+    if (!stockMaterial) return;
+    setLoadingHistory(true);
+    void api
+      .getMaterialStockHistory(stockMaterial.id)
+      .then(setStockHistory)
+      .catch(() => setStockHistory([]))
+      .finally(() => setLoadingHistory(false));
+  }, [stockMaterial]);
 
   const saveStockAdjust = async () => {
     if (!stockMaterial || savingStock) return;
@@ -209,6 +223,37 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
               autoFocus
             />
           </label>
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#63304B]">
+              Últimos movimentos
+            </p>
+            {loadingHistory ? (
+              <p className="text-xs text-[#7A6453]">Carregando histórico...</p>
+            ) : stockHistory.length === 0 ? (
+              <p className="rounded-xl bg-[#FCFAF8] p-3 text-xs text-[#7A6453]">
+                Nenhum movimento registrado ainda.
+              </p>
+            ) : (
+              <div className="max-h-40 space-y-2 overflow-y-auto">
+                {stockHistory.map((movement) => (
+                  <div
+                    key={movement.id}
+                    className="flex items-center justify-between rounded-xl bg-[#FCFAF8] px-3 py-2 text-xs"
+                  >
+                    <span className="text-[#7A6453]">
+                      {new Date(movement.createdAt).toLocaleDateString('pt-BR')} · {movement.reason}
+                    </span>
+                    <span
+                      className={`font-bold ${movement.quantityDelta >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}
+                    >
+                      {movement.quantityDelta >= 0 ? '+' : ''}
+                      {formatDecimal(movement.quantityDelta)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="flex justify-end gap-2">
             <Button
               type="button"

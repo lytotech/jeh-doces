@@ -46,6 +46,16 @@ export interface Material {
   updatedAt: string;
 }
 
+export interface StockMovement {
+  id: string;
+  materialId: string;
+  quantityDelta: number;
+  stockBefore: number;
+  stockAfter: number;
+  reason: string;
+  createdAt: string;
+}
+
 export interface ProductIngredient {
   ingredientId: string;
   quantity: number; // in ingredient unit

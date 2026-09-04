@@ -7,6 +7,7 @@ import {
   OrderStatus,
   PaymentRecord,
   PriceHistoryRecord,
+  StockMovement,
   DatabaseSchema,
   Customer,
   Commitment,
@@ -170,6 +171,10 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ stockQuantity }),
     });
+  },
+
+  async getMaterialStockHistory(id: string): Promise<StockMovement[]> {
+    return request<StockMovement[]>(`/materials/${id}/stock-history`);
   },
 
   // === Products ===

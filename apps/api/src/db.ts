@@ -12,6 +12,7 @@ import {
   Product,
   Customer,
   Commitment,
+  StockMovement,
   initialIngredients,
   initialMaterials,
   initialOrders,
@@ -83,6 +84,18 @@ function mapMaterial(row: Prisma.MaterialGetPayload<object>): Material {
     minStockAlert: row.minStockAlert ?? undefined,
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
+  };
+}
+
+function mapStockMovement(row: Prisma.MaterialStockMovementGetPayload<object>): StockMovement {
+  return {
+    id: row.id,
+    materialId: row.materialId,
+    quantityDelta: row.quantityDelta,
+    stockBefore: row.stockBefore,
+    stockAfter: row.stockAfter,
+    reason: row.reason,
+    createdAt: iso(row.createdAt),
   };
 }
 
@@ -325,8 +338,31 @@ class Database {
     );
   }
   async adjustMaterialStock(id: string, stockQuantity: number) {
-    if (!(await prisma.material.count({ where: { id, companyId: this.companyId() } }))) return null;
-    return mapMaterial(await prisma.material.update({ where: { id }, data: { stockQuantity } }));
+    const companyId = this.companyId();
+    return prisma.$transaction(async (tx) => {
+      const material = await tx.material.findFirst({ where: { id, companyId } });
+      if (!material) return null;
+      const updated = await tx.material.update({ where: { id }, data: { stockQuantity } });
+      await tx.materialStockMovement.create({
+        data: {
+          materialId: id,
+          companyId,
+          quantityDelta: stockQuantity - material.stockQuantity,
+          stockBefore: material.stockQuantity,
+          stockAfter: stockQuantity,
+          reason: 'Ajuste manual',
+        },
+      });
+      return mapMaterial(updated);
+    });
+  }
+  async getMaterialStockHistory(id: string) {
+    const rows = await prisma.materialStockMovement.findMany({
+      where: { materialId: id, companyId: this.companyId() },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+    return rows.map(mapStockMovement);
   }
 
   async getProducts() {
@@ -573,11 +609,23 @@ class Database {
     }
     for (const [materialId, quantity] of deductions) {
       const material = await tx.material.findUnique({ where: { id: materialId } });
-      if (material?.trackStock)
+      if (material?.trackStock) {
+        const stockAfter = Math.max(0, material.stockQuantity - quantity);
         await tx.material.update({
           where: { id: materialId },
-          data: { stockQuantity: Math.max(0, material.stockQuantity - quantity) },
+          data: { stockQuantity: stockAfter },
         });
+        await tx.materialStockMovement.create({
+          data: {
+            materialId,
+            companyId: order.companyId,
+            quantityDelta: stockAfter - material.stockQuantity,
+            stockBefore: material.stockQuantity,
+            stockAfter,
+            reason: `Baixa automática · encomenda ${order.orderNumber}`,
+          },
+        });
+      }
     }
     await tx.order.update({ where: { id }, data: { stockDecremented: true } });
   }
