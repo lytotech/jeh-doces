@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { Card } from '../ui/Card';
 import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
@@ -321,400 +322,415 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
         }
       />
 
-      <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
-        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Column (col-span-7): Customer & Items Form */}
-          <div className="lg:col-span-7 space-y-4">
-            {/* Dados do Cliente */}
-            <div className="p-5 bg-white rounded-3xl border border-[#E5DACD] space-y-3 shadow-xs">
-              <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5" /> Informações do Cliente
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:[&>div:first-child]:col-span-2">
-                <div ref={customerPickerRef} className="relative">
-                  <label className="block text-xs font-medium text-[#7A6453] mb-1">
-                    Selecionar cliente cadastrado
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="relative min-w-0 flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A89484]" />
-                      <input
-                        className="w-full min-w-0 pl-9 pr-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]"
-                        value={customerSearch}
-                        placeholder="Buscar por nome..."
-                        onFocus={() => {
-                          setCustomerPickerOpen(true);
-                          setCustomerSearch(
-                            customerId
-                              ? customers.find((c) => c.id === customerId)?.name || ''
-                              : '',
-                          );
-                        }}
-                        onChange={(e) => {
-                          setCustomerSearch(e.target.value);
-                          setCustomerId('');
-                          setClientName('');
-                          setClientPhone('');
-                          setClientAddress('');
-                          setCustomerPickerOpen(true);
-                        }}
-                      />
+      <div className="max-w-[1480px] mx-auto p-4 sm:p-6 lg:p-8">
+        <Card className="rounded-[2rem] border-0 p-4 shadow-sm sm:p-6 lg:p-7">
+          <form
+            onSubmit={handleSave}
+            className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start"
+          >
+            {/* Left Column (col-span-7): Customer & Items Form */}
+            <div className="lg:col-span-7 space-y-4">
+              {/* Dados do Cliente */}
+              <div className="p-5 bg-white rounded-3xl border border-[#E5DACD] space-y-3 shadow-xs">
+                <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5" /> Informações do Cliente
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:[&>div:first-child]:col-span-2">
+                  <div ref={customerPickerRef} className="relative">
+                    <label className="block text-xs font-medium text-[#7A6453] mb-1">
+                      Selecionar cliente cadastrado
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative min-w-0 flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A89484]" />
+                        <input
+                          className="w-full min-w-0 pl-9 pr-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]"
+                          value={customerSearch}
+                          placeholder="Buscar por nome..."
+                          onFocus={() => {
+                            setCustomerPickerOpen(true);
+                            setCustomerSearch(
+                              customerId
+                                ? customers.find((c) => c.id === customerId)?.name || ''
+                                : '',
+                            );
+                          }}
+                          onChange={(e) => {
+                            setCustomerSearch(e.target.value);
+                            setCustomerId('');
+                            setClientName('');
+                            setClientPhone('');
+                            setClientAddress('');
+                            setCustomerPickerOpen(true);
+                          }}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickCustomer(true)}
+                        className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-xs font-semibold whitespace-nowrap"
+                        title="Cadastrar novo cliente"
+                      >
+                        <UserPlus className="w-4 h-4 inline mr-1" />
+                        Novo
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowQuickCustomer(true)}
-                      className="px-3 rounded-2xl border border-[#DFCFC0] text-[#96642F] text-xs font-semibold whitespace-nowrap"
-                      title="Cadastrar novo cliente"
-                    >
-                      <UserPlus className="w-4 h-4 inline mr-1" />
-                      Novo
-                    </button>
+                    {customerPickerOpen && customerSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">
+                        {customerSuggestions.map((c) => (
+                          <button
+                            type="button"
+                            key={c.id}
+                            className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]"
+                            onClick={() => {
+                              setCustomerId(c.id);
+                              setCustomerSearch(c.name);
+                              setClientName(c.name);
+                              setClientPhone(c.phone || '');
+                              setClientAddress(c.address || '');
+                              setCustomerPickerOpen(false);
+                            }}
+                          >
+                            <span className="block text-xs font-semibold text-[#302116]">
+                              {c.name}
+                            </span>
+                            <span className="block text-[11px] text-[#7A6453]">
+                              {c.phone || c.email || 'Sem contato'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  {customerPickerOpen && customerSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full z-20 mt-1 bg-white border border-[#E5DACD] rounded-2xl shadow-lg overflow-hidden">
-                      {customerSuggestions.map((c) => (
-                        <button
-                          type="button"
-                          key={c.id}
-                          className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]"
-                          onClick={() => {
+                  <TextInput
+                    label={isCustomerLinked ? 'Nome do cliente (cadastro)' : 'Nome do cliente'}
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                    placeholder="Ex: Diego banco"
+                    required
+                    autoFocus
+                    helpText={
+                      isCustomerLinked
+                        ? 'Edite para atualizar o cadastro e esta encomenda.'
+                        : 'Cliente avulso: os dados ficam salvos somente nesta encomenda.'
+                    }
+                  />
+
+                  <TextInput
+                    label="Telefone / WhatsApp"
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                    placeholder="(11) 98765-4321"
+                  />
+                </div>
+
+                <Modal
+                  isOpen={showQuickCustomer}
+                  onClose={() => setShowQuickCustomer(false)}
+                  title="Novo cliente"
+                  subtitle="Cadastre e selecione na encomenda"
+                >
+                  <div className="space-y-3">
+                    <TextInput
+                      label="Nome"
+                      value={quickCustomerName}
+                      onChange={(e) => setQuickCustomerName(e.target.value)}
+                      autoFocus
+                      required
+                    />
+                    <TextInput
+                      label="Telefone / WhatsApp"
+                      value={quickCustomerPhone}
+                      onChange={(e) => setQuickCustomerPhone(e.target.value)}
+                    />
+                    <TextInput
+                      label="Endereço"
+                      value={quickCustomerAddress}
+                      onChange={(e) => setQuickCustomerAddress(e.target.value)}
+                    />
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setShowQuickCustomer(false)}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={async () => {
+                          if (!quickCustomerName.trim()) return;
+                          const c = await saveCustomerAction({
+                            name: quickCustomerName,
+                            phone: quickCustomerPhone,
+                            address: quickCustomerAddress,
+                          });
+                          if (c) {
                             setCustomerId(c.id);
                             setCustomerSearch(c.name);
                             setClientName(c.name);
                             setClientPhone(c.phone || '');
                             setClientAddress(c.address || '');
-                            setCustomerPickerOpen(false);
-                          }}
-                        >
-                          <span className="block text-xs font-semibold text-[#302116]">
-                            {c.name}
-                          </span>
-                          <span className="block text-[11px] text-[#7A6453]">
-                            {c.phone || c.email || 'Sem contato'}
-                          </span>
-                        </button>
-                      ))}
+                            setQuickCustomerName('');
+                            setQuickCustomerPhone('');
+                            setQuickCustomerAddress('');
+                            setShowQuickCustomer(false);
+                          }
+                        }}
+                      >
+                        Cadastrar cliente
+                      </Button>
                     </div>
-                  )}
-                </div>
-                <TextInput
-                  label={isCustomerLinked ? 'Nome do cliente (cadastro)' : 'Nome do cliente'}
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  placeholder="Ex: Diego banco"
-                  required
-                  autoFocus
-                  helpText={
-                    isCustomerLinked
-                      ? 'Edite para atualizar o cadastro e esta encomenda.'
-                      : 'Cliente avulso: os dados ficam salvos somente nesta encomenda.'
-                  }
-                />
+                  </div>
+                </Modal>
 
                 <TextInput
-                  label="Telefone / WhatsApp"
-                  value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="(11) 98765-4321"
+                  label="Endereço de entrega"
+                  value={clientAddress}
+                  onChange={(e) => setClientAddress(e.target.value)}
+                  placeholder="Ex: Av. Paulista, 1000 - Apto 42"
                 />
-              </div>
 
-              <Modal
-                isOpen={showQuickCustomer}
-                onClose={() => setShowQuickCustomer(false)}
-                title="Novo cliente"
-                subtitle="Cadastre e selecione na encomenda"
-              >
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <TextInput
-                    label="Nome"
-                    value={quickCustomerName}
-                    onChange={(e) => setQuickCustomerName(e.target.value)}
-                    autoFocus
+                    label="Data e hora da entrega"
+                    type="datetime-local"
+                    value={deliveryDate}
+                    onChange={(e) => setDeliveryDate(e.target.value)}
                     required
                   />
-                  <TextInput
-                    label="Telefone / WhatsApp"
-                    value={quickCustomerPhone}
-                    onChange={(e) => setQuickCustomerPhone(e.target.value)}
-                  />
-                  <TextInput
-                    label="Endereço"
-                    value={quickCustomerAddress}
-                    onChange={(e) => setQuickCustomerAddress(e.target.value)}
-                  />
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => setShowQuickCustomer(false)}
+
+                  <div>
+                    <label className="block text-xs font-medium text-[#7A6453] mb-1">
+                      Status Inicial
+                    </label>
+                    <select
+                      className="w-full px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-xs font-bold text-[#302116]"
+                      value={status}
+                      onChange={(e) => setStatus(e.target.value as OrderStatus)}
                     >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={async () => {
-                        if (!quickCustomerName.trim()) return;
-                        const c = await saveCustomerAction({
-                          name: quickCustomerName,
-                          phone: quickCustomerPhone,
-                          address: quickCustomerAddress,
-                        });
-                        if (c) {
-                          setCustomerId(c.id);
-                          setCustomerSearch(c.name);
-                          setClientName(c.name);
-                          setClientPhone(c.phone || '');
-                          setClientAddress(c.address || '');
-                          setQuickCustomerName('');
-                          setQuickCustomerPhone('');
-                          setQuickCustomerAddress('');
-                          setShowQuickCustomer(false);
-                        }
-                      }}
-                    >
-                      Cadastrar cliente
-                    </Button>
+                      {Object.entries(ORDER_STATUS_MAP).map(([key, val]) => (
+                        <option key={key} value={key}>
+                          {val.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              </Modal>
+              </div>
 
-              <TextInput
-                label="Endereço de entrega"
-                value={clientAddress}
-                onChange={(e) => setClientAddress(e.target.value)}
-                placeholder="Ex: Av. Paulista, 1000 - Apto 42"
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <TextInput
-                  label="Data e hora da entrega"
-                  type="datetime-local"
-                  value={deliveryDate}
-                  onChange={(e) => setDeliveryDate(e.target.value)}
-                  required
-                />
-
-                <div>
-                  <label className="block text-xs font-medium text-[#7A6453] mb-1">
-                    Status Inicial
-                  </label>
-                  <select
-                    className="w-full px-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] focus:border-[#96642F] rounded-2xl text-xs font-bold text-[#302116]"
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as OrderStatus)}
-                  >
-                    {Object.entries(ORDER_STATUS_MAP).map(([key, val]) => (
-                      <option key={key} value={key}>
-                        {val.label}
-                      </option>
-                    ))}
-                  </select>
+              {/* Produtos do Pedido */}
+              <div className="p-5 bg-white rounded-3xl border border-[#E5DACD] space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+                    <Cookie className="w-3.5 h-3.5" /> Doces & Produtos
+                  </h3>
+                  <Button type="button" size="sm" variant="secondary" onClick={handleAddProduct}>
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Doce
+                  </Button>
                 </div>
-              </div>
-            </div>
 
-            {/* Produtos do Pedido */}
-            <div className="p-5 bg-white rounded-3xl border border-[#E5DACD] space-y-3 shadow-xs">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
-                  <Cookie className="w-3.5 h-3.5" /> Doces & Produtos
-                </h3>
-                <Button type="button" size="sm" variant="secondary" onClick={handleAddProduct}>
-                  <Plus className="w-3.5 h-3.5" /> Adicionar Doce
-                </Button>
+                {items.length === 0 ? (
+                  <p className="text-xs text-center py-4 text-[#8A7565]">
+                    Nenhum doce adicionado. Clique no botão acima para incluir produtos.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {items.map((item, index) => (
+                      <div
+                        key={item.id || index}
+                        className="p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <select
+                            className="flex-1 bg-white px-2.5 py-1.5 rounded-xl border border-[#DFCFC0] text-xs font-semibold text-[#302116] focus:outline-none"
+                            value={item.productId}
+                            onChange={(e) =>
+                              handleUpdateProduct(index, 'productId', e.target.value)
+                            }
+                          >
+                            {products.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} ({formatCurrency(p.salePrice)})
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveProduct(index)}
+                            className="p-1 text-[#A89484] hover:text-rose-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div>
+                            <span className="text-[10px] text-[#7A6453] uppercase block">Qtd</span>
+                            <input
+                              type="number"
+                              step="any"
+                              className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-lg font-bold text-center"
+                              value={item.quantity}
+                              onChange={(e) =>
+                                handleUpdateProduct(index, 'quantity', e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-[#7A6453] uppercase block">
+                              Preço Un (R$)
+                            </span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-lg font-bold text-center"
+                              value={item.unitPrice}
+                              onChange={(e) =>
+                                handleUpdateProduct(index, 'unitPrice', e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-[#7A6453] uppercase block">
+                              Total
+                            </span>
+                            <span className="block pt-1 text-sm font-bold text-[#96642F] text-right">
+                              {formatCurrency(item.totalPrice)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {items.length === 0 ? (
-                <p className="text-xs text-center py-4 text-[#8A7565]">
-                  Nenhum doce adicionado. Clique no botão acima para incluir produtos.
-                </p>
-              ) : (
-                <div className="space-y-2.5">
-                  {items.map((item, index) => (
-                    <div
-                      key={item.id || index}
-                      className="p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] space-y-2"
-                    >
-                      <div className="flex items-center justify-between gap-2">
+              {/* Materiais e Embalagens */}
+              <div className="p-5 bg-white rounded-3xl border border-[#E5DACD] space-y-3 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5" /> Materiais & Embalagens
+                  </h3>
+                  <Button type="button" size="sm" variant="secondary" onClick={handleAddMaterial}>
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Material
+                  </Button>
+                </div>
+
+                {orderMaterials.length === 0 ? (
+                  <p className="text-xs text-center py-3 text-[#8A7565]">
+                    Nenhuma embalagem extra adicionada.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {orderMaterials.map((mat, index) => (
+                      <div
+                        key={mat.id || index}
+                        className="p-2.5 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] flex items-center gap-2"
+                      >
                         <select
-                          className="flex-1 bg-white px-2.5 py-1.5 rounded-xl border border-[#DFCFC0] text-xs font-semibold text-[#302116] focus:outline-none"
-                          value={item.productId}
-                          onChange={(e) => handleUpdateProduct(index, 'productId', e.target.value)}
+                          className="flex-1 bg-white px-2 py-1 rounded-xl border border-[#DFCFC0] text-xs font-semibold text-[#302116] truncate focus:outline-none"
+                          value={mat.materialId}
+                          onChange={(e) =>
+                            handleUpdateMaterial(index, 'materialId', e.target.value)
+                          }
                         >
-                          {products.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name} ({formatCurrency(p.salePrice)})
+                          {materials.map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.name} (Custo: {formatCurrency(m.unitCost)})
                             </option>
                           ))}
                         </select>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveProduct(index)}
-                          className="p-1 text-[#A89484] hover:text-rose-500"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
 
-                      <div className="grid grid-cols-3 gap-2 text-xs">
-                        <div>
-                          <span className="text-[10px] text-[#7A6453] uppercase block">Qtd</span>
+                        <div className="flex items-center gap-1">
                           <input
                             type="number"
                             step="any"
-                            className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-lg font-bold text-center"
-                            value={item.quantity}
-                            onChange={(e) => handleUpdateProduct(index, 'quantity', e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-[#7A6453] uppercase block">
-                            Preço Un (R$)
-                          </span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-lg font-bold text-center"
-                            value={item.unitPrice}
+                            className="w-14 px-1.5 py-1 text-xs font-bold text-center bg-white border border-[#DFCFC0] rounded-lg"
+                            value={mat.quantity}
                             onChange={(e) =>
-                              handleUpdateProduct(index, 'unitPrice', e.target.value)
+                              handleUpdateMaterial(index, 'quantity', e.target.value)
                             }
                           />
+                          <span className="text-[11px] text-[#7A6453]">un</span>
                         </div>
-                        <div>
-                          <span className="text-[10px] text-[#7A6453] uppercase block">Total</span>
-                          <span className="block pt-1 text-sm font-bold text-[#96642F] text-right">
-                            {formatCurrency(item.totalPrice)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* Materiais e Embalagens */}
-            <div className="p-5 bg-white rounded-3xl border border-[#E5DACD] space-y-3 shadow-xs">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
-                  <Package className="w-3.5 h-3.5" /> Materiais & Embalagens
-                </h3>
-                <Button type="button" size="sm" variant="secondary" onClick={handleAddMaterial}>
-                  <Plus className="w-3.5 h-3.5" /> Adicionar Material
-                </Button>
+                        <span className="text-xs font-bold text-[#7A6453] w-14 text-right">
+                          {formatCurrency(mat.totalCost)}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMaterial(index)}
+                          className="p-1 text-[#A89484] hover:text-rose-500"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-
-              {orderMaterials.length === 0 ? (
-                <p className="text-xs text-center py-3 text-[#8A7565]">
-                  Nenhuma embalagem extra adicionada.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {orderMaterials.map((mat, index) => (
-                    <div
-                      key={mat.id || index}
-                      className="p-2.5 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] flex items-center gap-2"
-                    >
-                      <select
-                        className="flex-1 bg-white px-2 py-1 rounded-xl border border-[#DFCFC0] text-xs font-semibold text-[#302116] truncate focus:outline-none"
-                        value={mat.materialId}
-                        onChange={(e) => handleUpdateMaterial(index, 'materialId', e.target.value)}
-                      >
-                        {materials.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name} (Custo: {formatCurrency(m.unitCost)})
-                          </option>
-                        ))}
-                      </select>
-
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          step="any"
-                          className="w-14 px-1.5 py-1 text-xs font-bold text-center bg-white border border-[#DFCFC0] rounded-lg"
-                          value={mat.quantity}
-                          onChange={(e) => handleUpdateMaterial(index, 'quantity', e.target.value)}
-                        />
-                        <span className="text-[11px] text-[#7A6453]">un</span>
-                      </div>
-
-                      <span className="text-xs font-bold text-[#7A6453] w-14 text-right">
-                        {formatCurrency(mat.totalCost)}
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMaterial(index)}
-                        className="p-1 text-[#A89484] hover:text-rose-500"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
-          </div>
 
-          {/* Right Column (col-span-5): Financial Summary & Actions */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="p-5 bg-[#F2ECE1] rounded-3xl border border-[#DFCFC0] shadow-xs space-y-3">
-              <h3 className="text-sm font-bold text-[#302116] pb-1 border-b border-[#E5DACD]">
-                Cálculo Financeiro
-              </h3>
+            {/* Right Column (col-span-5): Financial Summary & Actions */}
+            <div className="lg:col-span-5 space-y-4">
+              <div className="p-5 bg-[#F2ECE1] rounded-3xl border border-[#DFCFC0] shadow-xs space-y-3">
+                <h3 className="text-sm font-bold text-[#302116] pb-1 border-b border-[#E5DACD]">
+                  Cálculo Financeiro
+                </h3>
 
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-[#7A6453]">Subtotal dos Itens:</span>
-                <span className="font-semibold text-[#302116]">{formatCurrency(subtotal)}</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-[#7A6453]">Subtotal dos Itens:</span>
+                  <span className="font-semibold text-[#302116]">{formatCurrency(subtotal)}</span>
+                </div>
+
+                <TextInput
+                  label="Desconto Aplicado (R$)"
+                  type="number"
+                  step="0.01"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  placeholder="0,00"
+                />
+
+                <div className="flex justify-between items-center text-base font-bold pt-2 border-t border-[#E5DACD]">
+                  <span>Total a Cobrar:</span>
+                  <span className="text-[#302116] text-xl">{formatCurrency(totalCharged)}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-xs text-[#7A6453] pt-1">
+                  <span>Custo dos insumos e embalagens:</span>
+                  <span>{formatCurrency(estimatedCost)}</span>
+                </div>
+
+                <div className="flex justify-between items-center text-sm font-bold text-[#4A280F] pt-2 border-t border-[#E5DACD]">
+                  <span>Lucro Previsto:</span>
+                  <span className="text-[#96642F] text-lg">
+                    {formatCurrency(estimatedProfit)} ({formatDecimal(profitMarginPercent, 1)}%)
+                  </span>
+                </div>
               </div>
 
               <TextInput
-                label="Desconto Aplicado (R$)"
-                type="number"
-                step="0.01"
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                placeholder="0,00"
+                label="Observações do Pedido"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Ex: Entregar na portaria, cartão personalizado..."
               />
 
-              <div className="flex justify-between items-center text-base font-bold pt-2 border-t border-[#E5DACD]">
-                <span>Total a Cobrar:</span>
-                <span className="text-[#302116] text-xl">{formatCurrency(totalCharged)}</span>
-              </div>
-
-              <div className="flex justify-between items-center text-xs text-[#7A6453] pt-1">
-                <span>Custo dos insumos e embalagens:</span>
-                <span>{formatCurrency(estimatedCost)}</span>
-              </div>
-
-              <div className="flex justify-between items-center text-sm font-bold text-[#4A280F] pt-2 border-t border-[#E5DACD]">
-                <span>Lucro Previsto:</span>
-                <span className="text-[#96642F] text-lg">
-                  {formatCurrency(estimatedProfit)} ({formatDecimal(profitMarginPercent, 1)}%)
-                </span>
-              </div>
+              <Button
+                disabled={saving}
+                type="submit"
+                fullWidth
+                size="lg"
+                className="py-4 font-bold shadow-md"
+              >
+                {saving ? 'Salvando…' : 'Salvar Encomenda'}
+              </Button>
             </div>
-
-            <TextInput
-              label="Observações do Pedido"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ex: Entregar na portaria, cartão personalizado..."
-            />
-
-            <Button
-              disabled={saving}
-              type="submit"
-              fullWidth
-              size="lg"
-              className="py-4 font-bold shadow-md"
-            >
-              {saving ? 'Salvando…' : 'Salvar Encomenda'}
-            </Button>
-          </div>
-        </form>
+          </form>
+        </Card>
       </div>
       <ConfirmDialog
         isOpen={showDeleteConfirm}
