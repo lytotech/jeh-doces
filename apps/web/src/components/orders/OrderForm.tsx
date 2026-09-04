@@ -258,6 +258,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     setSaving(true);
 
     try {
+      if (isCustomerLinked && selectedCustomer) {
+        const updatedCustomer = await saveCustomerAction({
+          id: selectedCustomer.id,
+          name: clientName.trim(),
+          phone: clientPhone.trim() || undefined,
+          address: clientAddress.trim() || undefined,
+        });
+
+        if (!updatedCustomer) return;
+      }
+
       const savedId = await saveOrderAction({
         id: order?.id,
         clientName: clientName.trim(),
@@ -393,10 +404,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                   placeholder="Ex: Diego banco"
                   required
                   autoFocus
-                  readOnly={isCustomerLinked}
                   helpText={
                     isCustomerLinked
-                      ? 'Este dado vem do cadastro do cliente.'
+                      ? 'Edite para atualizar o cadastro e esta encomenda.'
                       : 'Cliente avulso: os dados ficam salvos somente nesta encomenda.'
                   }
                 />
@@ -406,7 +416,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                   value={clientPhone}
                   onChange={(e) => setClientPhone(e.target.value)}
                   placeholder="(11) 98765-4321"
-                  readOnly={isCustomerLinked}
                 />
               </div>
 
@@ -475,7 +484,6 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                 value={clientAddress}
                 onChange={(e) => setClientAddress(e.target.value)}
                 placeholder="Ex: Av. Paulista, 1000 - Apto 42"
-                readOnly={isCustomerLinked}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
