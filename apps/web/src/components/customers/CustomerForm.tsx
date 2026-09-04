@@ -5,13 +5,15 @@ import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
-import { Trash2 } from 'lucide-react';
+import { StatusBadge } from '../ui/Badge';
+import { formatCurrency, formatDateTime } from '../../services/costEngine';
+import { CalendarDays, ShoppingBag, Trash2 } from 'lucide-react';
 
 export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => void }> = ({
   customer,
   onBack,
 }) => {
-  const { saveCustomerAction, deleteCustomerAction } = useApp();
+  const { saveCustomerAction, deleteCustomerAction, orders } = useApp();
   const [name, setName] = useState(customer?.name || '');
   const [phone, setPhone] = useState(customer?.phone || '');
   const [email, setEmail] = useState(customer?.email || '');
@@ -19,6 +21,15 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
   const [notes, setNotes] = useState(customer?.notes || '');
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const customerOrders = customer
+    ? orders
+        .filter((order) => order.customerId === customer.id && order.status !== 'cancelado')
+        .sort(
+          (first, second) =>
+            new Date(second.deliveryDate).getTime() - new Date(first.deliveryDate).getTime(),
+        )
+    : [];
+  const customerTotal = customerOrders.reduce((total, order) => total + order.totalCharged, 0);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -120,6 +131,57 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
             </Button>
           </div>
         </form>
+
+        {customer && (
+          <section className="mt-4 rounded-3xl border border-[#E5DACD] bg-white p-5 shadow-xs sm:p-7">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-bold text-[#302116]">
+                  <ShoppingBag className="h-4 w-4 text-[#96315C]" /> Histórico de encomendas
+                </h2>
+                <p className="mt-1 text-xs text-[#7A6453]">
+                  Acompanhe os pedidos vinculados a este cliente.
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-[#96315C]">{formatCurrency(customerTotal)}</p>
+                <p className="text-[11px] text-[#7A6453]">
+                  {customerOrders.length} pedido{customerOrders.length === 1 ? '' : 's'}
+                </p>
+              </div>
+            </div>
+
+            {customerOrders.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-dashed border-[#E5DACD] bg-[#FCFAF8] p-4 text-center text-xs text-[#7A6453]">
+                Nenhuma encomenda vinculada ainda.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-2">
+                {customerOrders.slice(0, 5).map((order) => (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between gap-3 rounded-2xl border border-[#F0E7DE] bg-[#FCFAF8] px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-[#302116]">
+                        Encomenda {order.orderNumber}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1 text-[11px] text-[#7A6453]">
+                        <CalendarDays className="h-3 w-3" /> {formatDateTime(order.deliveryDate)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <StatusBadge status={order.status} size="sm" />
+                      <span className="text-xs font-bold text-[#96315C]">
+                        {formatCurrency(order.totalCharged)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
       <ConfirmDialog
         isOpen={showDeleteConfirm}
