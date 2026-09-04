@@ -4,7 +4,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime } from '../../services/costEngine';
-import { Plus, Search, ClipboardList, Calendar } from 'lucide-react';
+import { Plus, Search, ClipboardList, Calendar, AlertTriangle } from 'lucide-react';
 import { Order } from '../../types';
 
 interface OrderListProps {
@@ -108,12 +108,19 @@ export const OrderList: React.FC<OrderListProps> = ({
             {filtered.map((ord) => {
               const totalPaid = (ord.payments || []).reduce((sum, p) => sum + p.amount, 0);
               const isPaid = totalPaid >= ord.totalCharged && ord.totalCharged > 0;
+              const isOverdue =
+                !['cancelado', 'entregue'].includes(ord.status) &&
+                new Date(ord.deliveryDate).getTime() < Date.now();
 
               return (
                 <div
                   key={ord.id}
                   onClick={() => onSelectOrder(ord)}
-                  className="bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#D7BC9B] shadow-xs hover:shadow-card cursor-pointer transition-all space-y-3 flex flex-col justify-between group"
+                  className={`bg-white hover:bg-[#FAF6F0] p-4 sm:p-5 rounded-3xl border shadow-xs hover:shadow-card cursor-pointer transition-all space-y-3 flex flex-col justify-between group ${
+                    isOverdue
+                      ? 'border-red-200 hover:border-red-300'
+                      : 'border-[#E5DACD] hover:border-[#D7BC9B]'
+                  }`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
@@ -128,7 +135,10 @@ export const OrderList: React.FC<OrderListProps> = ({
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-[#7A6453]">
                           <Calendar className="w-3.5 h-3.5 text-[#96642F] shrink-0" />
-                          <span>{formatDateTime(ord.deliveryDate)}</span>
+                          <span className={isOverdue ? 'font-semibold text-red-700' : undefined}>
+                            {formatDateTime(ord.deliveryDate)}
+                          </span>
+                          {isOverdue && <AlertTriangle className="h-3.5 w-3.5 text-red-600" />}
                         </div>
                       </div>
 
@@ -171,6 +181,11 @@ export const OrderList: React.FC<OrderListProps> = ({
                     ) : (
                       <span className="text-stone-500 bg-stone-100 px-2 py-0.5 rounded-md">
                         Pendente
+                      </span>
+                    )}
+                    {!isPaid && ord.totalCharged > totalPaid && (
+                      <span className="text-[#7A6453]">
+                        A receber: {formatCurrency(ord.totalCharged - totalPaid)}
                       </span>
                     )}
                   </div>
