@@ -4,12 +4,13 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { Trash2 } from 'lucide-react';
 
 export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => void }> = ({
   customer,
   onBack,
 }) => {
-  const { saveCustomerAction } = useApp();
+  const { saveCustomerAction, deleteCustomerAction } = useApp();
   const [name, setName] = useState(customer?.name || '');
   const [phone, setPhone] = useState(customer?.phone || '');
   const [email, setEmail] = useState(customer?.email || '');
@@ -33,9 +34,38 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
     if (saved) onBack();
   };
 
+  const handleDelete = async () => {
+    if (!customer?.id) return;
+    const confirmed = confirm(
+      'Excluir este cliente permanentemente? As encomendas vinculadas serão mantidas, mas ficarão sem cliente cadastrado.',
+    );
+    if (!confirmed || saving) return;
+    setSaving(true);
+    const deleted = await deleteCustomerAction(customer.id);
+    setSaving(false);
+    if (deleted) onBack();
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
-      <AppHeader title={customer ? 'Editar cliente' : 'Novo cliente'} showBack onBack={onBack} />
+      <AppHeader
+        title={customer ? 'Editar cliente' : 'Novo cliente'}
+        showBack
+        onBack={onBack}
+        rightAction={
+          customer && (
+            <button
+              type="button"
+              onClick={() => void handleDelete()}
+              disabled={saving}
+              className="rounded-full p-2 text-white/80 transition-colors hover:bg-rose-600/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              title="Excluir cliente"
+            >
+              <Trash2 className="h-5 w-5" />
+            </button>
+          )
+        }
+      />
       <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8">
         <form
           onSubmit={handleSubmit}

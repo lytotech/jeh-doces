@@ -237,23 +237,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientName.trim() || saving) return;
+    if (!customerId || !clientName.trim() || saving) return;
     setSaving(true);
 
     try {
-      // The order form is also a convenient place to keep the selected customer's
-      // contact data current. Orders reference the customer directly, so updates
-      // are reflected everywhere after saving.
-      if (customerId) {
-        const updatedCustomer = await saveCustomerAction({
-          id: customerId,
-          name: clientName.trim(),
-          phone: clientPhone.trim() || undefined,
-          address: clientAddress.trim() || undefined,
-        });
-        if (!updatedCustomer) return;
-      }
-
       const savedId = await saveOrderAction({
         id: order?.id,
         clientName: clientName.trim(),
@@ -314,6 +301,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
               <h3 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
                 <User className="w-3.5 h-3.5" /> Informações do Cliente
               </h3>
+              {!customerId && (
+                <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                  Selecione um cliente cadastrado ou use “Novo” antes de salvar a encomenda.
+                </p>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:[&>div:first-child]:col-span-2">
                 <div ref={customerPickerRef} className="relative">

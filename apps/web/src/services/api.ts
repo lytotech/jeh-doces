@@ -101,6 +101,10 @@ export const api = {
     });
   },
 
+  async deleteCustomer(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/customers/${id}`, { method: 'DELETE' });
+  },
+
   // === Ingredients ===
   async getIngredients(): Promise<Ingredient[]> {
     return request<Ingredient[]>('/ingredients');

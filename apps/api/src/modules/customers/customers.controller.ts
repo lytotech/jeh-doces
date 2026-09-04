@@ -39,6 +39,11 @@ export class CustomersController {
     if (!updated) throw new NotFoundException('Cliente não encontrado');
     return updated;
   }
+  @Delete('customers/:id') async delete(@Param('id') id: string) {
+    const success = await this.database.database.deleteCustomer(id);
+    if (!success) throw new NotFoundException('Cliente não encontrado');
+    return { success: true };
+  }
   @Get('commitments') commitments() {
     return this.database.database.getCommitments();
   }

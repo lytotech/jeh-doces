@@ -78,6 +78,7 @@ interface AppContextType {
   // Customer Actions
   saveCustomerAction: (customer: Partial<Customer>) => Promise<Customer | null>;
   archiveCustomerAction: (id: string, archived?: boolean) => Promise<void>;
+  deleteCustomerAction: (id: string) => Promise<boolean>;
   saveCommitmentAction: (commitment: Partial<Commitment>) => Promise<void>;
   deleteCommitmentAction: (id: string) => Promise<void>;
 
@@ -406,6 +407,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const deleteCustomerAction = async (id: string): Promise<boolean> => {
+    try {
+      await api.deleteCustomer(id);
+      setCustomers((prev) => prev.filter((customer) => customer.id !== id));
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.customerId === id
+            ? {
+                ...order,
+                customerId: undefined,
+                clientName: 'Cliente não cadastrado',
+                clientPhone: undefined,
+                clientAddress: undefined,
+              }
+            : order,
+        ),
+      );
+      showToast('Cliente excluído com sucesso.');
+      return true;
+    } catch (e) {
+      console.error(e);
+      showToast('Erro ao excluir cliente.', 'error');
+      return false;
+    }
+  };
+
   const saveCommitmentAction = async (data: Partial<Commitment>) => {
     try {
       const saved = await api.saveCommitment(data);
@@ -496,6 +523,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removePaymentAction,
         saveCustomerAction,
         archiveCustomerAction,
+        deleteCustomerAction,
         saveCommitmentAction,
         deleteCommitmentAction,
         updateSettingsAction,

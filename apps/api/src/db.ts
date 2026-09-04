@@ -544,6 +544,11 @@ class Database {
       updatedAt: iso(updated.updatedAt),
     };
   }
+  async deleteCustomer(id: string) {
+    return (
+      (await prisma.customer.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0
+    );
+  }
   private async decrementInventory(tx: Prisma.TransactionClient, id: string) {
     const order = await tx.order.findUnique({
       where: { id },
@@ -576,20 +581,9 @@ class Database {
   async saveOrder(data: Partial<Order>) {
     return prisma.$transaction(async (tx) => {
       const companyId = this.companyId();
-      let customerId = data.customerId;
+      const customerId = data.customerId;
       if (customerId && !(await tx.customer.count({ where: { id: customerId, companyId } })))
         throw new Error('Cliente relacionado inválido para esta empresa.');
-      if (!customerId && data.clientName?.trim()) {
-        const customer = await tx.customer.create({
-          data: {
-            companyId,
-            name: data.clientName.trim(),
-            phone: data.clientPhone?.trim() || null,
-            address: data.clientAddress?.trim() || null,
-          },
-        });
-        customerId = customer.id;
-      }
       const productIds = [...new Set((data.items ?? []).map((item) => item.productId))];
       const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
       if (
