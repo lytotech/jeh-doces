@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { UserPlus, Trash2, Users } from 'lucide-react';
 import { authRequest, CompanyRole, useAuth } from '../../context/AuthContext';
 import { Modal } from '../ui/Modal';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 
 interface Member {
   id: string;
@@ -17,6 +18,7 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
   const [message, setMessage] = useState('');
   const [inviteBusy, setInviteBusy] = useState(false);
   const [memberBusyId, setMemberBusyId] = useState<string | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null);
   const canManage = auth?.role === 'owner' || auth?.role === 'admin';
   const load = () =>
     authRequest<Member[]>('/members')
@@ -55,12 +57,12 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
     }
   };
   const remove = async (member: Member) => {
-    if (!confirm(`Remover ${member.user.name} da empresa?`)) return;
     if (memberBusyId) return;
     setMemberBusyId(member.id);
     try {
       await authRequest(`/members/${member.id}`, { method: 'DELETE' });
       await load();
+      setMemberToRemove(null);
     } finally {
       setMemberBusyId(null);
     }
@@ -171,7 +173,7 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
                 {canManage && member.role !== 'owner' && member.user.id !== auth?.user.id && (
                   <button
                     disabled={memberBusyId === member.id}
-                    onClick={() => void remove(member)}
+                    onClick={() => setMemberToRemove(member)}
                     aria-label={`Remover ${member.user.name}`}
                     title="Remover acesso"
                     className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50"
@@ -184,6 +186,20 @@ export function TeamModal({ isOpen, onClose }: { isOpen: boolean; onClose: () =>
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        title="Remover acesso"
+        message={
+          memberToRemove
+            ? `Remover ${memberToRemove.user.name} da empresa? Essa pessoa perderá o acesso aos dados da empresa.`
+            : ''
+        }
+        confirmLabel="Remover acesso"
+        onConfirm={async () => {
+          if (memberToRemove) await remove(memberToRemove);
+        }}
+      />
     </Modal>
   );
 }

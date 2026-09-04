@@ -6,6 +6,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
 import {
@@ -87,6 +88,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [discount, setDiscount] = useState(order ? order.discount.toString() : '0');
   const [notes, setNotes] = useState(order?.notes || '');
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
   const [orderMaterials, setOrderMaterials] = useState<OrderMaterialItem[]>(order?.materials || []);
@@ -267,8 +269,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   };
 
   const handleDelete = () => {
-    if (order?.id && confirm('Deseja realmente excluir esta encomenda?')) {
+    if (order?.id) {
       deleteOrderAction(order.id);
+      setShowDeleteConfirm(false);
       onBack();
     }
   };
@@ -688,6 +691,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
           </div>
         </form>
       </div>
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Excluir encomenda"
+        message="Deseja realmente excluir esta encomenda? Essa ação não poderá ser desfeita."
+        confirmLabel="Excluir encomenda"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

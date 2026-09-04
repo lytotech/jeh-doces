@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput, Switch } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { formatCurrency, calculateMaterialUnitCost } from '../../services/costEngine';
 import { Trash2 } from 'lucide-react';
 
@@ -29,6 +30,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
     material ? material.stockQuantity.toString() : '10',
   );
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const numericTotalCost = parseFloat(totalCost.replace(',', '.')) || 0;
   const numericBaseQty = parseFloat(baseQuantity.replace(',', '.')) || 1;
@@ -61,8 +63,9 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
   };
 
   const handleDelete = () => {
-    if (material?.id && confirm('Deseja realmente remover este material?')) {
+    if (material?.id) {
       deleteMaterialAction(material.id);
+      setShowDeleteConfirm(false);
       onBack();
     }
   };
@@ -181,6 +184,14 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ material, onBack }) 
           </div>
         </form>
       </div>
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Excluir material"
+        message="Deseja realmente remover este material? Essa ação não poderá ser desfeita."
+        confirmLabel="Excluir material"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

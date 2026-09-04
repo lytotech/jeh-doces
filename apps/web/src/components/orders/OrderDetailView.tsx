@@ -3,6 +3,7 @@ import { Order, OrderStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { TagBadge } from '../ui/Badge';
 import { OrderStatusStepper } from './OrderStatusStepper';
 import { PaymentModal } from './PaymentModal';
@@ -40,6 +41,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
   const { updateOrderStatusAction, removePaymentAction } = useApp();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   const totalPaid = (order.payments || []).reduce((sum, p) => sum + p.amount, 0);
   const remaining = Math.max(0, order.totalCharged - totalPaid);
@@ -51,9 +53,8 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
   };
 
   const handleCancelOrder = () => {
-    if (confirm('Tem certeza que deseja cancelar esta encomenda?')) {
-      updateOrderStatusAction(order.id, 'cancelado');
-    }
+    updateOrderStatusAction(order.id, 'cancelado');
+    setShowCancelConfirm(false);
   };
 
   return (
@@ -364,6 +365,14 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
           onClose={() => setShowShareModal(false)}
         />
       )}
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        title="Cancelar encomenda"
+        message="Tem certeza que deseja cancelar esta encomenda?"
+        confirmLabel="Cancelar encomenda"
+        onConfirm={handleCancelOrder}
+      />
     </div>
   );
 };

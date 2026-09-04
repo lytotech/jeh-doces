@@ -3,6 +3,7 @@ import { Customer } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import {
   Plus,
   Search,
@@ -20,6 +21,7 @@ export const CustomerList: React.FC<{
   const { customers, archiveCustomerAction, deleteCustomerAction } = useApp();
   const [term, setTerm] = useState('');
   const [showArchived, setShowArchived] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const visible = useMemo(
     () =>
       customers.filter(
@@ -99,10 +101,7 @@ export const CustomerList: React.FC<{
                   type="button"
                   title="Excluir cliente"
                   onClick={() => {
-                    const confirmed = confirm(
-                      'Excluir este cliente permanentemente? As encomendas vinculadas serão mantidas, mas ficarão sem cliente cadastrado.',
-                    );
-                    if (confirmed) void deleteCustomerAction(c.id);
+                    setCustomerToDelete(c);
                   }}
                   className="rounded-xl p-2 text-rose-600 hover:bg-rose-50"
                 >
@@ -114,6 +113,18 @@ export const CustomerList: React.FC<{
           </div>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={!!customerToDelete}
+        onClose={() => setCustomerToDelete(null)}
+        title="Excluir cliente"
+        message="Excluir este cliente permanentemente? As encomendas vinculadas serão mantidas, mas ficarão sem cliente cadastrado."
+        confirmLabel="Excluir cliente"
+        onConfirm={async () => {
+          if (!customerToDelete) return;
+          const deleted = await deleteCustomerAction(customerToDelete.id);
+          if (deleted) setCustomerToDelete(null);
+        }}
+      />
     </div>
   );
 };

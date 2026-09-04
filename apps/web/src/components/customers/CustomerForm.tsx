@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { Trash2 } from 'lucide-react';
 
 export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => void }> = ({
@@ -17,6 +18,7 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
   const [address, setAddress] = useState(customer?.address || '');
   const [notes, setNotes] = useState(customer?.notes || '');
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -35,15 +37,14 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
   };
 
   const handleDelete = async () => {
-    if (!customer?.id) return;
-    const confirmed = confirm(
-      'Excluir este cliente permanentemente? As encomendas vinculadas serão mantidas, mas ficarão sem cliente cadastrado.',
-    );
-    if (!confirmed || saving) return;
+    if (!customer?.id || saving) return;
     setSaving(true);
     const deleted = await deleteCustomerAction(customer.id);
     setSaving(false);
-    if (deleted) onBack();
+    if (deleted) {
+      setShowDeleteConfirm(false);
+      onBack();
+    }
   };
 
   return (
@@ -56,7 +57,7 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
           customer && (
             <button
               type="button"
-              onClick={() => void handleDelete()}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={saving}
               className="rounded-full p-2 text-white/80 transition-colors hover:bg-rose-600/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
               title="Excluir cliente"
@@ -120,6 +121,14 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
           </div>
         </form>
       </div>
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Excluir cliente"
+        message="Excluir este cliente permanentemente? As encomendas vinculadas serão mantidas, mas ficarão sem cliente cadastrado."
+        confirmLabel="Excluir cliente"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

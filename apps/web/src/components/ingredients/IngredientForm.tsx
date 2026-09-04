@@ -5,6 +5,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { TextInput, Switch } from '../ui/Input';
 import { SegmentedControl } from '../ui/SegmentedControl';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { PriceHistoryModal } from './PriceHistoryModal';
 import { formatCurrency, calculateIngredientUnitCost } from '../../services/costEngine';
 import { TrendingUp, Trash2, Plus } from 'lucide-react';
@@ -32,6 +33,7 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ ingredient, onBa
   const [subIngredients, setSubIngredients] = useState<SubIngredientItem[]>(
     ingredient?.subIngredients || [],
   );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -119,8 +121,9 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ ingredient, onBa
   };
 
   const handleDelete = () => {
-    if (ingredient?.id && confirm('Tem certeza que deseja excluir este ingrediente?')) {
+    if (ingredient?.id) {
       deleteIngredientAction(ingredient.id);
+      setShowDeleteConfirm(false);
       onBack();
     }
   };
@@ -343,6 +346,14 @@ export const IngredientForm: React.FC<IngredientFormProps> = ({ ingredient, onBa
           onClose={() => setShowHistoryModal(false)}
         />
       )}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Excluir ingrediente"
+        message="Tem certeza que deseja excluir este ingrediente? Essa ação não poderá ser desfeita."
+        confirmLabel="Excluir ingrediente"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };

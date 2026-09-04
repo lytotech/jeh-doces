@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { TextInput } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal, calculateProductCost } from '../../services/costEngine';
 import { Trash2, Plus, UtensilsCrossed, Package, DollarSign, Sparkles } from 'lucide-react';
@@ -30,6 +31,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
     product?.materials || [],
   );
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const numericSalePrice = parseFloat(salePrice.replace(',', '.')) || 0;
 
@@ -129,8 +131,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
   };
 
   const handleDelete = () => {
-    if (product?.id && confirm('Deseja realmente remover este produto?')) {
+    if (product?.id) {
       deleteProductAction(product.id);
+      setShowDeleteConfirm(false);
       onBack();
     }
   };
@@ -395,6 +398,14 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
           </div>
         </form>
       </div>
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Excluir produto"
+        message="Deseja realmente remover este produto? Essa ação não poderá ser desfeita."
+        confirmLabel="Excluir produto"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };
