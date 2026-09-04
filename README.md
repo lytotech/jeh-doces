@@ -10,7 +10,7 @@ Sistema completo e moderno para confeitaria artesanal gerenciar encomendas, orç
 jeh-doces/
 ├── apps/
 │   ├── web/                     # Frontend (React 19 + TypeScript + Vite + Tailwind CSS)
-│   └── api/                     # Backend REST API (Node.js + Express + TypeScript)
+│   └── api/                     # Backend REST API (NestJS + Fastify + TypeScript)
 ├── packages/
 │   └── shared/                  # Tipos TypeScript, Fórmulas de Custos e Seed Data
 └── data/                        # Persistência de dados em disco
@@ -44,8 +44,18 @@ jeh-doces/
 
 - **📊 Painel & Relatórios**:
   - Total faturado, lucro previsto e margem média.
+  - Filtros por janela de entrega e alerta de encomendas atrasadas.
   - Alertas visuais de estoque baixo.
   - Lista das próximas entregas.
+
+- **👥 Clientes**:
+  - Cadastro, arquivamento e exclusão permanente.
+  - Histórico de encomendas e total movimentado por cliente.
+
+- **🔐 Segurança e qualidade**:
+  - Multiempresa com isolamento por contexto de empresa.
+  - Rate limit para API, autenticação e convites.
+  - Headers HTTP de segurança, lint, Prettier, build e smoke tests automatizados.
 
 - **📱 Multi-dispositivo & Sincronização em Tempo Real**:
   - Acesso direto pelo celular, tablet ou computador na mesma rede Wi-Fi.
