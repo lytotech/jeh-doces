@@ -78,15 +78,15 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
         }
       />
 
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="max-w-[1480px] mx-auto p-4 sm:p-6 lg:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left Column (col-span-7): Order Info, Stepper & Items */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className="lg:col-span-8 space-y-5">
             {/* Order Header Summary Card */}
-            <div className="bg-[#F2ECE1] p-4 sm:p-5 rounded-3xl border border-[#DFCFC0] shadow-xs space-y-3">
+            <div className="bg-[#FFF1E8] p-4 sm:p-5 rounded-3xl shadow-sm space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
-                  <div className="p-2.5 rounded-2xl bg-white/80 border border-[#DFCFC0] text-[#7A4B1D] shrink-0 mt-0.5">
+                  <div className="p-2.5 rounded-2xl bg-[#FFFCF8] text-[#8D3157] shrink-0 mt-0.5">
                     <FileText className="w-5 h-5 stroke-[2.2]" />
                   </div>
                   <div>
@@ -107,7 +107,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
                 </Button>
               </div>
 
-              <div className="pt-2 border-t border-[#E5DACD] grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+              <div className="pt-3 border-t border-[#EADDE2] grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
                   <span className="text-[#7A6453] text-xs block">Cliente</span>
                   <span className="text-[#302116] font-semibold">{order.clientName}</span>
@@ -145,17 +145,17 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
 
             {/* Section Heading: Itens — only show when there is something to display */}
             {(order.items.length > 0 || order.materials.length > 0) && <div className="space-y-3 pt-2">
-              <h3 className="text-base font-bold text-[#302116] px-1">Itens do Pedido</h3>
+              <h3 className="text-base font-bold text-[#302116] px-1">Itens do pedido <span className="ml-1 text-xs font-medium text-[#8C7665]">({order.items.length + order.materials.length})</span></h3>
 
               <div className="space-y-2.5">
                 {/* Product Items */}
                 {order.items.map((item) => (
                   <div
                     key={item.id}
-                    className="bg-white p-4 rounded-2xl border border-[#E5DACD] shadow-xs flex items-center justify-between"
+                    className="bg-white p-4 rounded-2xl border border-[#EADDE2] shadow-xs flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-2xl bg-[#FAF3EB] text-[#78542A] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-2xl bg-[#FFF0F4] text-[#8D3157] flex items-center justify-center shrink-0">
                         <Cookie className="w-4 h-4" />
                       </div>
                       <div>
@@ -176,10 +176,10 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
                 {order.materials.map((mat) => (
                   <div
                     key={mat.id}
-                    className="bg-white p-4 rounded-2xl border border-[#E5DACD] shadow-xs flex items-center justify-between"
+                    className="bg-white p-4 rounded-2xl border border-[#EADDE2] shadow-xs flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-2xl bg-[#EDE4D8] text-[#78542A] flex items-center justify-center shrink-0">
+                      <div className="w-9 h-9 rounded-2xl bg-[#FFF1E8] text-[#8D3157] flex items-center justify-center shrink-0">
                         <Package className="w-4 h-4" />
                       </div>
                       <div>
@@ -203,9 +203,9 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({
           </div>
 
           {/* Right Column (col-span-5): Financials, Payments, Actions */}
-          <div className="lg:col-span-5 space-y-4">
+          <div className="lg:col-span-4 space-y-5">
             {/* Financial Summary Box */}
-            <div className="p-5 bg-[#F2ECE1] rounded-3xl border border-[#DFCFC0] shadow-xs space-y-3">
+            <div className="p-5 bg-[#FFF1E8] rounded-3xl shadow-sm space-y-3">
               <h3 className="text-sm font-bold text-[#302116] pb-1 border-b border-[#E5DACD]">
                 Resumo Financeiro
               </h3>

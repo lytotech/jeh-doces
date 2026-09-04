@@ -33,7 +33,7 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
   };
 
   return (
-    <div className="bg-white p-4 rounded-3xl border border-[#E5DACD] shadow-xs space-y-3">
+    <div className="bg-white p-4 rounded-3xl shadow-xs space-y-3">
       <h3 className="text-sm font-semibold text-[#302116]">Status</h3>
 
       <div className="space-y-2">
@@ -50,18 +50,18 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
               onClick={() => handleStepClick(statusKey)}
               className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer select-none ${
                 isCurrent
-                  ? 'bg-[#F6ECE0] border-[#96642F] shadow-xs font-semibold'
-                  : 'bg-white border-[#EFE8DE] hover:bg-[#FAF6F0] text-[#543015]'
+                  ? 'bg-[#FFF0F4] border-[#D69A88] shadow-xs font-semibold'
+                  : 'bg-[#FFFCF8] border-[#EADDE2] hover:bg-[#FFF8F2] text-[#543015]'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                     isCurrent
-                      ? 'bg-[#845025] text-white'
+                      ? 'bg-[#8D3157] text-white'
                       : isPast
-                      ? 'bg-[#D7BC9B] text-[#543015]'
-                      : 'bg-[#EFE8DE] text-[#7A6453]'
+                      ? 'bg-[#F0CBD6] text-[#63304B]'
+                      : 'bg-[#F1E7EC] text-[#756878]'
                   }`}
                 >
                   {isPast ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : stepNum}
