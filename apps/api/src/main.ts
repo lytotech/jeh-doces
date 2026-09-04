@@ -24,6 +24,13 @@ export async function createApplication() {
   app.useGlobalGuards(new RateLimitGuard());
   app.enableCors({ origin: env.corsOrigins.length ? env.corsOrigins : true, credentials: true });
   const fastify = app.getHttpAdapter().getInstance();
+  fastify.addHook('onSend', async (request: { url: string }, reply: any) => {
+    reply.header('X-Content-Type-Options', 'nosniff');
+    reply.header('X-Frame-Options', 'SAMEORIGIN');
+    reply.header('Referrer-Policy', 'strict-origin-when-cross-origin');
+    reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (request.url.startsWith('/api/')) reply.header('Cache-Control', 'no-store');
+  });
   await fastify.register(fastifyCookie as any);
   await fastify.register(fastifyStatic as any, { root: distPath, wildcard: false });
   await app.init();
