@@ -403,26 +403,30 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                       </div>
                     )}
                   </div>
-                  <TextInput
-                    label={isCustomerLinked ? 'Nome do cliente (cadastro)' : 'Nome do cliente'}
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Ex: Diego banco"
-                    required
-                    autoFocus
-                    helpText={
-                      isCustomerLinked
-                        ? 'Edite para atualizar o cadastro e esta encomenda.'
-                        : 'Cliente avulso: os dados ficam salvos somente nesta encomenda.'
-                    }
-                  />
+                  {(customerId || isEditing) && (
+                    <>
+                      <TextInput
+                        label={isCustomerLinked ? 'Nome do cliente (cadastro)' : 'Nome do cliente'}
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        placeholder="Ex: Diego banco"
+                        required
+                        autoFocus
+                        helpText={
+                          isCustomerLinked
+                            ? 'Edite para atualizar o cadastro e esta encomenda.'
+                            : undefined
+                        }
+                      />
 
-                  <TextInput
-                    label="Telefone / WhatsApp"
-                    value={clientPhone}
-                    onChange={(e) => setClientPhone(e.target.value)}
-                    placeholder="(11) 98765-4321"
-                  />
+                      <TextInput
+                        label="Telefone / WhatsApp"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        placeholder="(11) 98765-4321"
+                      />
+                    </>
+                  )}
                 </div>
 
                 <Modal
@@ -485,12 +489,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                   </div>
                 </Modal>
 
-                <TextInput
-                  label="Endereço de entrega"
-                  value={clientAddress}
-                  onChange={(e) => setClientAddress(e.target.value)}
-                  placeholder="Ex: Av. Paulista, 1000 - Apto 42"
-                />
+                {(customerId || isEditing) && (
+                  <TextInput
+                    label="Endereço de entrega"
+                    value={clientAddress}
+                    onChange={(e) => setClientAddress(e.target.value)}
+                    placeholder="Ex: Av. Paulista, 1000 - Apto 42"
+                  />
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <DateTimePicker
