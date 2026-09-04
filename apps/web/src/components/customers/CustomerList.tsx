@@ -3,13 +3,21 @@ import { Customer } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
-import { Plus, Search, UserRound, ArchiveRestore, Archive, ChevronRight } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  UserRound,
+  ArchiveRestore,
+  Archive,
+  Trash2,
+  ChevronRight,
+} from 'lucide-react';
 
 export const CustomerList: React.FC<{
   onSelectCustomer: (customer: Customer) => void;
   onNewCustomer: () => void;
 }> = ({ onSelectCustomer, onNewCustomer }) => {
-  const { customers, archiveCustomerAction } = useApp();
+  const { customers, archiveCustomerAction, deleteCustomerAction } = useApp();
   const [term, setTerm] = useState('');
   const [showArchived, setShowArchived] = useState(false);
   const visible = useMemo(
@@ -76,6 +84,7 @@ export const CustomerList: React.FC<{
                   </p>
                 </button>
                 <button
+                  type="button"
                   title={c.archivedAt ? 'Restaurar' : 'Arquivar'}
                   onClick={() => void archiveCustomerAction(c.id, !c.archivedAt)}
                   className="p-2 text-[#96642F] hover:bg-[#F5ECE0] rounded-xl"
@@ -85,6 +94,19 @@ export const CustomerList: React.FC<{
                   ) : (
                     <Archive className="w-4 h-4" />
                   )}
+                </button>
+                <button
+                  type="button"
+                  title="Excluir cliente"
+                  onClick={() => {
+                    const confirmed = confirm(
+                      'Excluir este cliente permanentemente? As encomendas vinculadas serão mantidas, mas ficarão sem cliente cadastrado.',
+                    );
+                    if (confirmed) void deleteCustomerAction(c.id);
+                  }}
+                  className="rounded-xl p-2 text-rose-600 hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </button>
                 <ChevronRight className="w-4 h-4 text-[#C4B2A0]" />
               </div>
