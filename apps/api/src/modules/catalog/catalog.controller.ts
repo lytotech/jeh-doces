@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -52,9 +53,12 @@ export class CatalogController {
     return this.database.database.deleteMaterial(id).then((success) => ({ success }));
   }
   @Patch('materials/:id/stock') async adjustStock(@Param('id') id: string, @Body() body: any) {
+    const stockQuantity = Number(body?.stockQuantity);
+    if (!Number.isFinite(stockQuantity) || stockQuantity < 0)
+      throw new BadRequestException('A quantidade em estoque deve ser um número não negativo.');
     const updated = await this.database.database.adjustMaterialStock(
       id,
-      Number(body.stockQuantity),
+      stockQuantity,
     );
     if (!updated) throw new NotFoundException('Material not found');
     return updated;
