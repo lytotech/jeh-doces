@@ -85,7 +85,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
         }
       />
 
-      <div className="max-w-md mx-auto p-4 sm:p-5 space-y-4">
+      <div className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
         <form onSubmit={handleSave} className="space-y-4">
           {/* Nome */}
           <TextInput
@@ -130,7 +130,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
           />
 
           {/* Custo por unidade badge / card */}
-          <div className="p-4 bg-[#F2ECE1] border border-[#DFCFC0] rounded-2xl flex items-center justify-between shadow-xs">
+          <div className="p-4 bg-[#FFF1E8] rounded-2xl flex items-center justify-between shadow-sm">
             <span className="text-sm font-medium text-[#543015]">
               Custo por unidade ({unit || 'un'})
             </span>
@@ -140,7 +140,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
           </div>
 
           {/* Controlar estoque card */}
-          <div className="p-4 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl shadow-xs space-y-3">
+          <div className="p-4 bg-white rounded-2xl border border-[#EADDE2] shadow-xs space-y-3">
             <Switch
               label="Controlar estoque"
               sublabel="Quando ligado, o app desconta da quantidade ao usar em vendas."
