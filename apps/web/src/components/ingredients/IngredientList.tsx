@@ -28,7 +28,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({
       <AppHeader
         title="Ingredientes & Insumos"
         rightAction={
-          <Button size="sm" onClick={onNewIngredient} className="shadow-none font-semibold">
+          <Button size="sm" onClick={onNewIngredient} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
             <Plus className="w-4 h-4" /> Novo Ingrediente
           </Button>
         }

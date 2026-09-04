@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { FormField, TextInput } from '../ui/Input';
 import { api } from '../../services/api';
 import { Download, Store, ShieldCheck } from 'lucide-react';
+import { maskPhone } from '../../services/formatters';
 
 interface BackupSettingsModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
   const { settings, updateSettingsAction, showToast } = useApp();
 
   const [storeName, setStoreName] = useState(settings.storeName);
-  const [storePhone, setStorePhone] = useState(settings.storePhone);
+  const [storePhone, setStorePhone] = useState(maskPhone(settings.storePhone));
   const [pixKey, setPixKey] = useState(settings.pixKey);
   const [pixKeyType, setPixKeyType] = useState(settings.pixKeyType);
   const [defaultMargin] = useState(settings.defaultProfitMargin.toString());
@@ -85,8 +86,9 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
 
           <TextInput
             label="WhatsApp da Loja"
+            type="tel"
             value={storePhone}
-            onChange={(e) => setStorePhone(e.target.value)}
+            onChange={(e) => setStorePhone(maskPhone(e.target.value))}
             placeholder="(11) 99999-9999"
           />
 

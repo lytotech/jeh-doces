@@ -222,7 +222,7 @@ export const CalendarView: React.FC<{ onSelectOrder: (order: Order) => void }> =
       <AppHeader
         title="Calendário de compromissos"
         rightAction={
-          <Button size="sm" onClick={() => setShowForm(true)}>
+          <Button size="sm" onClick={() => setShowForm(true)} className="!bg-[#6B1F3B] shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
             + Compromisso
           </Button>
         }

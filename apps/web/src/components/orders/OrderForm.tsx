@@ -9,6 +9,7 @@ import { Card } from '../ui/Card';
 import { Modal } from '../ui/Modal';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { DateTimePicker } from '../ui/DateTimePicker';
+import { maskPhone } from '../../services/formatters';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
 import { Plus, UserPlus, Search, Trash2, Cookie, Package, User } from 'lucide-react';
 
@@ -22,6 +23,85 @@ type EditableOrderMaterial = OrderMaterialItem & {
   source: 'automatic' | 'manual';
 };
 
+type CatalogOption = {
+  id: string;
+  name: string;
+  detail: string;
+};
+
+const CatalogPicker: React.FC<{
+  value: string;
+  options: CatalogOption[];
+  placeholder: string;
+  onChange: (id: string) => void;
+}> = ({ value, options, placeholder, onChange }) => {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((option) => option.id === value);
+  const [query, setQuery] = useState(selected?.name || '');
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) setQuery(selected?.name || '');
+  }, [selected?.name, open]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const filteredOptions = options.filter((option) =>
+    `${option.name} ${option.detail}`.toLowerCase().includes(query.toLowerCase()),
+  );
+
+  return (
+    <div ref={wrapperRef} className="relative min-w-0 flex-1">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#A89484]" />
+        <input
+          value={query}
+          placeholder={placeholder}
+          onFocus={() => setOpen(true)}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+          }}
+          className="w-full rounded-xl border border-[#DFCFC0] bg-white py-1.5 pl-8 pr-2.5 text-xs font-semibold text-[#302116] focus:outline-none"
+        />
+      </div>
+      {open && (
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#E5DACD] bg-white shadow-lg">
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  onChange(option.id);
+                  setQuery(option.name);
+                  setOpen(false);
+                }}
+                className="block w-full border-b border-[#F4EFEA] px-3 py-2 text-left last:border-0 hover:bg-[#F7E5EA]"
+              >
+                <span className="block truncate text-xs font-semibold text-[#302116]">
+                  {option.name}
+                </span>
+                <span className="block truncate text-[10px] text-[#7A6453]">{option.detail}</span>
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-2 text-xs text-[#8A7565]">Nenhum item encontrado.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) => {
   const { products, materials, customers, saveOrderAction, deleteOrderAction, saveCustomerAction } =
     useApp();
@@ -29,7 +109,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const isEditing = !!order?.id;
 
   const [clientName, setClientName] = useState(order?.clientName || '');
-  const [clientPhone, setClientPhone] = useState(order?.clientPhone || '');
+  const [clientPhone, setClientPhone] = useState(maskPhone(order?.clientPhone || ''));
   const [clientAddress, setClientAddress] = useState(order?.clientAddress || '');
   const [customerId, setCustomerId] = useState(order?.customerId || '');
   const selectedCustomer = customers.find((customer) => customer.id === customerId);
@@ -50,7 +130,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     if (!customer) return;
     setClientName(customer.name);
     setCustomerSearch(customer.name);
-    setClientPhone(customer.phone || '');
+    setClientPhone(maskPhone(customer.phone || ''));
     setClientAddress(customer.address || '');
   }, [customerId, customers]);
 
@@ -387,7 +467,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                               setCustomerId(c.id);
                               setCustomerSearch(c.name);
                               setClientName(c.name);
-                              setClientPhone(c.phone || '');
+                              setClientPhone(maskPhone(c.phone || ''));
                               setClientAddress(c.address || '');
                               setCustomerPickerOpen(false);
                             }}
@@ -421,8 +501,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
 
                       <TextInput
                         label="Telefone / WhatsApp"
+                        type="tel"
                         value={clientPhone}
-                        onChange={(e) => setClientPhone(e.target.value)}
+                        onChange={(e) => setClientPhone(maskPhone(e.target.value))}
                         placeholder="(11) 98765-4321"
                       />
                     </>
@@ -445,8 +526,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                     />
                     <TextInput
                       label="Telefone / WhatsApp"
+                      type="tel"
                       value={quickCustomerPhone}
-                      onChange={(e) => setQuickCustomerPhone(e.target.value)}
+                      onChange={(e) => setQuickCustomerPhone(maskPhone(e.target.value))}
                     />
                     <TextInput
                       label="Endereço"
@@ -548,19 +630,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                         className="p-3 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] space-y-2"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <select
-                            className="flex-1 bg-white px-2.5 py-1.5 rounded-xl border border-[#DFCFC0] text-xs font-semibold text-[#302116] focus:outline-none"
+                          <CatalogPicker
                             value={item.productId}
-                            onChange={(e) =>
-                              handleUpdateProduct(index, 'productId', e.target.value)
-                            }
-                          >
-                            {products.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} ({formatCurrency(p.salePrice)})
-                              </option>
-                            ))}
-                          </select>
+                            placeholder="Buscar doce ou produto..."
+                            options={products.map((p) => ({
+                              id: p.id,
+                              name: p.name,
+                              detail: formatCurrency(p.salePrice),
+                            }))}
+                            onChange={(id) => handleUpdateProduct(index, 'productId', id)}
+                          />
                           <button
                             type="button"
                             onClick={() => handleRemoveProduct(index)}
@@ -634,19 +713,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                         key={mat.id || index}
                         className="p-2.5 bg-[#FAF7F2] rounded-2xl border border-[#E5DACD] flex items-center gap-2"
                       >
-                        <select
-                          className="flex-1 bg-white px-2 py-1 rounded-xl border border-[#DFCFC0] text-xs font-semibold text-[#302116] truncate focus:outline-none"
+                        <CatalogPicker
                           value={mat.materialId}
-                          onChange={(e) =>
-                            handleUpdateMaterial(index, 'materialId', e.target.value)
-                          }
-                        >
-                          {materials.map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.name} (Custo: {formatCurrency(m.unitCost)})
-                            </option>
-                          ))}
-                        </select>
+                          placeholder="Buscar material ou embalagem..."
+                          options={materials.map((m) => ({
+                            id: m.id,
+                            name: m.name,
+                            detail: `Custo: ${formatCurrency(m.unitCost)}`,
+                          }))}
+                          onChange={(id) => handleUpdateMaterial(index, 'materialId', id)}
+                        />
 
                         <div className="flex items-center gap-1">
                           <input

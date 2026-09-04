@@ -8,6 +8,7 @@ import { Card } from '../ui/Card';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime } from '../../services/costEngine';
+import { maskPhone } from '../../services/formatters';
 import { CalendarDays, ShoppingBag, Trash2 } from 'lucide-react';
 
 export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => void }> = ({
@@ -16,7 +17,7 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
 }) => {
   const { saveCustomerAction, deleteCustomerAction, orders } = useApp();
   const [name, setName] = useState(customer?.name || '');
-  const [phone, setPhone] = useState(customer?.phone || '');
+  const [phone, setPhone] = useState(maskPhone(customer?.phone || ''));
   const [email, setEmail] = useState(customer?.email || '');
   const [address, setAddress] = useState(customer?.address || '');
   const [notes, setNotes] = useState(customer?.notes || '');
@@ -93,8 +94,9 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <TextInput
                 label="Telefone / WhatsApp"
+                type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(maskPhone(e.target.value))}
                 placeholder="(11) 99999-9999"
               />
               <TextInput

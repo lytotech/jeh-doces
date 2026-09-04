@@ -25,6 +25,11 @@ const getApiBase = (): string => {
 const API_BASE = getApiBase();
 const inFlightRequests = new Map<string, Promise<unknown>>();
 
+export interface CatalogCategorySummary {
+  name: string;
+  itemCount: number;
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -145,6 +150,21 @@ export const api = {
   // === Materials ===
   async getMaterials(): Promise<Material[]> {
     return request<Material[]>('/materials');
+  },
+  async getCatalogCategories(type: 'product' | 'material'): Promise<CatalogCategorySummary[]> {
+    return request<CatalogCategorySummary[]>(`/catalog-categories?type=${type}`);
+  },
+  async renameCatalogCategory(type: 'product' | 'material', name: string, newName: string) {
+    return request<CatalogCategorySummary>(
+      `/catalog-categories/${type}/${encodeURIComponent(name)}`,
+      { method: 'PATCH', body: JSON.stringify({ name: newName }) },
+    );
+  },
+  async deleteCatalogCategory(type: 'product' | 'material', name: string) {
+    return request<{ success: boolean }>(
+      `/catalog-categories/${type}/${encodeURIComponent(name)}`,
+      { method: 'DELETE' },
+    );
   },
 
   async saveMaterial(data: Partial<Material>): Promise<Material> {

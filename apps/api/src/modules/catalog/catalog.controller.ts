@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -22,6 +23,15 @@ import { AuthGuard } from '../auth/auth.guard';
 @UseInterceptors(CompanyContextInterceptor)
 export class CatalogController {
   constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+  @Get('catalog-categories') getCatalogCategories(@Query('type') type: string) {
+    return this.database.database.getCatalogCategories(type === 'material' ? 'material' : 'product');
+  }
+  @Patch('catalog-categories/:type/:name') renameCatalogCategory(@Param('type') type: string, @Param('name') name: string, @Body('name') newName: string) {
+    return this.database.database.renameCatalogCategory(type === 'material' ? 'material' : 'product', decodeURIComponent(name), newName);
+  }
+  @Delete('catalog-categories/:type/:name') deleteCatalogCategory(@Param('type') type: string, @Param('name') name: string) {
+    return this.database.database.deleteCatalogCategory(type === 'material' ? 'material' : 'product', decodeURIComponent(name));
+  }
   @Get('ingredients') getIngredients() {
     return this.database.database.getIngredients();
   }

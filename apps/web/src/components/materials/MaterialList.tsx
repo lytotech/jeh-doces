@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Material, StockMovement } from '../../types';
 import { api } from '../../services/api';
+import { CategoryManager } from '../catalog/CategoryManager';
 
 interface MaterialListProps {
   onSelectMaterial: (material: Material) => void;
@@ -25,19 +26,28 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
   const { materials, adjustMaterialStockAction } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [persistedCategories, setPersistedCategories] = useState<string[]>([]);
   const [stockMaterial, setStockMaterial] = useState<Material | null>(null);
   const [stockDraft, setStockDraft] = useState('');
   const [stockReason, setStockReason] = useState('Ajuste manual');
   const [savingStock, setSavingStock] = useState(false);
   const [stockHistory, setStockHistory] = useState<StockMovement[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
 
   const categories = [
     'Todos',
-    ...Array.from(new Set(materials.map((mat) => mat.category || 'Geral'))).sort((a, b) =>
+    ...Array.from(new Set([
+      ...persistedCategories,
+      ...materials.map((mat) => mat.category || 'Geral'),
+    ])).sort((a, b) =>
       a.localeCompare(b),
     ),
   ];
+
+  useEffect(() => {
+    void api.getCatalogCategories('material').then((items) => setPersistedCategories(items.map((item) => item.name))).catch(() => undefined);
+  }, [materials.length]);
 
   const filtered = materials.filter((mat) => {
     const category = mat.category || 'Geral';
@@ -81,15 +91,20 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
       <AppHeader
         title="Materiais & Embalagens"
         rightAction={
-          <Button size="sm" onClick={onNewMaterial} className="shadow-none font-semibold">
-            <Plus className="w-4 h-4" /> Novo Material
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={() => setCategoryManagerOpen(true)}>
+              Categorias
+            </Button>
+            <Button size="sm" onClick={onNewMaterial} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+              <Plus className="w-4 h-4" /> Novo Material
+            </Button>
+          </div>
         }
       />
 
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
         {/* Busca e categorias */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch sm:justify-between">
           <div className="relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-[#A89484] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -101,26 +116,27 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
             />
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-1.5 overflow-x-auto pb-1 sm:max-w-[60%] sm:pb-0 scrollbar-none">
             {categories.map((category) => (
               <button
                 key={category}
                 type="button"
                 onClick={() => setSelectedCategory(category)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors ${
                   selectedCategory === category
-                    ? 'border-[#96642F] bg-[#96642F] text-white'
-                    : 'border-[#E5DACD] bg-white text-[#7A6453] hover:border-[#D7BC9B] hover:text-[#96642F]'
+                    ? 'bg-[#96642F] text-white shadow-xs'
+                    : 'border border-[#E5DACD] bg-white text-[#7A6453] hover:bg-[#F6ECE0]'
                 }`}
               >
                 {category}
               </button>
             ))}
           </div>
+        </div>
 
-          <div className="text-xs text-[#7A6453]">
-            <span>{filtered.length} materiais encontrados</span>
-          </div>
+        <div className="flex items-center justify-between px-1 text-xs text-[#7A6453]">
+          <span>{filtered.length} materiais encontrados</span>
+          <span className="hidden sm:inline">Controle de custos e estoque em tempo real</span>
         </div>
 
         {/* List of Materials in responsive grid */}
@@ -282,6 +298,7 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
           </div>
         </div>
       </Modal>
+      <CategoryManager isOpen={categoryManagerOpen} onClose={() => setCategoryManagerOpen(false)} initialType="material" />
     </div>
   );
 };

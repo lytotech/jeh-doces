@@ -318,12 +318,62 @@ class Database {
       })
     ).map(mapMaterial);
   }
+  async getCatalogCategories(type: 'product' | 'material') {
+    const categories = await prisma.catalogCategory.findMany({
+      where: { companyId: this.companyId(), type },
+      orderBy: { name: 'asc' },
+      select: { name: true },
+    });
+    const companyId = this.companyId();
+    return Promise.all(categories.map(async ({ name }) => ({
+      name,
+      itemCount: type === 'product'
+        ? await prisma.product.count({ where: { companyId, category: name } })
+        : await prisma.material.count({ where: { companyId, category: name } }),
+    })));
+  }
+  async renameCatalogCategory(type: 'product' | 'material', name: string, newName: string) {
+    const companyId = this.companyId();
+    const category = newName.trim();
+    if (!category) throw new Error('Informe o nome da categoria.');
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.catalogCategory.findFirst({ where: { companyId, type, name } });
+      if (!existing) throw new Error('Categoria não encontrada.');
+      const duplicate = await tx.catalogCategory.count({
+        where: { companyId, type, name: category, NOT: { id: existing.id } },
+      });
+      if (duplicate) throw new Error('Já existe uma categoria com esse nome.');
+      if (type === 'product') {
+        await tx.product.updateMany({ where: { companyId, category: name }, data: { category } });
+      } else {
+        await tx.material.updateMany({ where: { companyId, category: name }, data: { category } });
+      }
+      await tx.catalogCategory.update({ where: { id: existing.id }, data: { name: category } });
+    });
+    return { name: category, itemCount: type === 'product'
+      ? await prisma.product.count({ where: { companyId, category } })
+      : await prisma.material.count({ where: { companyId, category } }) };
+  }
+  async deleteCatalogCategory(type: 'product' | 'material', name: string) {
+    const companyId = this.companyId();
+    const itemCount = type === 'product'
+      ? await prisma.product.count({ where: { companyId, category: name } })
+      : await prisma.material.count({ where: { companyId, category: name } });
+    if (itemCount > 0) throw new Error('A categoria ainda possui itens vinculados.');
+    return { success: (await prisma.catalogCategory.deleteMany({ where: { companyId, type, name } })).count > 0 };
+  }
   async getMaterialById(id: string) {
     const row = await prisma.material.findFirst({ where: { id, companyId: this.companyId() } });
     return row ? mapMaterial(row) : null;
   }
   async saveMaterial(data: Partial<Material>) {
     const companyId = this.companyId();
+    const category = data.category?.trim() || 'Geral';
+    await prisma.catalogCategory.upsert({
+      where: { companyId_type_name: { companyId, type: 'material', name: category } },
+      create: { companyId, type: 'material', name: category },
+      update: {},
+    });
     const row =
       data.id && (await prisma.material.count({ where: { id: data.id, companyId } }))
         ? await prisma.material.update({ where: { id: data.id }, data: materialFields(data) })
@@ -399,6 +449,12 @@ class Database {
       },
     };
     const companyId = this.companyId();
+    const category = data.category?.trim() || 'Geral';
+    await prisma.catalogCategory.upsert({
+      where: { companyId_type_name: { companyId, type: 'product', name: category } },
+      create: { companyId, type: 'product', name: category },
+      update: {},
+    });
     const ingredientIds = [...new Set((data.ingredients ?? []).map((item) => item.ingredientId))];
     const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
     if (

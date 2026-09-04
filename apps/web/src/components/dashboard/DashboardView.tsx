@@ -72,7 +72,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         title="Painel & Relatórios"
         onOpenSettings={onOpenSettings}
         rightAction={
-          <Button size="sm" onClick={onNewOrder} className="shadow-none font-semibold">
+          <Button size="sm" onClick={onNewOrder} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
             <Plus className="w-4 h-4" /> Nova Encomenda
           </Button>
         }

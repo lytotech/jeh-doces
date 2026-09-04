@@ -36,7 +36,7 @@ export const CustomerList: React.FC<{
       <AppHeader
         title="Clientes"
         rightAction={
-          <Button size="sm" onClick={onNewCustomer}>
+          <Button size="sm" onClick={onNewCustomer} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
             <Plus className="w-4 h-4" /> Novo cliente
           </Button>
         }

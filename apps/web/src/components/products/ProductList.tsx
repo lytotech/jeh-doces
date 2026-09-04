@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
@@ -6,6 +6,8 @@ import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal } from '../../services/costEngine';
 import { Plus, Search, Cake, ChevronRight, Copy } from 'lucide-react';
 import { Product } from '../../types';
+import { api } from '../../services/api';
+import { CategoryManager } from '../catalog/CategoryManager';
 
 interface ProductListProps {
   onSelectProduct: (product: Product) => void;
@@ -16,8 +18,17 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
   const { products, saveProductAction } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('todos');
+  const [categoryManagerOpen, setCategoryManagerOpen] = useState(false);
+  const [persistedCategories, setPersistedCategories] = useState<string[]>([]);
 
-  const categories = ['todos', ...Array.from(new Set(products.map((p) => p.category || 'Geral')))];
+  useEffect(() => {
+    void api.getCatalogCategories('product').then((items) => setPersistedCategories(items.map((item) => item.name))).catch(() => undefined);
+  }, [products.length]);
+
+  const categories = ['todos', ...Array.from(new Set([
+    ...persistedCategories,
+    ...products.map((p) => p.category || 'Geral'),
+  ]))];
 
   const filtered = products.filter((prod) => {
     const matchesSearch =
@@ -47,9 +58,14 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
       <AppHeader
         title="Cardápio & Receitas"
         rightAction={
-          <Button size="sm" onClick={onNewProduct} className="shadow-none font-semibold">
-            <Plus className="w-4 h-4" /> Novo Produto
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="secondary" onClick={() => setCategoryManagerOpen(true)}>
+              Categorias
+            </Button>
+            <Button size="sm" onClick={onNewProduct} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+              <Plus className="w-4 h-4" /> Novo Produto
+            </Button>
+          </div>
         }
       />
 
@@ -164,6 +180,7 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
           </div>
         )}
       </div>
+      <CategoryManager isOpen={categoryManagerOpen} onClose={() => setCategoryManagerOpen(false)} initialType="product" />
     </div>
   );
 };

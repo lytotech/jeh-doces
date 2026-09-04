@@ -28,8 +28,28 @@ model Company {
   customers   Customer[]
   commitments Commitment[]
   stockMovements MaterialStockMovement[]
+  catalogCategories CatalogCategory[]
 
   @@map("companies")
+}
+
+enum CatalogCategoryType {
+  product
+  material
+}
+
+model CatalogCategory {
+  id        String             @id @default(cuid())
+  name      String
+  type      CatalogCategoryType
+  companyId String
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@unique([companyId, type, name])
+  @@index([companyId, type, name])
+  @@map("catalog_categories")
 }
 
 model User {
