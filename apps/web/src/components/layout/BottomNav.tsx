@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   ClipboardList,
@@ -22,6 +22,24 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
   const { activeTab, setActiveTab, setSelectedOrderId } = useApp();
   const { logout } = useAuth();
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const settingsRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node))
+        setSettingsOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSettingsOpen(false);
+    };
+    document.addEventListener('mousedown', closeOnOutsideClick);
+    document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick);
+      document.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [settingsOpen]);
 
   const navItems = [
     {
@@ -61,7 +79,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8DECF] shadow-lg pb-[env(safe-area-inset-bottom)]">
+    <nav
+      ref={settingsRef}
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8DECF] shadow-lg pb-[env(safe-area-inset-bottom)]"
+    >
       <div className="max-w-3xl mx-auto flex items-center justify-around py-1.5 px-1 overflow-x-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -139,7 +160,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
           <button
             type="button"
             role="menuitem"
-            onClick={() => void logout()}
+            onClick={() => {
+              setSettingsOpen(false);
+              void logout();
+            }}
             className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-rose-700 hover:bg-rose-50"
           >
             <LogOut className="h-4 w-4" />
