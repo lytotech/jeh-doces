@@ -6,7 +6,13 @@ import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
 import { AlertTriangle, Calendar, Download, Plus } from 'lucide-react';
 import { Order } from '../../types';
-import { api, ExpenseRecord, FinanceSummary, OperationalReport } from '../../services/api';
+import {
+  api,
+  BillingStatus,
+  ExpenseRecord,
+  FinanceSummary,
+  OperationalReport,
+} from '../../services/api';
 
 interface DashboardViewProps {
   onSelectOrder: (order: Order) => void;
@@ -19,10 +25,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNewOrder,
   onOpenSettings,
 }) => {
-  const { orders, materials, products, ingredients, setActiveTab } = useApp();
+  const { orders, materials, products, ingredients, settings, setActiveTab, showToast } = useApp();
   const [period, setPeriod] = useState<'all' | '30' | '90'>('all');
   const [finance, setFinance] = useState<FinanceSummary | null>(null);
   const [report, setReport] = useState<OperationalReport | null>(null);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [expenseDraft, setExpenseDraft] = useState({
     description: '',
@@ -43,7 +50,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   useEffect(() => {
     refreshFinance();
+    api
+      .getBilling()
+      .then(setBilling)
+      .catch(() => setBilling(null));
   }, []);
+
+  const hasCompletePlan =
+    (billing?.plan === 'monthly' || billing?.plan === 'annual') &&
+    billing.status !== 'pending' &&
+    (!billing.currentPeriodEnd || new Date(billing.currentPeriodEnd).getTime() > Date.now());
 
   const saveExpense = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -133,6 +149,60 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     link.download = `confeiti-relatorio-operacional-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const printOperationalReport = () => {
+    if (!report || !hasCompletePlan) {
+      showToast('A exportação PDF está disponível no plano Completo.', 'warning');
+      return;
+    }
+    const escapeHtml = (value: string) =>
+      value.replace(/[&<>'"]/g, (character) => {
+        const entities: Record<string, string> = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;',
+        };
+        return entities[character];
+      });
+    const list = (
+      items: { name: string; quantity: number; value: number }[],
+      valueLabel: string,
+    ) =>
+      items.length
+        ? `<table><thead><tr><th>Nome</th><th>Quantidade</th><th>${valueLabel}</th></tr></thead><tbody>${items
+            .map(
+              (item) =>
+                `<tr><td>${escapeHtml(item.name)}</td><td>${formatDecimal(item.quantity)}</td><td>${formatCurrency(item.value)}</td></tr>`,
+            )
+            .join('')}</tbody></table>`
+        : '<p>Nenhum registro no período.</p>';
+    const reportWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!reportWindow) {
+      showToast('Permita pop-ups para gerar o PDF.', 'warning');
+      return;
+    }
+    reportWindow.document.write(
+      `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório operacional - ${escapeHtml(settings.storeName)}</title><style>body{font-family:Arial,sans-serif;color:#302116;margin:40px}h1{color:#8d3157}h2{margin-top:28px;color:#6b1f3b}table{border-collapse:collapse;width:100%;margin-top:10px}th,td{border-bottom:1px solid #eadde2;padding:8px;text-align:left}th{background:#fff1e8}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{border:1px solid #eadde2;border-radius:12px;padding:12px}.value{font-size:20px;font-weight:700;color:#8d3157}@media print{body{margin:20px}}</style></head><body><h1>${escapeHtml(settings.storeName)}</h1><p>Relatório operacional · gerado em ${new Date().toLocaleString('pt-BR')}</p><div class="summary"><div class="card">Vendas<div class="value">${formatCurrency(report.salesTotal)}</div></div><div class="card">Recebido<div class="value">${formatCurrency(report.receivedTotal)}</div></div><div class="card">Lucro estimado<div class="value">${formatCurrency(report.estimatedProfit)}</div></div></div><h2>Produtos mais vendidos</h2>${list(
+        report.topProducts.map((item) => ({ ...item, value: item.revenue })),
+        'Receita',
+      )}<h2>Clientes recorrentes</h2>${list(
+        report.recurringCustomers.map((item) => ({
+          ...item,
+          quantity: item.orders,
+          value: item.revenue,
+        })),
+        'Receita',
+      )}<h2>Consumo de materiais</h2>${list(
+        report.materialConsumption.map((item) => ({ ...item, value: item.cost })),
+        'Custo',
+      )}</body></html>`,
+    );
+    reportWindow.document.close();
+    reportWindow.focus();
+    reportWindow.print();
   };
 
   const periodOrders = useMemo(() => {
@@ -450,15 +520,29 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
           </div>
           <div className="flex justify-end">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={exportOperationalReportCsv}
-              disabled={!report}
-            >
-              <Download className="h-3.5 w-3.5" /> Exportar relatório CSV
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={exportOperationalReportCsv}
+                disabled={!report}
+              >
+                <Download className="h-3.5 w-3.5" /> Exportar CSV
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={printOperationalReport}
+                disabled={!report || !hasCompletePlan}
+                title={
+                  hasCompletePlan ? 'Imprimir ou salvar como PDF' : 'Disponível no plano Completo'
+                }
+              >
+                Imprimir / PDF
+              </Button>
+            </div>
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <ReportList

@@ -26,6 +26,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 - Estoque agora é estornado ao cancelar ou reabrir encomendas que já tiveram baixa automática.
 - Baixas e estornos permanecem idempotentes e registrados no histórico de movimentações.
 
+## [1.0.58] - 2026-09-05
+
+### Adicionado
+
+- Relatório operacional imprimível e salvável como PDF para o plano Completo.
+- Exportação PDF bloqueada visualmente para empresas no plano Básico.
+
 ## [1.0.57] - 2026-09-05
 
 ### Adicionado
