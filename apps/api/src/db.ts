@@ -25,6 +25,20 @@ import { assertCanCreate } from './modules/billing/plan-limits';
 export { prisma, runForCompany };
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
 
+export function validateBackupData(data: unknown): data is DatabaseSchema {
+  if (!data || typeof data !== 'object') return false;
+  const value = data as Partial<DatabaseSchema>;
+  return (
+    Array.isArray(value.ingredients) &&
+    Array.isArray(value.materials) &&
+    Array.isArray(value.products) &&
+    Array.isArray(value.orders) &&
+    (value.stockMovements === undefined || Array.isArray(value.stockMovements)) &&
+    Boolean(value.settings) &&
+    typeof value.settings === 'object'
+  );
+}
+
 export function calculateMaterialDeductions(
   items: Array<{ productId: string; quantity: number }>,
   manualMaterials: Array<{ materialId: string; quantity: number }>,
@@ -937,6 +951,7 @@ class Database {
     ]);
   }
   async restoreAllData(data: DatabaseSchema) {
+    if (!validateBackupData(data)) throw new Error('Backup inválido: estrutura incompleta.');
     await this.clearAll();
     for (const item of data.ingredients) await this.saveIngredient(item);
     for (const item of data.materials) await this.saveMaterial(item);
