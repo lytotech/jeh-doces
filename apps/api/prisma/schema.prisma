@@ -80,6 +80,8 @@ model SubscriptionPayment {
   amount          Float
   status          String
   paidAt          DateTime?
+  refundedAt      DateTime?
+  refundId        String?
   createdAt       DateTime         @default(now())
 
   @@index([subscriptionId, createdAt])

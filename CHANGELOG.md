@@ -6,6 +6,15 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.45] - 2026-09-05
+
+### Corrigido
+
+- Sincronização de pagamentos agora envia uma requisição JSON válida ao Fastify.
+- Webhooks aprovados são conciliados mesmo quando chegam antes da gravação local.
+- Pagamentos duplicados preservam o período pago sem ativar um segundo período.
+- Histórico permite solicitar estorno de cobranças aprovadas duplicadas.
+
 ## [1.0.44] - 2026-09-05
 
 ### Corrigido

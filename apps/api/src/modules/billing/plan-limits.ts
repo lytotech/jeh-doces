@@ -11,15 +11,25 @@ export const BASIC_LIMITS = {
 
 export const canCreateWithinLimit = (currentCount: number, limit: number) => currentCount < limit;
 
+export function hasCurrentPaidPeriod(
+  subscription: {
+    plan: SubscriptionPlan;
+    status: string;
+    currentPeriodEnd: Date | null;
+  },
+  now = new Date(),
+) {
+  return (
+    subscription.plan !== SubscriptionPlan.basic &&
+    ['active', 'pending', 'canceled'].includes(subscription.status) &&
+    !!subscription.currentPeriodEnd &&
+    subscription.currentPeriodEnd > now
+  );
+}
+
 export async function isCompletePlan(companyId: string) {
   const subscription = await prisma.subscription.findUnique({ where: { companyId } });
-  return Boolean(
-    subscription &&
-    subscription.plan !== SubscriptionPlan.basic &&
-    (subscription.status === 'active' || subscription.status === 'canceled') &&
-    subscription.currentPeriodEnd &&
-    subscription.currentPeriodEnd > new Date(),
-  );
+  return Boolean(subscription && hasCurrentPaidPeriod(subscription));
 }
 
 export async function assertCanCreate(

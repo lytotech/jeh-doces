@@ -52,7 +52,8 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack }) => {
         : 'Plano Básico';
   const history = useMemo(() => billing?.payments ?? [], [billing]);
   const pendingPayments = history.filter(
-    (payment) => !['approved', 'cancelled', 'canceled', 'rejected'].includes(payment.status),
+    (payment) =>
+      !['approved', 'cancelled', 'canceled', 'rejected', 'refunded'].includes(payment.status),
   );
   const isPending = billing?.status === 'pending' || pendingPayments.length > 0;
   const isComplete = billing?.plan === 'monthly' || billing?.plan === 'annual';
@@ -119,6 +120,22 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack }) => {
       showToast('Renovação cancelada. Seu acesso continua até o fim do período.');
     } catch {
       showToast('Não foi possível cancelar a renovação.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refundPayment = async (paymentId: string) => {
+    if (
+      !window.confirm('Estornar esta cobrança aprovada? O valor será devolvido pelo Mercado Pago.')
+    )
+      return;
+    setLoading(true);
+    try {
+      setBilling(await api.refundBillingPayment(paymentId));
+      showToast('Estorno solicitado com sucesso.');
+    } catch {
+      showToast('Não foi possível estornar esta cobrança.', 'error');
     } finally {
       setLoading(false);
     }
@@ -378,18 +395,36 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack }) => {
                   key={payment.mercadoPagoId}
                   className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm"
                 >
-                  <span className="capitalize text-[#5C4533]">
-                    Plano {payment.plan} · {date(payment.createdAt)}
-                  </span>
-                  <span
-                    className={
-                      payment.status === 'approved'
-                        ? 'font-semibold text-emerald-700'
-                        : 'font-semibold text-amber-700'
-                    }
-                  >
-                    {money(payment.amount)} · {payment.status === 'approved' ? 'Pago' : 'Pendente'}
-                  </span>
+                  <div>
+                    <p className="capitalize text-[#5C4533]">
+                      Plano {payment.plan} · {date(payment.createdAt)}
+                    </p>
+                    <p
+                      className={
+                        payment.status === 'approved' || payment.status === 'refunded'
+                          ? 'font-semibold text-emerald-700'
+                          : 'font-semibold text-amber-700'
+                      }
+                    >
+                      {money(payment.amount)} ·{' '}
+                      {payment.status === 'approved'
+                        ? 'Pago'
+                        : payment.status === 'refunded'
+                          ? 'Estornado'
+                          : 'Pendente'}
+                    </p>
+                  </div>
+                  {payment.status === 'approved' &&
+                    payment.mercadoPagoId !== billing?.mercadoPagoId && (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => void refundPayment(payment.mercadoPagoId)}
+                        disabled={loading}
+                      >
+                        Estornar cobrança
+                      </Button>
+                    )}
                 </div>
               ))}
             </div>
