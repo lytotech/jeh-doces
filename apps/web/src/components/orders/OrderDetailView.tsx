@@ -15,6 +15,7 @@ import {
   ORDER_STATUS_MAP,
 } from '../../services/costEngine';
 import { generateWhatsAppStatusMessage, getWhatsAppUrl } from '../../services/whatsappExporter';
+import { api } from '../../services/api';
 import { FileText, Edit3, Plus, Trash2, Package, Cookie, Send } from 'lucide-react';
 
 interface OrderDetailViewProps {
@@ -43,7 +44,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
     setShowCancelConfirm(false);
   };
 
-  const handleNotifyCustomer = () => {
+  const handleNotifyCustomer = async () => {
     if (!order.clientPhone) {
       showToast('Cadastre um telefone para avisar o cliente pelo WhatsApp.', 'warning');
       return;
@@ -51,6 +52,18 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
 
     const url = getWhatsAppUrl(order.clientPhone, generateWhatsAppStatusMessage(order, settings));
     window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      await api.recordCommunication({
+        orderId: order.id,
+        status: order.status,
+        template: `status_${order.status}`,
+        recipient: order.clientPhone,
+      });
+    } catch {
+      showToast('WhatsApp aberto, mas não foi possível registrar o histórico.', 'warning');
+      return;
+    }
+    showToast('Aviso registrado no histórico de comunicação.', 'success');
   };
 
   return (

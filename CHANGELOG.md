@@ -26,6 +26,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 - Estoque agora é estornado ao cancelar ou reabrir encomendas que já tiveram baixa automática.
 - Baixas e estornos permanecem idempotentes e registrados no histórico de movimentações.
 
+## [1.0.53] - 2026-09-05
+
+### Adicionado
+
+- Histórico persistente dos avisos de WhatsApp por empresa e encomenda.
+- Registro do status, template, destinatário e canal de cada comunicação.
+
 ## [1.0.52] - 2026-09-05
 
 ### Adicionado

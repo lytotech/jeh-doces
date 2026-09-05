@@ -39,7 +39,7 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 - [x] Criar templates de WhatsApp por status.
 - [x] Avisar o cliente sobre o status atual com um clique.
 - [ ] Enviar lembretes de entrega e cobrança.
-- [ ] Registrar o histórico de comunicação.
+- [x] Registrar o histórico de comunicação.
 
 ### 5. Relatórios
 

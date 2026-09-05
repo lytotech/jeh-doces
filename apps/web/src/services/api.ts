@@ -413,6 +413,15 @@ export const api = {
     });
   },
 
+  async recordCommunication(data: {
+    orderId: string;
+    status: OrderStatus;
+    template: string;
+    recipient?: string;
+  }): Promise<void> {
+    await request('/communications', { method: 'POST', body: JSON.stringify(data) });
+  },
+
   // === Settings ===
   async getSettings(): Promise<AppSettings> {
     return request<AppSettings>('/settings');
