@@ -148,11 +148,30 @@ export class CommunicationsController {
     if (!['complete', 'dismiss'].includes(action)) {
       throw new BadRequestException('Ação de lembrete inválida.');
     }
-    const reminder = await prisma.automaticReminder.updateMany({
-      where: { id, companyId: getCompanyId(), status: 'pending' },
-      data: { status: action === 'complete' ? 'completed' : 'dismissed' },
+    const companyId = getCompanyId();
+    const reminder = await prisma.automaticReminder.findFirst({
+      where: { id, companyId, status: 'pending' },
+      include: { order: { select: { status: true, clientPhone: true } } },
     });
-    if (!reminder.count) throw new BadRequestException('Lembrete não encontrado.');
+    if (!reminder) throw new BadRequestException('Lembrete não encontrado.');
+    await prisma.$transaction(async (transaction) => {
+      await transaction.automaticReminder.update({
+        where: { id: reminder.id },
+        data: { status: action === 'complete' ? 'completed' : 'dismissed' },
+      });
+      if (action === 'complete') {
+        await transaction.communication.create({
+          data: {
+            companyId,
+            orderId: reminder.orderId,
+            channel: 'whatsapp',
+            template: `automatic_reminder_${reminder.kind}`,
+            status: reminder.order.status,
+            recipient: reminder.order.clientPhone,
+          },
+        });
+      }
+    });
     return { success: true };
   }
 
