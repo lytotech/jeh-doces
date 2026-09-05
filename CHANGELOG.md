@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.63] - 2026-09-05
+
+### Adicionado
+
+- Contador OpenTelemetry para falhas do provedor de pagamentos.
+- Regra de alerta ConfeitiBillingProviderFailure no Prometheus/Grafana.
+
 ## [1.0.62] - 2026-09-05
 
 ### Adicionado
