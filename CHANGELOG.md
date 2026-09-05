@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.44] - 2026-09-05
+
+### Corrigido
+
+- Links públicos passam a respeitar o período pago da assinatura, inclusive quando a renovação foi cancelada.
+- Empresas com plano ativo não conseguem criar novas cobranças Pix ou recorrentes.
+
 ## [1.0.43] - 2026-09-05
 
 ### Corrigido

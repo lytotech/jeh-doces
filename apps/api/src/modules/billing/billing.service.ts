@@ -49,6 +49,22 @@ export function isPaymentAmountValid(
   );
 }
 
+export function hasActivePaidPlan(
+  subscription: {
+    plan: SubscriptionPlan;
+    status: SubscriptionStatus;
+    currentPeriodEnd: Date | null;
+  },
+  now = new Date(),
+) {
+  return (
+    subscription.plan !== SubscriptionPlan.basic &&
+    subscription.status === SubscriptionStatus.active &&
+    !!subscription.currentPeriodEnd &&
+    subscription.currentPeriodEnd > now
+  );
+}
+
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
@@ -217,6 +233,11 @@ export class BillingService {
     }
     const plan = requestedPlan as 'monthly' | 'annual';
     const current = await this.ensureSubscription(auth.companyId);
+    if (hasActivePaidPlan(current)) {
+      throw new BadRequestException(
+        'Seu plano já está ativo. Não é necessário gerar uma nova cobrança.',
+      );
+    }
     if (current.pendingPaymentId && current.pendingPlan === plan) {
       const existing = await this.getPixPayment(current.pendingPaymentId);
       if (existing && !['cancelled', 'canceled', 'rejected'].includes(String(existing.status))) {
@@ -274,6 +295,12 @@ export class BillingService {
     if (!env.mercadoPagoAccessToken)
       throw new BadRequestException('Mercado Pago ainda não está configurado.');
     const plan = requestedPlan as 'monthly' | 'annual';
+    const current = await this.ensureSubscription(auth.companyId);
+    if (hasActivePaidPlan(current)) {
+      throw new BadRequestException(
+        'Seu plano já está ativo. Não é necessário iniciar uma nova assinatura.',
+      );
+    }
     const reference = `${auth.companyId}:${plan}:${randomUUID()}`;
     const response = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
