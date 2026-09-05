@@ -40,7 +40,7 @@ export const InstallAppPrompt: React.FC = () => {
           Acesse mais rápido pelo celular, mesmo pela tela inicial.
         </p>
         <div className="mt-3 flex gap-2">
-          <Button size="sm" onClick={() => void install}>
+          <Button size="sm" onClick={() => void install()}>
             <Download className="h-3.5 w-3.5" /> Instalar
           </Button>
           <button onClick={dismiss} className="px-2 text-xs text-[#7A6453]">
