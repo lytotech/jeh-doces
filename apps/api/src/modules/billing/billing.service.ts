@@ -29,6 +29,10 @@ export function isMercadoPagoSignatureValid(input: {
   return receivedBuffer.length === expectedBuffer.length && timingSafeEqual(receivedBuffer, expectedBuffer);
 }
 
+export function isPaymentAmountValid(payment: { transaction_amount?: unknown; currency_id?: unknown }, plan: 'monthly' | 'annual') {
+  return Number(payment.transaction_amount) === PRICES[plan] && (!payment.currency_id || payment.currency_id === 'BRL');
+}
+
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
@@ -121,16 +125,31 @@ export class BillingService {
     const payment = await response.json() as any;
     const [companyId, plan] = String(payment.external_reference || '').split(':');
     if (!companyId || !['monthly', 'annual'].includes(plan)) return;
+    if (!isPaymentAmountValid(payment, plan as 'monthly' | 'annual')) {
+      this.logger.warn(`Pagamento ${payment.id} rejeitado por valor ou moeda incompatível.`);
+      return;
+    }
     const subscription = await prisma.subscription.findUnique({ where: { companyId } });
     if (!subscription || subscription.pendingPaymentId !== String(payment.id)) return;
-    await prisma.subscriptionPayment.updateMany({ where: { mercadoPagoId: String(payment.id) }, data: { status: String(payment.status || 'pending'), paidAt: payment.status === 'approved' ? new Date() : null } });
-    if (payment.status !== 'approved') return;
+    if (payment.status !== 'approved') {
+      await prisma.subscriptionPayment.updateMany({ where: { mercadoPagoId: String(payment.id), status: { not: String(payment.status || 'pending') } }, data: { status: String(payment.status || 'pending'), paidAt: null } });
+      return;
+    }
     const end = new Date();
     if (plan === 'annual') end.setFullYear(end.getFullYear() + 1);
     else end.setMonth(end.getMonth() + 1);
-    await prisma.subscription.update({
-      where: { companyId },
-      data: { plan: plan as SubscriptionPlan, status: SubscriptionStatus.active, currentPeriodEnd: end, mercadoPagoId: String(payment.id), pendingPaymentId: null, pendingPlan: null },
+    await prisma.$transaction(async (tx) => {
+      // A atualização condicional funciona como um lock lógico: somente o primeiro
+      // webhook que encontrar a cobrança pendente pode ativar o plano.
+      const claimed = await tx.subscriptionPayment.updateMany({
+        where: { mercadoPagoId: String(payment.id), status: { not: 'approved' } },
+        data: { status: 'approved', paidAt: new Date() },
+      });
+      if (claimed.count !== 1) return;
+      await tx.subscription.updateMany({
+        where: { companyId, pendingPaymentId: String(payment.id) },
+        data: { plan: plan as SubscriptionPlan, status: SubscriptionStatus.active, currentPeriodEnd: end, mercadoPagoId: String(payment.id), pendingPaymentId: null, pendingPlan: null },
+      });
     });
   }
 
