@@ -50,8 +50,8 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 ### 6. Confiabilidade
 
 - [ ] Golden signals no Grafana: latência, tráfego, erros e saturação.
-- [ ] Logs estruturados com correlação de requisição.
-- [ ] Traces de autenticação, pedidos, estoque e billing.
+- [x] Logs estruturados com correlação de requisição.
+- [x] Traces automáticos da API via OpenTelemetry.
 - [ ] Alertas de indisponibilidade, erro e falha de pagamento.
 - [ ] Testes E2E dos fluxos críticos e backup restaurável.
 
