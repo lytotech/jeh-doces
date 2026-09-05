@@ -7,6 +7,7 @@ export interface AuthContext {
   name: string;
   email: string;
   sessionId: string;
+  companyInactive?: boolean;
 }
 
 export type AuthenticatedRequest = { auth?: AuthContext; headers: { cookie?: string } };

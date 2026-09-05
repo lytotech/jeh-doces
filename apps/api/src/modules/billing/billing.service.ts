@@ -20,16 +20,16 @@ export class BillingService {
   }
 
   async getStatus(companyId: string) {
-    const subscription = await this.ensureSubscription(companyId);
+    let subscription = await this.ensureSubscription(companyId);
     const expired = subscription.plan !== SubscriptionPlan.basic &&
       (!subscription.currentPeriodEnd || subscription.currentPeriodEnd <= new Date());
     if (expired && subscription.status !== SubscriptionStatus.past_due) {
-      return prisma.subscription.update({
+      subscription = await prisma.subscription.update({
         where: { companyId },
         data: { plan: SubscriptionPlan.basic, status: SubscriptionStatus.past_due },
       });
     }
-    return subscription;
+    return prisma.subscription.findUniqueOrThrow({ where: { id: subscription.id }, include: { payments: { orderBy: { createdAt: 'desc' }, take: 12 } } });
   }
 
   async cancelRenewal(companyId: string) {
@@ -77,6 +77,8 @@ export class BillingService {
       where: { companyId: auth.companyId },
       data: { status: SubscriptionStatus.pending, pendingPlan: plan, pendingPaymentId: String(payment.id) },
     });
+    const subscription = await prisma.subscription.findUniqueOrThrow({ where: { companyId: auth.companyId } });
+    await prisma.subscriptionPayment.create({ data: { subscriptionId: subscription.id, mercadoPagoId: String(payment.id), plan, amount: PRICES[plan], status: String(payment.status || 'pending') } });
     return {
       id: String(payment.id),
       plan,
@@ -99,6 +101,7 @@ export class BillingService {
     if (!companyId || !['monthly', 'annual'].includes(plan)) return;
     const subscription = await prisma.subscription.findUnique({ where: { companyId } });
     if (!subscription || subscription.pendingPaymentId !== String(payment.id)) return;
+    await prisma.subscriptionPayment.updateMany({ where: { mercadoPagoId: String(payment.id) }, data: { status: String(payment.status || 'pending'), paidAt: payment.status === 'approved' ? new Date() : null } });
     if (payment.status !== 'approved') return;
     const end = new Date();
     if (plan === 'annual') end.setFullYear(end.getFullYear() + 1);

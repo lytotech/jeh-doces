@@ -5,7 +5,8 @@ export interface AuthState {
   user: { id: string; name: string; email: string };
   activeCompanyId: string;
   role: CompanyRole;
-  companies: { id: string; name: string; role: CompanyRole }[];
+  companyInactive?: boolean;
+  companies: { id: string; name: string; role: CompanyRole; inactive?: boolean }[];
 }
 
 const inFlightAuthRequests = new Map<string, Promise<unknown>>();
@@ -61,6 +62,8 @@ interface AuthContextValue {
   }) => Promise<{ message: string }>;
   logout: () => Promise<void>;
   switchCompany: (companyId: string) => Promise<void>;
+  createCompany: (name: string) => Promise<void>;
+  reactivateCompany: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -111,9 +114,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await authRequest('/switch-company', { method: 'POST', body: JSON.stringify({ companyId }) });
     window.location.reload();
   };
+  const createCompany = async (name: string) => {
+    await authRequest('/companies', { method: 'POST', body: JSON.stringify({ name }) });
+    await refresh();
+  };
+  const reactivateCompany = async () => {
+    await authRequest('/reactivate-company', { method: 'POST', body: JSON.stringify({}) });
+    await refresh();
+  };
   return (
     <AuthContext.Provider
-      value={{ auth, loading, refresh, login, register, logout, switchCompany }}
+      value={{ auth, loading, refresh, login, register, logout, switchCompany, createCompany, reactivateCompany }}
     >
       {children}
     </AuthContext.Provider>

@@ -13,6 +13,7 @@ import { FastifyReply } from 'fastify';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { AuthContext, AuthenticatedRequest } from '../../common/auth.types';
 import { EmailService } from './email.service';
+import { isCompletePlan } from '../billing/plan-limits';
 
 const scrypt = promisify(crypto.scrypt);
 const SESSION_COOKIE = 'jeh_session';
@@ -83,7 +84,7 @@ export class AuthService {
     if (!token) throw new UnauthorizedException('Não autenticado.');
     const session = await this.prisma.client.session.findUnique({
       where: { tokenHash: tokenHash(token) },
-      include: { user: true },
+      include: { user: true, },
     });
     if (!session || session.expiresAt <= new Date()) {
       if (session) await this.prisma.client.session.delete({ where: { id: session.id } });
@@ -97,6 +98,7 @@ export class AuthService {
     }
     const membership = await this.prisma.client.membership.findUnique({
       where: { userId_companyId: { userId: session.userId, companyId: session.activeCompanyId } },
+      include: { company: { select: { deactivatedAt: true } } },
     });
     if (!membership) throw new ForbiddenException('Acesso à empresa removido.');
     return {
@@ -106,6 +108,7 @@ export class AuthService {
       name: session.user.name,
       email: session.user.email,
       sessionId: session.id,
+      companyInactive: Boolean(membership.company.deactivatedAt),
     };
   }
 
@@ -132,7 +135,7 @@ export class AuthService {
     const email = normalizeEmail(body.email);
     const user = await this.prisma.client.user.findUnique({
       where: { email },
-      include: { memberships: true },
+      include: { memberships: { include: { company: { select: { deactivatedAt: true } } } } },
     });
     if (!user || !(await verifyPassword(String(body.password ?? ''), user.passwordHash)))
       throw new UnauthorizedException('E-mail ou senha incorretos.');
@@ -140,7 +143,7 @@ export class AuthService {
       throw new ForbiddenException(
         'Confirme seu e-mail antes de entrar. Você pode solicitar um novo link abaixo.',
       );
-    let membership = user.memberships[0];
+    let membership: any = user.memberships.find((item) => !item.company.deactivatedAt) ?? user.memberships[0];
     const invitationToken = String(body.invitationToken ?? '');
     if (invitationToken) {
       const invitation = await this.prisma.client.invitation.findUnique({
@@ -318,13 +321,32 @@ export class AuthService {
     return {
       user: { id: auth.userId, name: auth.name, email: auth.email },
       activeCompanyId: auth.companyId,
+      companyInactive: Boolean(auth.companyInactive),
       role: auth.role,
       companies: companies.map(({ company, role }) => ({
         id: company.id,
         name: company.name,
         role,
+        inactive: Boolean(company.deactivatedAt),
       })),
     };
+  }
+
+  async createCompany(auth: AuthContext, nameValue: unknown) {
+    const name = String(nameValue ?? '').trim();
+    if (name.length < 2) throw new BadRequestException('Informe o nome da empresa.');
+    const company = await this.prisma.client.company.create({ data: { name } });
+    await this.prisma.client.membership.create({ data: { userId: auth.userId, companyId: company.id, role: 'owner' } });
+    await this.prisma.client.session.update({ where: { id: auth.sessionId }, data: { activeCompanyId: company.id } });
+    return { id: company.id, name: company.name };
+  }
+
+  async reactivateCompany(auth: AuthContext) {
+    const membership = await this.prisma.client.membership.findUnique({ where: { userId_companyId: { userId: auth.userId, companyId: auth.companyId } }, include: { company: true } });
+    if (!membership || membership.role !== 'owner') throw new ForbiddenException('Apenas o proprietário pode reativar a empresa.');
+    if (!membership.company.deactivatedAt) return { success: true };
+    await this.prisma.client.company.update({ where: { id: auth.companyId }, data: { deactivatedAt: null, deletionRequestedAt: null, deletionScheduledFor: null } });
+    return { success: true };
   }
   async switchCompany(auth: AuthContext, companyId: string) {
     if (!(await this.prisma.client.membership.count({ where: { userId: auth.userId, companyId } })))
@@ -394,6 +416,8 @@ export class AuthService {
     }));
   }
   async invite(auth: AuthContext, body: Record<string, unknown>) {
+    if (!(await isCompletePlan(auth.companyId)) && (await this.prisma.client.membership.count({ where: { companyId: auth.companyId } })) >= 1)
+      throw new ForbiddenException('O plano Básico permite apenas o proprietário. Assine o Completo para adicionar sua equipe.');
     const email = normalizeEmail(body.email);
     const role = body.role === 'admin' ? 'admin' : 'employee';
     if (!email.includes('@')) throw new BadRequestException('E-mail inválido.');

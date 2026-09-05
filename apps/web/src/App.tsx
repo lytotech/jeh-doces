@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from './context/AppContext';
+import { useAuth } from './context/AuthContext';
+import { InactiveCompanyView } from './components/account/InactiveCompanyView';
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { ToastContainer } from './components/ui/ToastContainer';
@@ -31,6 +33,7 @@ import { CustomerForm } from './components/customers/CustomerForm';
 import { CalendarView } from './components/calendar/CalendarView';
 
 export const App: React.FC = () => {
+  const { auth } = useAuth();
   const {
     activeTab,
     setActiveTab,
@@ -58,6 +61,8 @@ export const App: React.FC = () => {
   const [showTeamModal, setShowTeamModal] = useState(false);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
+
+  if (auth?.companyInactive) return <InactiveCompanyView />;
 
   // Cada tela começa no topo; evita herdar a posição de rolagem da tela anterior.
   useEffect(() => {

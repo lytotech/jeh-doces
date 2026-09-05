@@ -9,6 +9,7 @@ import { AppModule } from './nest/app.module';
 import { env } from './config/env';
 import { LegacyHttpExceptionFilter } from './common/legacy-http-exception.filter';
 import { RateLimitGuard } from './common/rate-limit.guard';
+import { prisma } from './infrastructure/database/client';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,5 +43,9 @@ export async function bootstrap() {
   await app.listen({ port: env.port, host: env.host });
   console.log(`\n🧁 CONFEITI • API NestJS + Fastify rodando na porta ${env.port}`);
   console.log(`🏠 Local: http://localhost:${env.port}`);
+  const deactivateScheduledCompanies = () => prisma.company.updateMany({ where: { deactivatedAt: null, deletionScheduledFor: { lte: new Date() } }, data: { deactivatedAt: new Date() } }).catch(() => undefined);
+  void deactivateScheduledCompanies();
+  const cleanup = setInterval(() => { void deactivateScheduledCompanies(); }, 24 * 60 * 60 * 1000);
+  cleanup.unref();
   return app;
 }

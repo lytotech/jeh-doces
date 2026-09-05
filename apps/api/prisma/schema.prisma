@@ -30,6 +30,11 @@ model Company {
   stockMovements MaterialStockMovement[]
   catalogCategories CatalogCategory[]
   subscription Subscription?
+  deletionRequestedAt DateTime?
+  deletionScheduledFor DateTime?
+  deactivatedAt DateTime?
+
+  @@index([deletionScheduledFor])
 
   @@map("companies")
 }
@@ -57,11 +62,27 @@ model Subscription {
   mercadoPagoId     String?
   pendingPaymentId  String?
   pendingPlan       SubscriptionPlan?
+  payments          SubscriptionPayment[]
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
   @@index([status, currentPeriodEnd])
   @@map("subscriptions")
+}
+
+model SubscriptionPayment {
+  id              String           @id @default(cuid())
+  subscriptionId  String
+  subscription    Subscription     @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  mercadoPagoId   String           @unique
+  plan            SubscriptionPlan
+  amount          Float
+  status          String
+  paidAt          DateTime?
+  createdAt       DateTime         @default(now())
+
+  @@index([subscriptionId, createdAt])
+  @@map("subscription_payments")
 }
 
 enum CatalogCategoryType {

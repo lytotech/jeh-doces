@@ -20,6 +20,7 @@ import {
   initialSettings,
 } from '@jeh-doces/shared';
 import { getCompanyId, prisma, runForCompany } from './infrastructure/database/client';
+import { assertCanCreate } from './modules/billing/plan-limits';
 
 export { prisma, runForCompany };
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
@@ -231,6 +232,7 @@ class Database {
     };
     let row: IngredientRow;
     const companyId = this.companyId();
+    if (!data.id || !(await prisma.ingredient.count({ where: { id: data.id, companyId } }))) await assertCanCreate(companyId, 'ingredients', await prisma.ingredient.count({ where: { companyId } }));
     const subIngredientIds = [
       ...new Set((data.subIngredients ?? []).map((item) => item.ingredientId)),
     ];
@@ -369,6 +371,7 @@ class Database {
   async saveMaterial(data: Partial<Material>) {
     const companyId = this.companyId();
     const category = data.category?.trim() || 'Geral';
+    if (!data.id || !(await prisma.material.count({ where: { id: data.id, companyId } }))) await assertCanCreate(companyId, 'materials', await prisma.material.count({ where: { companyId } }));
     await prisma.catalogCategory.upsert({
       where: { companyId_type_name: { companyId, type: 'material', name: category } },
       create: { companyId, type: 'material', name: category },
@@ -450,6 +453,7 @@ class Database {
     };
     const companyId = this.companyId();
     const category = data.category?.trim() || 'Geral';
+    if (!data.id || !(await prisma.product.count({ where: { id: data.id, companyId } }))) await assertCanCreate(companyId, 'products', await prisma.product.count({ where: { companyId } }));
     await prisma.catalogCategory.upsert({
       where: { companyId_type_name: { companyId, type: 'product', name: category } },
       create: { companyId, type: 'product', name: category },
@@ -706,6 +710,12 @@ class Database {
       )
         throw new Error('Material relacionado inválido para esta empresa.');
       const exists = data.id ? await tx.order.count({ where: { id: data.id, companyId } }) : 0;
+      if (!exists) {
+        const start = new Date();
+        start.setDate(1); start.setHours(0, 0, 0, 0);
+        const ordersThisMonth = await tx.order.count({ where: { companyId, createdAt: { gte: start } } });
+        await assertCanCreate(companyId, 'ordersPerMonth', ordersThisMonth);
+      }
       const orderNumber = exists
         ? (
             await tx.order.findUniqueOrThrow({

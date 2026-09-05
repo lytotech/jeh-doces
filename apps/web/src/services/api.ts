@@ -34,6 +34,7 @@ export interface BillingStatus {
   plan: 'basic' | 'monthly' | 'annual';
   status: 'active' | 'pending' | 'past_due' | 'canceled';
   currentPeriodEnd: string | null;
+  payments?: { mercadoPagoId: string; plan: 'monthly' | 'annual'; amount: number; status: string; paidAt: string | null; createdAt: string }[];
 }
 
 export interface PixPayment {
@@ -44,6 +45,12 @@ export interface PixPayment {
   qrCode: string | null;
   qrCodeBase64: string | null;
   ticketUrl: string | null;
+}
+
+export interface AccountDeletionStatus {
+  deletionRequestedAt: string | null;
+  deletionScheduledFor: string | null;
+  deactivatedAt: string | null;
 }
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -96,6 +103,9 @@ export const api = {
   async cancelBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing/subscription', { method: 'DELETE' });
   },
+  async getDeletionStatus(): Promise<AccountDeletionStatus> { return request<AccountDeletionStatus>('/account/deletion'); },
+  async requestDeletion(): Promise<AccountDeletionStatus> { return request<AccountDeletionStatus>('/account/deletion', { method: 'POST', body: JSON.stringify({}) }); },
+  async cancelDeletion(): Promise<AccountDeletionStatus> { return request<AccountDeletionStatus>('/account/deletion', { method: 'DELETE' }); },
   async getCommitments(): Promise<Commitment[]> {
     return request<Commitment[]>('/commitments');
   },

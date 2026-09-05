@@ -1,0 +1,12 @@
+import React from 'react';
+import { Archive, Plus, RotateCcw } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+
+export function InactiveCompanyView() {
+  const { auth, reactivateCompany, createCompany, logout } = useAuth();
+  const [newName, setNewName] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const [error, setError] = React.useState('');
+  const run = async (action: () => Promise<void>) => { setBusy(true); setError(''); try { await action(); } catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível concluir.'); } finally { setBusy(false); } };
+  return <main className="flex min-h-screen items-center justify-center bg-[#FAF7F2] p-5"><div className="w-full max-w-lg rounded-[2rem] border border-[#E8DECF] bg-white p-7 text-center shadow-xl"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F7E5EA] text-[#8D3157]"><Archive /></div><h1 className="mt-5 text-2xl font-bold text-[#2E2A3D]">Empresa inativa</h1><p className="mt-2 text-sm leading-6 text-[#756878]">A empresa <strong>{auth?.companies.find((company) => company.id === auth.activeCompanyId)?.name}</strong> está inativa. Você pode recuperar os dados antigos ou começar uma nova empresa vazia.</p><div className="mt-6 grid gap-3"><button disabled={busy} onClick={() => void run(reactivateCompany)} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#8D3157] px-4 py-3 font-bold text-white"><RotateCcw size={17} /> Reativar empresa e recuperar dados</button><div className="rounded-2xl border border-[#E8DECF] bg-[#FCFAF7] p-4 text-left"><p className="flex items-center gap-2 text-sm font-bold text-[#2E2A3D]"><Plus size={17} /> Criar nova empresa</p><p className="mt-1 text-xs text-[#756878]">A nova empresa começa vazia e não altera os dados antigos.</p><div className="mt-3 flex gap-2"><input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="Nome da nova empresa" className="min-w-0 flex-1 rounded-xl border border-[#E5DACD] bg-white px-3 py-2 text-sm" /><button disabled={busy || newName.trim().length < 2} onClick={() => void run(() => createCompany(newName.trim()))} className="rounded-xl bg-[#6B1F3B] px-3 py-2 text-xs font-bold text-white">Criar</button></div></div></div>{error && <p className="mt-4 rounded-xl bg-rose-50 p-3 text-xs text-rose-700">{error}</p>}<button onClick={() => void logout()} className="mt-5 text-xs font-semibold text-[#8D3157] underline">Sair</button></div></main>;
+}

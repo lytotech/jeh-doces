@@ -67,6 +67,10 @@ export class AuthController {
     return this.service.switchCompany(auth, companyId);
   }
   @UseGuards(AuthGuard)
+  @Post('companies') createCompany(@CurrentUser() auth: AuthContext, @Body('name') name: string) { return this.service.createCompany(auth, name); }
+  @UseGuards(AuthGuard)
+  @Post('reactivate-company') reactivateCompany(@CurrentUser() auth: AuthContext) { return this.service.reactivateCompany(auth); }
+  @UseGuards(AuthGuard)
   @Get('members')
   members(@CurrentUser() auth: AuthContext) {
     return this.service.members(auth);
