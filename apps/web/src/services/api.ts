@@ -103,6 +103,9 @@ export const api = {
   async syncBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing/sync', { method: 'POST' });
   },
+  async cancelPendingBilling(): Promise<BillingStatus> {
+    return request<BillingStatus>('/billing/pending-payment', { method: 'DELETE' });
+  },
   async createPixPayment(plan: 'monthly' | 'annual'): Promise<PixPayment> {
     return request<PixPayment>('/billing/pix', { method: 'POST', body: JSON.stringify({ plan }) });
   },

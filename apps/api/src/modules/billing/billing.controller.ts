@@ -30,6 +30,9 @@ export class BillingController {
   @Post('sync') sync(@CurrentUser() auth: AuthContext) { return this.billing.syncPendingPayment(auth.companyId); }
 
   @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
+  @Delete('pending-payment') cancelPendingPayment(@CurrentUser() auth: AuthContext) { return this.billing.cancelPendingPayment(auth.companyId); }
+
+  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
   @Post('pix') createPix(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
     return this.billing.createPixPayment(auth, plan);
   }

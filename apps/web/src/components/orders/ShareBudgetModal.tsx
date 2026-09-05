@@ -39,8 +39,13 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({ order, isOpe
       setShareUrl(url);
       await navigator.clipboard.writeText(url);
       showToast('Link do pedido copiado!');
-    } catch {
-      showToast('Não foi possível gerar o link.', 'error');
+    } catch (error) {
+      showToast(
+        error instanceof Error && error.message.includes('Links públicos')
+          ? 'Links públicos estão disponíveis no plano Completo.'
+          : 'Não foi possível gerar o link.',
+        'error',
+      );
     }
   };
 

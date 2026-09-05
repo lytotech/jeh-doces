@@ -68,6 +68,36 @@ export class BillingService {
     return this.getStatus(companyId);
   }
 
+  async cancelPendingPayment(companyId: string) {
+    const subscription = await this.ensureSubscription(companyId);
+    const paymentId = subscription.pendingPaymentId;
+    if (!paymentId) throw new BadRequestException('Não existe cobrança pendente para cancelar.');
+
+    if (env.mercadoPagoAccessToken) {
+      const response = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${env.mercadoPagoAccessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (!response.ok) {
+        this.logger.error(`Não foi possível cancelar a cobrança Pix (${response.status}).`);
+        throw new BadRequestException('Não foi possível cancelar a cobrança. Tente novamente.');
+      }
+    }
+
+    await prisma.$transaction([
+      prisma.subscriptionPayment.updateMany({
+        where: { mercadoPagoId: paymentId, status: { not: 'approved' } },
+        data: { status: 'cancelled', paidAt: null },
+      }),
+      prisma.subscription.update({
+        where: { companyId },
+        data: { status: SubscriptionStatus.canceled, pendingPaymentId: null, pendingPlan: null },
+      }),
+    ]);
+    return this.getStatus(companyId);
+  }
+
   async cancelRenewal(companyId: string) {
     const subscription = await this.ensureSubscription(companyId);
     if (subscription.plan === SubscriptionPlan.basic || !subscription.currentPeriodEnd || subscription.currentPeriodEnd <= new Date()) {
