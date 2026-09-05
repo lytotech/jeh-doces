@@ -6,6 +6,12 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.64] - 2026-09-05
+
+### Adicionado
+
+- Gates de CI para as suítes de billing, finanças, estoque, conta e backup.
+
 ## [1.0.63] - 2026-09-05
 
 ### Adicionado
