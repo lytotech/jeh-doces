@@ -95,6 +95,31 @@ export interface FinanceSummary {
   ordersCount: number;
 }
 
+export interface OperationalReport {
+  from: string;
+  to: string;
+  salesTotal: number;
+  receivedTotal: number;
+  receivableTotal: number;
+  estimatedCost: number;
+  estimatedProfit: number;
+  marginPercent: number;
+  ordersCount: number;
+  topProducts: { name: string; quantity: number; revenue: number }[];
+  recurringCustomers: { name: string; orders: number; revenue: number }[];
+  materialConsumption: { name: string; quantity: number; cost: number }[];
+}
+
+export interface CommunicationRecord {
+  id: string;
+  orderId: string;
+  channel: string;
+  template: string;
+  status: OrderStatus;
+  recipient?: string | null;
+  createdAt: string;
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -367,6 +392,14 @@ export const api = {
     return request<FinanceSummary>(`/finance/summary${query ? `?${query}` : ''}`);
   },
 
+  async getOperationalReport(from?: string, to?: string): Promise<OperationalReport> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return request<OperationalReport>(`/finance/report${query ? `?${query}` : ''}`);
+  },
+
   async createOrderShareLink(id: string): Promise<{ token: string }> {
     return request<{ token: string }>(`/orders/${id}/share-link`, {
       method: 'POST',
@@ -411,6 +444,19 @@ export const api = {
     return request<Order>(`/orders/${orderId}/payments/${paymentId}`, {
       method: 'DELETE',
     });
+  },
+
+  async recordCommunication(data: {
+    orderId: string;
+    status: OrderStatus;
+    template: string;
+    recipient?: string;
+  }): Promise<void> {
+    await request('/communications', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async getCommunications(orderId: string): Promise<CommunicationRecord[]> {
+    return request<CommunicationRecord[]>(`/communications/orders/${encodeURIComponent(orderId)}`);
   },
 
   // === Settings ===
