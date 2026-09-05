@@ -17,4 +17,5 @@ export const env = {
   appUrl: process.env.APP_URL || 'http://localhost:5173',
   mercadoPagoAccessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
   mercadoPagoWebhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || '',
+  mercadoPagoWebhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET || '',
 };

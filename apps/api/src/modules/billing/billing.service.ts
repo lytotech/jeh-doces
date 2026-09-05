@@ -1,11 +1,33 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { prisma } from '../../infrastructure/database/client';
 import { env } from '../../config/env';
 import { AuthContext } from '../../common/auth.types';
 
 const PRICES: Record<'monthly' | 'annual', number> = { monthly: 19.8, annual: 179.8 };
+
+export function isMercadoPagoSignatureValid(input: {
+  signature: string | undefined;
+  requestId: string | undefined;
+  dataId: string;
+  nowMs?: number;
+  secret: string;
+}) {
+  if (!input.signature || !input.requestId || !input.secret) return false;
+  const values = Object.fromEntries(input.signature.split(',').map((part) => {
+    const [key, ...value] = part.trim().split('=');
+    return [key, value.join('=')];
+  }));
+  const timestamp = Number(values.ts);
+  const received = values.v1;
+  if (!Number.isFinite(timestamp) || !received || Math.abs((input.nowMs ?? Date.now()) - timestamp * 1000) > 5 * 60 * 1000) return false;
+  const manifest = `id:${input.dataId};request-id:${input.requestId};ts:${values.ts};`;
+  const expected = createHmac('sha256', input.secret).update(manifest).digest('hex');
+  const receivedBuffer = Buffer.from(received, 'utf8');
+  const expectedBuffer = Buffer.from(expected, 'utf8');
+  return receivedBuffer.length === expectedBuffer.length && timingSafeEqual(receivedBuffer, expectedBuffer);
+}
 
 @Injectable()
 export class BillingService {
@@ -110,5 +132,13 @@ export class BillingService {
       where: { companyId },
       data: { plan: plan as SubscriptionPlan, status: SubscriptionStatus.active, currentPeriodEnd: end, mercadoPagoId: String(payment.id), pendingPaymentId: null, pendingPlan: null },
     });
+  }
+
+  validateWebhookSignature(signature: string | undefined, requestId: string | undefined, dataId: string) {
+    if (!env.mercadoPagoWebhookSecret) {
+      this.logger.warn('MERCADOPAGO_WEBHOOK_SECRET não configurado; webhook aceito sem validação de assinatura.');
+      return true;
+    }
+    return isMercadoPagoSignatureValid({ signature, requestId, dataId, secret: env.mercadoPagoWebhookSecret });
   }
 }

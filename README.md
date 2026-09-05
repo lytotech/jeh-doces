@@ -124,7 +124,14 @@ SMTP_PORT=587
 SMTP_USER=usuario
 SMTP_PASSWORD=segredo
 SMTP_FROM=Jeh Doces <no-reply@example.com>
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-...
+MERCADOPAGO_WEBHOOK_URL=https://confeiti.com.br/api/billing/webhook
+MERCADOPAGO_WEBHOOK_SECRET=chave-secreta-do-painel
 ```
+
+Configure `MERCADOPAGO_WEBHOOK_SECRET` com a chave secreta exibida no painel de
+notificações do Mercado Pago. Quando preenchida, a API valida a assinatura
+`x-signature` e rejeita notificações adulteradas ou antigas.
 
 `APP_URL` também determina se o cookie de sessão será marcado como `Secure`:
 use uma URL `https://` no acesso público e a URL HTTP da LAN apenas durante a
