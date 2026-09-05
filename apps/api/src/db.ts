@@ -24,6 +24,28 @@ import { assertCanCreate } from './modules/billing/plan-limits';
 
 export { prisma, runForCompany };
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
+
+export function calculateMaterialDeductions(
+  items: Array<{ productId: string; quantity: number }>,
+  manualMaterials: Array<{ materialId: string; quantity: number }>,
+  productMaterials: Array<{ productId: string; materialId: string; quantity: number }>,
+) {
+  const deductions = new Map<string, number>();
+  for (const item of manualMaterials) {
+    deductions.set(item.materialId, (deductions.get(item.materialId) ?? 0) + item.quantity);
+  }
+  for (const item of items) {
+    for (const material of productMaterials.filter(
+      (candidate) => candidate.productId === item.productId,
+    )) {
+      deductions.set(
+        material.materialId,
+        (deductions.get(material.materialId) ?? 0) + material.quantity * item.quantity,
+      );
+    }
+  }
+  return deductions;
+}
 const ingredientInclude = {
   priceHistory: { orderBy: { date: 'desc' as const } },
   subIngredients: true,
@@ -232,7 +254,12 @@ class Database {
     };
     let row: IngredientRow;
     const companyId = this.companyId();
-    if (!data.id || !(await prisma.ingredient.count({ where: { id: data.id, companyId } }))) await assertCanCreate(companyId, 'ingredients', await prisma.ingredient.count({ where: { companyId } }));
+    if (!data.id || !(await prisma.ingredient.count({ where: { id: data.id, companyId } })))
+      await assertCanCreate(
+        companyId,
+        'ingredients',
+        await prisma.ingredient.count({ where: { companyId } }),
+      );
     const subIngredientIds = [
       ...new Set((data.subIngredients ?? []).map((item) => item.ingredientId)),
     ];
@@ -327,12 +354,15 @@ class Database {
       select: { name: true },
     });
     const companyId = this.companyId();
-    return Promise.all(categories.map(async ({ name }) => ({
-      name,
-      itemCount: type === 'product'
-        ? await prisma.product.count({ where: { companyId, category: name } })
-        : await prisma.material.count({ where: { companyId, category: name } }),
-    })));
+    return Promise.all(
+      categories.map(async ({ name }) => ({
+        name,
+        itemCount:
+          type === 'product'
+            ? await prisma.product.count({ where: { companyId, category: name } })
+            : await prisma.material.count({ where: { companyId, category: name } }),
+      })),
+    );
   }
   async renameCatalogCategory(type: 'product' | 'material', name: string, newName: string) {
     const companyId = this.companyId();
@@ -352,17 +382,25 @@ class Database {
       }
       await tx.catalogCategory.update({ where: { id: existing.id }, data: { name: category } });
     });
-    return { name: category, itemCount: type === 'product'
-      ? await prisma.product.count({ where: { companyId, category } })
-      : await prisma.material.count({ where: { companyId, category } }) };
+    return {
+      name: category,
+      itemCount:
+        type === 'product'
+          ? await prisma.product.count({ where: { companyId, category } })
+          : await prisma.material.count({ where: { companyId, category } }),
+    };
   }
   async deleteCatalogCategory(type: 'product' | 'material', name: string) {
     const companyId = this.companyId();
-    const itemCount = type === 'product'
-      ? await prisma.product.count({ where: { companyId, category: name } })
-      : await prisma.material.count({ where: { companyId, category: name } });
+    const itemCount =
+      type === 'product'
+        ? await prisma.product.count({ where: { companyId, category: name } })
+        : await prisma.material.count({ where: { companyId, category: name } });
     if (itemCount > 0) throw new Error('A categoria ainda possui itens vinculados.');
-    return { success: (await prisma.catalogCategory.deleteMany({ where: { companyId, type, name } })).count > 0 };
+    return {
+      success:
+        (await prisma.catalogCategory.deleteMany({ where: { companyId, type, name } })).count > 0,
+    };
   }
   async getMaterialById(id: string) {
     const row = await prisma.material.findFirst({ where: { id, companyId: this.companyId() } });
@@ -371,7 +409,12 @@ class Database {
   async saveMaterial(data: Partial<Material>) {
     const companyId = this.companyId();
     const category = data.category?.trim() || 'Geral';
-    if (!data.id || !(await prisma.material.count({ where: { id: data.id, companyId } }))) await assertCanCreate(companyId, 'materials', await prisma.material.count({ where: { companyId } }));
+    if (!data.id || !(await prisma.material.count({ where: { id: data.id, companyId } })))
+      await assertCanCreate(
+        companyId,
+        'materials',
+        await prisma.material.count({ where: { companyId } }),
+      );
     await prisma.catalogCategory.upsert({
       where: { companyId_type_name: { companyId, type: 'material', name: category } },
       create: { companyId, type: 'material', name: category },
@@ -453,7 +496,12 @@ class Database {
     };
     const companyId = this.companyId();
     const category = data.category?.trim() || 'Geral';
-    if (!data.id || !(await prisma.product.count({ where: { id: data.id, companyId } }))) await assertCanCreate(companyId, 'products', await prisma.product.count({ where: { companyId } }));
+    if (!data.id || !(await prisma.product.count({ where: { id: data.id, companyId } })))
+      await assertCanCreate(
+        companyId,
+        'products',
+        await prisma.product.count({ where: { companyId } }),
+      );
     await prisma.catalogCategory.upsert({
       where: { companyId_type_name: { companyId, type: 'product', name: category } },
       create: { companyId, type: 'product', name: category },
@@ -648,29 +696,29 @@ class Database {
       (await prisma.customer.deleteMany({ where: { id, companyId: this.companyId() } })).count > 0
     );
   }
-  private async decrementInventory(tx: Prisma.TransactionClient, id: string) {
+  private async adjustInventory(tx: Prisma.TransactionClient, id: string, direction: 1 | -1) {
     const order = await tx.order.findUnique({
       where: { id },
       include: { items: true, materials: true },
     });
-    if (!order || order.stockDecremented) return;
-    const deductions = new Map<string, number>();
-    for (const item of order.materials)
-      deductions.set(item.materialId, (deductions.get(item.materialId) ?? 0) + item.quantity);
-    for (const item of order.items) {
-      for (const material of await tx.productMaterial.findMany({
-        where: { productId: item.productId },
-      })) {
-        deductions.set(
-          material.materialId,
-          (deductions.get(material.materialId) ?? 0) + material.quantity * item.quantity,
-        );
-      }
-    }
+    if (
+      !order ||
+      (direction === -1 && order.stockDecremented) ||
+      (direction === 1 && !order.stockDecremented)
+    )
+      return;
+    const productIds = [...new Set(order.items.map((item) => item.productId))];
+    const productMaterials = productIds.length
+      ? await tx.productMaterial.findMany({ where: { productId: { in: productIds } } })
+      : [];
+    const deductions = calculateMaterialDeductions(order.items, order.materials, productMaterials);
     for (const [materialId, quantity] of deductions) {
       const material = await tx.material.findUnique({ where: { id: materialId } });
       if (material?.trackStock) {
-        const stockAfter = Math.max(0, material.stockQuantity - quantity);
+        const stockAfter =
+          direction === -1
+            ? Math.max(0, material.stockQuantity - quantity)
+            : material.stockQuantity + quantity;
         await tx.material.update({
           where: { id: materialId },
           data: { stockQuantity: stockAfter },
@@ -682,12 +730,12 @@ class Database {
             quantityDelta: stockAfter - material.stockQuantity,
             stockBefore: material.stockQuantity,
             stockAfter,
-            reason: `Baixa automática · encomenda ${order.orderNumber}`,
+            reason: `${direction === -1 ? 'Baixa automática' : 'Estorno de baixa'} · encomenda ${order.orderNumber}`,
           },
         });
       }
     }
-    await tx.order.update({ where: { id }, data: { stockDecremented: true } });
+    await tx.order.update({ where: { id }, data: { stockDecremented: direction === -1 } });
   }
   async saveOrder(data: Partial<Order>) {
     return prisma.$transaction(async (tx) => {
@@ -712,8 +760,11 @@ class Database {
       const exists = data.id ? await tx.order.count({ where: { id: data.id, companyId } }) : 0;
       if (!exists) {
         const start = new Date();
-        start.setDate(1); start.setHours(0, 0, 0, 0);
-        const ordersThisMonth = await tx.order.count({ where: { companyId, createdAt: { gte: start } } });
+        start.setDate(1);
+        start.setHours(0, 0, 0, 0);
+        const ordersThisMonth = await tx.order.count({
+          where: { companyId, createdAt: { gte: start } },
+        });
         await assertCanCreate(companyId, 'ordersPerMonth', ordersThisMonth);
       }
       const orderNumber = exists
@@ -753,7 +804,8 @@ class Database {
             },
           });
       if (activeStatuses.includes((data.status ?? 'orcamento') as OrderStatus))
-        await this.decrementInventory(tx, row.id);
+        await this.adjustInventory(tx, row.id, -1);
+      else await this.adjustInventory(tx, row.id, 1);
       return mapOrder(
         await tx.order.findUniqueOrThrow({ where: { id: row.id }, include: orderInclude }),
       );
@@ -768,7 +820,8 @@ class Database {
     return prisma.$transaction(async (tx) => {
       if (!(await tx.order.count({ where: { id, companyId: this.companyId() } }))) return null;
       await tx.order.update({ where: { id }, data: { status: status as PrismaOrderStatus } });
-      if (activeStatuses.includes(status)) await this.decrementInventory(tx, id);
+      if (activeStatuses.includes(status)) await this.adjustInventory(tx, id, -1);
+      else await this.adjustInventory(tx, id, 1);
       return mapOrder(await tx.order.findUniqueOrThrow({ where: { id }, include: orderInclude }));
     });
   }
@@ -799,10 +852,17 @@ class Database {
 
   async getSettings(): Promise<AppSettings> {
     const companyId = this.companyId();
-    const company = await prisma.company.findUnique({ where: { id: companyId }, select: { name: true } });
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: { name: true },
+    });
     const row = await prisma.setting.upsert({
       where: { companyId },
-      create: { companyId, ...initialSettings, storeName: company?.name?.trim() || initialSettings.storeName },
+      create: {
+        companyId,
+        ...initialSettings,
+        storeName: company?.name?.trim() || initialSettings.storeName,
+      },
       update: {},
     });
     return {

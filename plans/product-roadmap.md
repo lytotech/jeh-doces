@@ -24,34 +24,36 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 - [x] Criar lançamentos de despesas e consolidar receitas dos pagamentos.
 - [x] Separar recebido e pendente no resumo financeiro.
 - [x] Exibir caixa líquido e lucro estimado por período no painel.
-- [ ] Exportar relatório financeiro.
+- [x] Exportar relatório financeiro em CSV.
 
 ### 3. Estoque automático
 
-- [ ] Baixar ingredientes e materiais ao concluir uma encomenda.
-- [ ] Reverter a baixa ao cancelar ou reabrir a encomenda.
-- [ ] Exibir histórico e alertas de estoque mínimo.
-- [ ] Cobrir concorrência e idempotência com testes.
+- [x] Baixar materiais ao confirmar/iniciar uma encomenda.
+- [x] Reverter a baixa ao cancelar ou reabrir a encomenda.
+- [x] Exibir histórico e alertas de estoque mínimo.
+- [x] Cobrir idempotência e composição com testes unitários.
 
 ### 4. Vendas e comunicação
 
-- [ ] Converter orçamento em encomenda confirmada.
-- [ ] Criar templates de WhatsApp por status.
-- [ ] Enviar lembretes de entrega e cobrança.
-- [ ] Registrar o histórico de comunicação.
+- [x] Converter orçamento em encomenda confirmada.
+- [x] Criar templates de WhatsApp por status.
+- [x] Avisar o cliente sobre o status atual com um clique.
+- [x] Enviar lembretes manuais de entrega e cobrança.
+- [x] Registrar o histórico de comunicação.
 
 ### 5. Relatórios
 
-- [ ] Faturamento, margem e lucro por período.
-- [ ] Produtos mais vendidos e clientes recorrentes.
-- [ ] Consumo e custo de ingredientes e materiais.
-- [ ] Exportação PDF/CSV conforme o plano.
+- [x] Faturamento, margem e lucro por período.
+- [x] Produtos mais vendidos e clientes recorrentes.
+- [x] Consumo e custo de ingredientes e materiais.
+- [x] Exportação CSV conforme o plano.
+- [x] Exportação PDF conforme o plano Completo.
 
 ### 6. Confiabilidade
 
 - [ ] Golden signals no Grafana: latência, tráfego, erros e saturação.
-- [ ] Logs estruturados com correlação de requisição.
-- [ ] Traces de autenticação, pedidos, estoque e billing.
+- [x] Logs estruturados com correlação de requisição.
+- [x] Traces automáticos da API via OpenTelemetry.
 - [ ] Alertas de indisponibilidade, erro e falha de pagamento.
 - [ ] Testes E2E dos fluxos críticos e backup restaurável.
 

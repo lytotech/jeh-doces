@@ -24,6 +24,7 @@ model Company {
   materials   Material[]
   products    Product[]
   orders      Order[]
+  communications Communication[]
   setting     Setting?
   customers   Customer[]
   commitments Commitment[]
@@ -380,6 +381,7 @@ model Order {
   items               OrderItem[]
   materials           OrderMaterial[]
   payments            Payment[]
+  communications      Communication[]
 
   @@map("orders")
   @@unique([companyId, orderNumber])
@@ -456,6 +458,23 @@ model Payment {
   createdAt DateTime      @default(now())
 
   @@map("payments")
+}
+
+model Communication {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  channel   String
+  template  String
+  status    OrderStatus
+  recipient String?
+  createdAt DateTime @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([companyId, orderId, createdAt])
+  @@map("communications")
 }
 
 model Setting {
