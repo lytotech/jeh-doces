@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
@@ -6,6 +6,7 @@ import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
 import { AlertTriangle, Calendar, Plus } from 'lucide-react';
 import { Order } from '../../types';
+import { api, ExpenseRecord, FinanceSummary } from '../../services/api';
 
 interface DashboardViewProps {
   onSelectOrder: (order: Order) => void;
@@ -20,6 +21,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const { orders, materials, products, ingredients, setActiveTab } = useApp();
   const [period, setPeriod] = useState<'all' | '30' | '90'>('all');
+  const [finance, setFinance] = useState<FinanceSummary | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [expenseDraft, setExpenseDraft] = useState({
+    description: '',
+    category: 'Outros',
+    amount: '',
+    occurredAt: new Date().toISOString().slice(0, 10),
+  });
+  const [savingExpense, setSavingExpense] = useState(false);
+
+  const refreshFinance = () =>
+    Promise.all([api.getFinanceSummary(), api.getExpenses()])
+      .then(([summary, items]) => {
+        setFinance(summary);
+        setExpenses(items);
+      })
+      .catch(() => undefined);
+
+  useEffect(() => {
+    refreshFinance();
+  }, []);
+
+  const saveExpense = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!expenseDraft.description.trim() || Number(expenseDraft.amount) <= 0) return;
+    setSavingExpense(true);
+    try {
+      await api.saveExpense({
+        description: expenseDraft.description,
+        category: expenseDraft.category,
+        amount: Number(expenseDraft.amount),
+        occurredAt: expenseDraft.occurredAt,
+      });
+      setExpenseDraft({
+        description: '',
+        category: 'Outros',
+        amount: '',
+        occurredAt: new Date().toISOString().slice(0, 10),
+      });
+      refreshFinance();
+    } finally {
+      setSavingExpense(false);
+    }
+  };
+
+  const removeExpense = async (id: string) => {
+    await api.deleteExpense(id);
+    refreshFinance();
+  };
 
   const periodOrders = useMemo(() => {
     const activeOrders = orders.filter((order) => order.status !== 'cancelado');
@@ -72,7 +122,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         title="Painel & Relatórios"
         onOpenSettings={onOpenSettings}
         rightAction={
-          <Button size="sm" onClick={onNewOrder} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+          <Button
+            size="sm"
+            onClick={onNewOrder}
+            className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]"
+          >
             <Plus className="w-4 h-4" /> Nova Encomenda
           </Button>
         }
@@ -191,6 +245,127 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
         </div>
+
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-7">
+            <div className="flex items-center justify-between px-1">
+              <div>
+                <h3 className="text-base font-bold text-[#302116]">Controle financeiro</h3>
+                <p className="text-xs text-[#7A6453]">Resumo do caixa e das despesas deste mês.</p>
+              </div>
+              <span className="rounded-full bg-[#F6ECE0] px-3 py-1 text-xs font-semibold text-[#96642F]">
+                {finance?.ordersCount ?? 0} encomendas
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                ['Recebido', finance?.receivedTotal ?? 0, 'text-emerald-700'],
+                ['A receber', finance?.receivableTotal ?? 0, 'text-amber-700'],
+                ['Despesas', finance?.expensesTotal ?? 0, 'text-red-700'],
+                ['Caixa líquido', finance?.netCash ?? 0, 'text-[#96642F]'],
+              ].map(([label, value, color]) => (
+                <div
+                  key={String(label)}
+                  className="rounded-2xl border border-[#E5DACD] bg-white p-3 shadow-xs"
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#8A7565]">
+                    {label}
+                  </span>
+                  <strong className={`mt-1 block text-lg ${color}`}>
+                    {formatCurrency(Number(value))}
+                  </strong>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-[#E5DACD] bg-white p-4 shadow-xs">
+              <h4 className="mb-3 text-sm font-bold text-[#302116]">Despesas recentes</h4>
+              {expenses.length === 0 ? (
+                <p className="text-xs text-[#8A7565]">Nenhuma despesa lançada neste mês.</p>
+              ) : (
+                <div className="space-y-2">
+                  {expenses.slice(0, 5).map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="flex items-center justify-between gap-3 border-b border-[#F2ECE1] pb-2 text-xs last:border-0 last:pb-0"
+                    >
+                      <span className="min-w-0 truncate text-[#5C4533]">
+                        {expense.description}{' '}
+                        <em className="not-italic text-[#A89484]">· {expense.category}</em>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2 font-semibold text-red-700">
+                        {formatCurrency(expense.amount)}
+                        <button
+                          type="button"
+                          onClick={() => void removeExpense(expense.id)}
+                          className="text-[10px] text-[#A89484] hover:text-red-700"
+                        >
+                          Excluir
+                        </button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <form
+            onSubmit={saveExpense}
+            className="space-y-3 rounded-3xl border border-[#E5DACD] bg-white p-5 shadow-xs lg:col-span-5"
+          >
+            <div>
+              <h3 className="text-base font-bold text-[#302116]">Adicionar despesa</h3>
+              <p className="text-xs text-[#7A6453]">Registre compras e custos fora da encomenda.</p>
+            </div>
+            <input
+              value={expenseDraft.description}
+              onChange={(event) =>
+                setExpenseDraft({ ...expenseDraft, description: event.target.value })
+              }
+              placeholder="Descrição"
+              className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={expenseDraft.amount}
+                onChange={(event) =>
+                  setExpenseDraft({ ...expenseDraft, amount: event.target.value })
+                }
+                placeholder="Valor"
+                className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+              />
+              <input
+                type="date"
+                value={expenseDraft.occurredAt}
+                onChange={(event) =>
+                  setExpenseDraft({ ...expenseDraft, occurredAt: event.target.value })
+                }
+                className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+              />
+            </div>
+            <input
+              value={expenseDraft.category}
+              onChange={(event) =>
+                setExpenseDraft({ ...expenseDraft, category: event.target.value })
+              }
+              placeholder="Categoria"
+              className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={
+                savingExpense ||
+                !expenseDraft.description.trim() ||
+                Number(expenseDraft.amount) <= 0
+              }
+            >
+              {savingExpense ? 'Salvando…' : 'Lançar despesa'}
+            </Button>
+          </form>
+        </section>
 
         {/* 2-Column Desktop Grid for Deliveries and Stock Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

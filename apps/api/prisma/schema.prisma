@@ -28,6 +28,7 @@ model Company {
   customers   Customer[]
   commitments Commitment[]
   stockMovements MaterialStockMovement[]
+  expenses      Expense[]
   catalogCategories CatalogCategory[]
   subscription Subscription?
   deletionRequestedAt DateTime?
@@ -86,6 +87,22 @@ model SubscriptionPayment {
 
   @@index([subscriptionId, createdAt])
   @@map("subscription_payments")
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  description String
+  category    String   @default("Outros")
+  amount      Float
+  occurredAt  DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId, occurredAt])
+  @@map("expenses")
 }
 
 enum CatalogCategoryType {

@@ -72,6 +72,29 @@ export interface AccountDeletionStatus {
   deactivatedAt: string | null;
 }
 
+export interface ExpenseRecord {
+  id: string;
+  description: string;
+  category: string;
+  amount: number;
+  occurredAt: string;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinanceSummary {
+  from: string;
+  to: string;
+  salesTotal: number;
+  receivedTotal: number;
+  receivableTotal: number;
+  expensesTotal: number;
+  netCash: number;
+  estimatedProfit: number;
+  ordersCount: number;
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -315,6 +338,33 @@ export const api = {
   // === Orders ===
   async getOrders(): Promise<Order[]> {
     return request<Order[]>('/orders');
+  },
+
+  async getExpenses(from?: string, to?: string): Promise<ExpenseRecord[]> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return request<ExpenseRecord[]>(`/expenses${query ? `?${query}` : ''}`);
+  },
+
+  async saveExpense(data: Partial<ExpenseRecord>): Promise<ExpenseRecord> {
+    return request<ExpenseRecord>(data.id ? `/expenses/${data.id}` : '/expenses', {
+      method: data.id ? 'PUT' : 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteExpense(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/expenses/${id}`, { method: 'DELETE' });
+  },
+
+  async getFinanceSummary(from?: string, to?: string): Promise<FinanceSummary> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return request<FinanceSummary>(`/finance/summary${query ? `?${query}` : ''}`);
   },
 
   async createOrderShareLink(id: string): Promise<{ token: string }> {
