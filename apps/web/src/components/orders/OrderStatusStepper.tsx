@@ -36,6 +36,16 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
     <div className="bg-white p-4 rounded-3xl shadow-xs space-y-3">
       <h3 className="text-sm font-semibold text-[#302116]">Status</h3>
 
+      {currentStatus === 'orcamento' && (
+        <button
+          type="button"
+          onClick={() => onStatusChange('confirmado')}
+          className="w-full rounded-2xl bg-[#8D3157] px-4 py-3 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#742747]"
+        >
+          Confirmar orçamento e reservar encomenda
+        </button>
+      )}
+
       <div className="space-y-2">
         {ORDER_STATUS_STEPS.map((statusKey, index) => {
           const stepNum = index + 1;
