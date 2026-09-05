@@ -34,15 +34,13 @@ export async function createApplication() {
   });
   await fastify.register(fastifyCookie as any);
   await fastify.register(fastifyStatic as any, { root: distPath, wildcard: false });
-  await app.init();
-  // O frontend é uma SPA: links públicos como /pedido/:token precisam carregar
-  // o index.html para que o React resolva a tela e consulte a API pública.
-  fastify.setNotFoundHandler((request: { url: string }, reply: any) => {
+  fastify.get('/*', (request: { url: string }, reply: any) => {
     if (request.url.startsWith('/api/')) {
       return reply.code(404).send({ error: `Cannot GET ${request.url}` });
     }
     return reply.type('text/html').sendFile('index.html');
   });
+  await app.init();
   return app;
 }
 
