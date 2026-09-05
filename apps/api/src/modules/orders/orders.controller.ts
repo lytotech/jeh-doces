@@ -16,6 +16,9 @@ import {
 import { CompanyContextInterceptor } from '../../common/company-context.interceptor';
 import { DatabaseService } from '../../infrastructure/database/database.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { isCompletePlan } from '../billing/plan-limits';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { AuthContext } from '../../common/auth.types';
 import type { OrderStatus } from '@jeh-doces/shared';
 
 const orderStatuses = new Set([
@@ -59,7 +62,9 @@ export class OrdersController {
     if (!updated) throw new NotFoundException('Order not found');
     return updated;
   }
-  @Post(':id/share-link') async share(@Param('id') id: string) {
+  @Post(':id/share-link') async share(@CurrentUser() auth: AuthContext, @Param('id') id: string) {
+    if (!(await isCompletePlan(auth.companyId)))
+      throw new BadRequestException('Links públicos estão disponíveis no plano Completo.');
     const token = await this.database.database.createOrderShareLink(id);
     if (!token) throw new NotFoundException('Order not found');
     return { token };
