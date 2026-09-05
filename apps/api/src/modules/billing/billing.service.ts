@@ -65,6 +65,17 @@ export function hasActivePaidPlan(
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
 
+  private logBillingFailure(operation: string, fields: Record<string, unknown> = {}) {
+    this.logger.error(
+      JSON.stringify({
+        event: 'billing_provider_failure',
+        provider: 'mercadopago',
+        operation,
+        ...fields,
+      }),
+    );
+  }
+
   private async ensureSubscription(companyId: string) {
     return prisma.subscription.upsert({
       where: { companyId },
@@ -149,7 +160,7 @@ export class BillingService {
         },
       );
       if (!response.ok) {
-        this.logger.error(`Não foi possível cancelar a cobrança Pix (${response.status}).`);
+        this.logBillingFailure('cancel_pix', { statusCode: response.status });
         throw new BadRequestException('Não foi possível cancelar a cobrança. Tente novamente.');
       }
     }
@@ -196,9 +207,7 @@ export class BillingService {
         },
       );
       if (!response.ok) {
-        this.logger.error(
-          `Não foi possível cancelar a assinatura recorrente (${response.status}).`,
-        );
+        this.logBillingFailure('cancel_recurring', { statusCode: response.status });
         throw new BadRequestException('Não foi possível cancelar a renovação. Tente novamente.');
       }
     }
@@ -270,7 +279,7 @@ export class BillingService {
     });
     const payment = (await response.json()) as any;
     if (!response.ok) {
-      this.logger.error(`Mercado Pago recusou a cobrança (${response.status}).`);
+      this.logBillingFailure('create_pix', { statusCode: response.status, plan });
       throw new BadRequestException('Não foi possível gerar o Pix. Tente novamente.');
     }
     await prisma.$transaction(async (tx) => {
@@ -338,7 +347,11 @@ export class BillingService {
     });
     const subscription = (await response.json()) as any;
     if (!response.ok || !subscription.id || !subscription.init_point) {
-      this.logger.error(`Mercado Pago recusou a assinatura recorrente (${response.status}).`);
+      this.logBillingFailure('create_recurring', {
+        statusCode: response.status,
+        plan,
+        responseShapeValid: Boolean(subscription.id && subscription.init_point),
+      });
       throw new BadRequestException(
         'Não foi possível iniciar a assinatura automática. Tente novamente.',
       );
@@ -365,7 +378,10 @@ export class BillingService {
       `https://api.mercadopago.com/preapproval/${encodeURIComponent(subscriptionId)}`,
       { headers: { Authorization: `Bearer ${env.mercadoPagoAccessToken}` } },
     );
-    if (!response.ok) return;
+    if (!response.ok) {
+      this.logBillingFailure('sync_payment', { statusCode: response.status });
+      return;
+    }
     const remote = (await response.json()) as any;
     const [companyId, plan] = String(remote.external_reference || '').split(':');
     if (!companyId || !['monthly', 'annual'].includes(plan)) return;
@@ -497,7 +513,7 @@ export class BillingService {
     );
     const refund = (await response.json()) as { id?: string };
     if (!response.ok) {
-      this.logger.error(`Não foi possível estornar o pagamento ${paymentId} (${response.status}).`);
+      this.logBillingFailure('refund_payment', { statusCode: response.status });
       throw new BadRequestException('Não foi possível estornar o pagamento. Tente novamente.');
     }
     await prisma.subscriptionPayment.update({
