@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.61] - 2026-09-05
+
+### Adicionado
+
+- Filtros independentes para os relatórios financeiros e operacionais.
+- Exportações e impressão passam a respeitar o período selecionado.
+
 ## [1.0.51] - 2026-09-05
 
 ### Adicionado
@@ -25,6 +32,20 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 - Estoque agora é estornado ao cancelar ou reabrir encomendas que já tiveram baixa automática.
 - Baixas e estornos permanecem idempotentes e registrados no histórico de movimentações.
+
+## [1.0.60] - 2026-09-05
+
+### Corrigido
+
+- Restauração de backup agora valida a estrutura antes de limpar os dados da empresa.
+- Adicionados testes para backups válidos e inválidos.
+
+## [1.0.59] - 2026-09-05
+
+### Alterado
+
+- Falhas do Mercado Pago agora geram eventos estruturados para observabilidade.
+- Logs de billing não incluem tokens, valores, e-mails ou respostas do provedor.
 
 ## [1.0.58] - 2026-09-05
 

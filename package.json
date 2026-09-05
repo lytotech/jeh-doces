@@ -21,7 +21,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"*.{js,json}\"",
     "format:check": "sh scripts/check-format.sh",
-    "verify": "npm run format:check && npm run lint && npm run build && npm run test:smoke -w @jeh-doces/api",
+    "verify": "npm run format:check && npm run lint && npm run build && npm run test:smoke -w @jeh-doces/api && npm run test:backup -w @jeh-doces/api",
     "prepare": "husky",
     "check:commit": "node scripts/check-commit-message.mjs",
     "dev:web": "npm run dev -w @jeh-doces/web -- --host",

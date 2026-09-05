@@ -9,6 +9,7 @@
     "test:billing": "tsx --tsconfig tsconfig.json --test src/modules/billing/plan-limits.test.ts src/modules/billing/billing-reconciliation.test.ts",
     "test:finance": "tsx --tsconfig tsconfig.json --test src/modules/finance/finance.controller.test.ts",
     "test:inventory": "tsx --tsconfig tsconfig.json --test src/db.inventory.test.ts",
+    "test:backup": "tsx --tsconfig tsconfig.json --test src/db.backup.test.ts",
     "test:webhook": "tsx --tsconfig tsconfig.json --test src/modules/billing/webhook-signature.test.ts",
     "test:payment": "tsx --tsconfig tsconfig.json --test src/modules/billing/payment-validation.test.ts",
     "test:account": "tsx --tsconfig tsconfig.json --test src/modules/account/account.service.test.ts",
