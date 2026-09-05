@@ -110,6 +110,16 @@ export interface OperationalReport {
   materialConsumption: { name: string; quantity: number; cost: number }[];
 }
 
+export interface CommunicationRecord {
+  id: string;
+  orderId: string;
+  channel: string;
+  template: string;
+  status: OrderStatus;
+  recipient?: string | null;
+  createdAt: string;
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -443,6 +453,10 @@ export const api = {
     recipient?: string;
   }): Promise<void> {
     await request('/communications', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async getCommunications(orderId: string): Promise<CommunicationRecord[]> {
+    return request<CommunicationRecord[]>(`/communications/orders/${encodeURIComponent(orderId)}`);
   },
 
   // === Settings ===

@@ -10,7 +10,7 @@ visibilidade ao atendimento da empresa.
 - [x] Persistir canal, template, status, destinatário e data por empresa/encomenda.
 - [x] Registrar o aviso de WhatsApp depois de abrir a conversa.
 - [x] Garantir isolamento por empresa no backend.
-- [ ] Exibir a linha do tempo no detalhe da encomenda.
+- [x] Exibir a linha do tempo no detalhe da encomenda.
 - [ ] Adicionar lembretes automáticos de entrega e cobrança.
 
 ## Validação

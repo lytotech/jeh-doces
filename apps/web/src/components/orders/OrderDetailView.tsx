@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Order, OrderStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
@@ -15,7 +15,7 @@ import {
   ORDER_STATUS_MAP,
 } from '../../services/costEngine';
 import { generateWhatsAppStatusMessage, getWhatsAppUrl } from '../../services/whatsappExporter';
-import { api } from '../../services/api';
+import { api, CommunicationRecord } from '../../services/api';
 import { FileText, Edit3, Plus, Trash2, Package, Cookie, Send } from 'lucide-react';
 
 interface OrderDetailViewProps {
@@ -29,9 +29,17 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [communications, setCommunications] = useState<CommunicationRecord[]>([]);
 
   const totalPaid = (order.payments || []).reduce((sum, p) => sum + p.amount, 0);
   const remaining = Math.max(0, order.totalCharged - totalPaid);
+
+  useEffect(() => {
+    api
+      .getCommunications(order.id)
+      .then(setCommunications)
+      .catch(() => setCommunications([]));
+  }, [order.id]);
 
   const statusConfig = ORDER_STATUS_MAP[order.status] || ORDER_STATUS_MAP.orcamento;
 
@@ -59,6 +67,7 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
         template: `status_${order.status}`,
         recipient: order.clientPhone,
       });
+      setCommunications(await api.getCommunications(order.id));
     } catch {
       showToast('WhatsApp aberto, mas não foi possível registrar o histórico.', 'warning');
       return;
@@ -363,6 +372,37 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
                 >
                   <Send className="w-5 h-5 mr-2 stroke-[2.2]" /> Avisar cliente sobre o status
                 </Button>
+              </div>
+
+              <div className="rounded-2xl border border-[#EADDE2] bg-[#FFFDFC] p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-[#302116]">Histórico de comunicação</h3>
+                    <p className="text-xs text-[#8A7565]">Avisos enviados para este cliente.</p>
+                  </div>
+                  <span className="rounded-full bg-[#F6ECE0] px-2.5 py-1 text-[11px] font-semibold text-[#96642F]">
+                    {communications.length}
+                  </span>
+                </div>
+                {communications.length === 0 ? (
+                  <p className="text-xs text-[#8A7565]">Nenhum aviso registrado ainda.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {communications.slice(0, 8).map((communication) => (
+                      <div
+                        key={communication.id}
+                        className="flex items-center justify-between gap-3 border-b border-[#F2ECE1] pb-2 text-xs last:border-0 last:pb-0"
+                      >
+                        <span className="font-semibold text-[#5C4533]">
+                          WhatsApp · {communication.template.replace('status_', '')}
+                        </span>
+                        <span className="shrink-0 text-[#8A7565]">
+                          {new Date(communication.createdAt).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
