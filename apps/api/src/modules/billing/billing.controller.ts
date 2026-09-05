@@ -1,4 +1,18 @@
-import { BadRequestException, Body, Controller, Delete, Get, Headers, HttpCode, HttpStatus, Inject, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Post,
+  Query,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { CompanyContextInterceptor } from '../../common/company-context.interceptor';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthGuard } from '../auth/auth.guard';
@@ -10,40 +24,72 @@ import { env } from '../../config/env';
 export class BillingController {
   constructor(@Inject(BillingService) private readonly billing: BillingService) {}
 
-  @Get('webhook') @HttpCode(HttpStatus.OK) webhookGet() { return { ok: true }; }
+  @Get('webhook') @HttpCode(HttpStatus.OK) webhookGet() {
+    return { ok: true };
+  }
 
-  @Post('webhook') @HttpCode(HttpStatus.OK) async webhook(@Body() body: any, @Headers('x-signature') signature?: string, @Headers('x-request-id') requestId?: string, @Query('data.id') queryDataId?: string) {
+  @Post('webhook') @HttpCode(HttpStatus.OK) async webhook(
+    @Body() body: any,
+    @Headers('x-signature') signature?: string,
+    @Headers('x-request-id') requestId?: string,
+    @Query('data.id') queryDataId?: string,
+  ) {
     const paymentId = body?.data?.id || (body?.type === 'payment' ? body?.id : null);
     const dataId = String(queryDataId || paymentId || '');
-    if (env.mercadoPagoWebhookSecret && !this.billing.validateWebhookSignature(signature, requestId, dataId)) {
+    if (
+      env.mercadoPagoWebhookSecret &&
+      !this.billing.validateWebhookSignature(signature, requestId, dataId)
+    ) {
       throw new BadRequestException('Assinatura do webhook inválida.');
     }
-    if (body?.type === 'subscription_preapproval' || body?.action?.startsWith('subscription_preapproval')) await this.billing.processRecurringWebhook(String(paymentId || ''));
+    if (
+      body?.type === 'subscription_preapproval' ||
+      body?.action?.startsWith('subscription_preapproval')
+    )
+      await this.billing.processRecurringWebhook(String(paymentId || ''));
     else await this.billing.processWebhook(String(paymentId || ''));
     return { received: true };
   }
 
-  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
-  @Get() status(@CurrentUser() auth: AuthContext) { return this.billing.getStatus(auth.companyId); }
+  @UseGuards(AuthGuard)
+  @UseInterceptors(CompanyContextInterceptor)
+  @Get()
+  status(@CurrentUser() auth: AuthContext) {
+    return this.billing.getStatus(auth.companyId);
+  }
 
-  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
-  @Post('sync') sync(@CurrentUser() auth: AuthContext) { return this.billing.syncPendingPayment(auth.companyId); }
+  @UseGuards(AuthGuard)
+  @UseInterceptors(CompanyContextInterceptor)
+  @Post('sync')
+  sync(@CurrentUser() auth: AuthContext) {
+    return this.billing.syncPendingPayment(auth.companyId);
+  }
 
-  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
-  @Delete('pending-payment') cancelPendingPayment(@CurrentUser() auth: AuthContext) { return this.billing.cancelPendingPayment(auth.companyId); }
+  @UseGuards(AuthGuard)
+  @UseInterceptors(CompanyContextInterceptor)
+  @Delete('pending-payment')
+  cancelPendingPayment(@CurrentUser() auth: AuthContext, @Query('paymentId') paymentId?: string) {
+    return this.billing.cancelPendingPayment(auth.companyId, paymentId);
+  }
 
-  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
-  @Post('pix') createPix(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
+  @UseGuards(AuthGuard)
+  @UseInterceptors(CompanyContextInterceptor)
+  @Post('pix')
+  createPix(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
     return this.billing.createPixPayment(auth, plan);
   }
 
-  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
-  @Post('recurring') createRecurring(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
+  @UseGuards(AuthGuard)
+  @UseInterceptors(CompanyContextInterceptor)
+  @Post('recurring')
+  createRecurring(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
     return this.billing.createRecurringSubscription(auth, plan);
   }
 
-  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
-  @Delete('subscription') cancel(@CurrentUser() auth: AuthContext) {
+  @UseGuards(AuthGuard)
+  @UseInterceptors(CompanyContextInterceptor)
+  @Delete('subscription')
+  cancel(@CurrentUser() auth: AuthContext) {
     return this.billing.cancelRenewal(auth.companyId);
   }
 }

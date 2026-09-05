@@ -6,6 +6,12 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.43] - 2026-09-05
+
+### Corrigido
+
+- Cobranças Pix pendentes antigas agora podem ser canceladas individualmente pela tela Meu plano.
+
 ## [1.0.42] - 2026-09-05
 
 ### Alterado
