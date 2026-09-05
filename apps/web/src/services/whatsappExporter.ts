@@ -81,6 +81,28 @@ export const generateWhatsAppStatusMessage = (order: Order, settings: AppSetting
   return message;
 };
 
+export const generateWhatsAppReminderMessage = (
+  order: Order,
+  settings: AppSettings,
+  kind: 'delivery' | 'payment',
+): string => {
+  const totalPaid = (order.payments || []).reduce((sum, payment) => sum + payment.amount, 0);
+  const remaining = Math.max(0, order.totalCharged - totalPaid);
+  let message = `Olá, ${order.clientName}! 😊\n\n`;
+  message += `Lembrete da encomenda *#${order.orderNumber}* - ${settings.storeName}:\n`;
+
+  if (kind === 'delivery') {
+    message += `Sua entrega está agendada para *${formatDateTime(order.deliveryDate)}*.\n`;
+    message += 'Se precisar ajustar algum detalhe, avise a gente por aqui.\n';
+  } else {
+    message += `Ainda falta *${formatCurrency(remaining)}* para completar o pagamento.\n`;
+    if (settings.pixKey) message += `Chave Pix: *${settings.pixKey}*\n`;
+  }
+
+  message += '\nObrigada pela preferência! ✨';
+  return message;
+};
+
 export const getWhatsAppUrl = (phone: string | undefined, message: string): string => {
   let cleanPhone = (phone || '').replace(/\D/g, '');
   if (cleanPhone.length >= 10 && !cleanPhone.startsWith('55')) {

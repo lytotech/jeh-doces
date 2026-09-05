@@ -11,7 +11,8 @@ escritas manualmente e deixando o cliente informado sobre cada etapa.
 - [x] Adicionar ação para abrir o WhatsApp já com a mensagem do status atual.
 - [x] Validar telefone ausente sem abrir um link inválido.
 - [ ] Registrar histórico de mensagens enviadas.
-- [ ] Criar lembretes automáticos de entrega e cobrança.
+- [x] Criar lembretes manuais de entrega e cobrança.
+- [ ] Automatizar lembretes de entrega e cobrança com preferências da empresa.
 
 ## Validação
 

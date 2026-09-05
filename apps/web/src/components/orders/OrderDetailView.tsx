@@ -14,7 +14,11 @@ import {
   formatDateTime,
   ORDER_STATUS_MAP,
 } from '../../services/costEngine';
-import { generateWhatsAppStatusMessage, getWhatsAppUrl } from '../../services/whatsappExporter';
+import {
+  generateWhatsAppReminderMessage,
+  generateWhatsAppStatusMessage,
+  getWhatsAppUrl,
+} from '../../services/whatsappExporter';
 import { api, CommunicationRecord } from '../../services/api';
 import { FileText, Edit3, Plus, Trash2, Package, Cookie, Send } from 'lucide-react';
 
@@ -73,6 +77,31 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
       return;
     }
     showToast('Aviso registrado no histórico de comunicação.', 'success');
+  };
+
+  const handleReminder = async (kind: 'delivery' | 'payment') => {
+    if (!order.clientPhone) {
+      showToast('Cadastre um telefone para avisar o cliente pelo WhatsApp.', 'warning');
+      return;
+    }
+
+    window.open(
+      getWhatsAppUrl(order.clientPhone, generateWhatsAppReminderMessage(order, settings, kind)),
+      '_blank',
+      'noopener,noreferrer',
+    );
+    try {
+      await api.recordCommunication({
+        orderId: order.id,
+        status: order.status,
+        template: `reminder_${kind}`,
+        recipient: order.clientPhone,
+      });
+      setCommunications(await api.getCommunications(order.id));
+      showToast('Lembrete registrado no histórico.', 'success');
+    } catch {
+      showToast('WhatsApp aberto, mas não foi possível registrar o lembrete.', 'warning');
+    }
   };
 
   return (
@@ -359,6 +388,27 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
                   <FileText className="w-5 h-5 mr-2 stroke-[2.2]" /> Enviar orçamento (WhatsApp /
                   PDF)
                 </Button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleReminder('delivery')}
+                >
+                  Lembrar entrega
+                </Button>
+                {remaining > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleReminder('payment')}
+                  >
+                    Lembrar cobrança
+                  </Button>
+                )}
               </div>
 
               <div className="pt-1">

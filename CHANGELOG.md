@@ -26,6 +26,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 - Estoque agora é estornado ao cancelar ou reabrir encomendas que já tiveram baixa automática.
 - Baixas e estornos permanecem idempotentes e registrados no histórico de movimentações.
 
+## [1.0.56] - 2026-09-05
+
+### Adicionado
+
+- Botão explícito para confirmar um orçamento e reservar a encomenda.
+- Lembretes manuais de entrega e cobrança pelo WhatsApp, com histórico.
+
 ## [1.0.55] - 2026-09-05
 
 ### Adicionado
