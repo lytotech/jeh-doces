@@ -6,6 +6,7 @@ import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime } from '../../services/costEngine';
 import { Plus, Search, ClipboardList, Calendar, AlertTriangle } from 'lucide-react';
 import { Order } from '../../types';
+import { InitialSetupCard } from '../onboarding/InitialSetupCard';
 
 interface OrderListProps {
   onSelectOrder: (order: Order) => void;
@@ -18,7 +19,7 @@ export const OrderList: React.FC<OrderListProps> = ({
   onNewOrder,
   onOpenSettings,
 }) => {
-  const { orders } = useApp();
+  const { orders, ingredients, materials, products, customers } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
 
@@ -52,6 +53,14 @@ export const OrderList: React.FC<OrderListProps> = ({
       />
 
       <div className="max-w-[1480px] mx-auto p-4 sm:p-6 lg:p-8 space-y-5">
+        {orders.length === 0 &&
+          ingredients.length === 0 &&
+          materials.length === 0 &&
+          products.length === 0 &&
+          customers.length === 0 && (
+            <InitialSetupCard onNewOrder={onNewOrder} onOpenSettings={onOpenSettings} />
+          )}
+
         {/* Search & Filters */}
         <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
           <div className="relative flex-1 max-w-md">
