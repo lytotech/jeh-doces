@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { prisma } from '../../infrastructure/database/client';
 import { env } from '../../config/env';
 import { AuthContext } from '../../common/auth.types';
+import { hasCurrentPaidPeriod } from './plan-limits';
 
 const PRICES: Record<'monthly' | 'annual', number> = { monthly: 19.8, annual: 179.8 };
 
@@ -57,12 +58,7 @@ export function hasActivePaidPlan(
   },
   now = new Date(),
 ) {
-  return (
-    subscription.plan !== SubscriptionPlan.basic &&
-    subscription.status === SubscriptionStatus.active &&
-    !!subscription.currentPeriodEnd &&
-    subscription.currentPeriodEnd > now
-  );
+  return subscription.plan !== SubscriptionPlan.basic && hasCurrentPaidPeriod(subscription, now);
 }
 
 @Injectable()
@@ -96,9 +92,20 @@ export class BillingService {
 
   async syncPendingPayment(companyId: string) {
     const subscription = await this.ensureSubscription(companyId);
-    if (subscription.pendingPaymentId) {
-      await this.processWebhook(subscription.pendingPaymentId);
-    } else if (
+    const paymentIds = new Set(
+      [subscription.pendingPaymentId, subscription.mercadoPagoId].filter((id): id is string =>
+        Boolean(id),
+      ),
+    );
+    const recentPayments = await prisma.subscriptionPayment.findMany({
+      where: { subscriptionId: subscription.id },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+      select: { mercadoPagoId: true },
+    });
+    recentPayments.forEach((payment) => paymentIds.add(payment.mercadoPagoId));
+    for (const paymentId of paymentIds) await this.processWebhook(paymentId);
+    if (
       subscription.status === SubscriptionStatus.pending &&
       subscription.mercadoPagoSubscriptionId
     ) {
@@ -266,26 +273,33 @@ export class BillingService {
       this.logger.error(`Mercado Pago recusou a cobrança (${response.status}).`);
       throw new BadRequestException('Não foi possível gerar o Pix. Tente novamente.');
     }
-    await prisma.subscription.update({
-      where: { companyId: auth.companyId },
-      data: {
-        status: SubscriptionStatus.pending,
-        pendingPlan: plan,
-        pendingPaymentId: String(payment.id),
-      },
+    await prisma.$transaction(async (tx) => {
+      const subscription = await tx.subscription.findUniqueOrThrow({
+        where: { companyId: auth.companyId },
+      });
+      await tx.subscriptionPayment.upsert({
+        where: { mercadoPagoId: String(payment.id) },
+        update: { plan, amount: PRICES[plan], status: String(payment.status || 'pending') },
+        create: {
+          subscriptionId: subscription.id,
+          mercadoPagoId: String(payment.id),
+          plan,
+          amount: PRICES[plan],
+          status: String(payment.status || 'pending'),
+        },
+      });
+      if (!hasCurrentPaidPeriod(subscription)) {
+        await tx.subscription.update({
+          where: { companyId: auth.companyId },
+          data: {
+            status: SubscriptionStatus.pending,
+            pendingPlan: plan,
+            pendingPaymentId: String(payment.id),
+          },
+        });
+      }
     });
-    const subscription = await prisma.subscription.findUniqueOrThrow({
-      where: { companyId: auth.companyId },
-    });
-    await prisma.subscriptionPayment.create({
-      data: {
-        subscriptionId: subscription.id,
-        mercadoPagoId: String(payment.id),
-        plan,
-        amount: PRICES[plan],
-        status: String(payment.status || 'pending'),
-      },
-    });
+    if (payment.status === 'approved') await this.processWebhook(String(payment.id));
     return this.mapPixPayment(payment, plan);
   }
 
@@ -394,41 +408,105 @@ export class BillingService {
       this.logger.warn(`Pagamento ${payment.id} rejeitado por valor ou moeda incompatível.`);
       return;
     }
-    const subscription = await prisma.subscription.findUnique({ where: { companyId } });
-    if (!subscription || subscription.pendingPaymentId !== String(payment.id)) return;
-    if (payment.status !== 'approved') {
-      await prisma.subscriptionPayment.updateMany({
-        where: {
-          mercadoPagoId: String(payment.id),
-          status: { not: String(payment.status || 'pending') },
-        },
-        data: { status: String(payment.status || 'pending'), paidAt: null },
-      });
-      return;
-    }
     const end = new Date();
     if (plan === 'annual') end.setFullYear(end.getFullYear() + 1);
     else end.setMonth(end.getMonth() + 1);
     await prisma.$transaction(async (tx) => {
-      // A atualização condicional funciona como um lock lógico: somente o primeiro
-      // webhook que encontrar a cobrança pendente pode ativar o plano.
-      const claimed = await tx.subscriptionPayment.updateMany({
-        where: { mercadoPagoId: String(payment.id), status: { not: 'approved' } },
-        data: { status: 'approved', paidAt: new Date() },
-      });
-      if (claimed.count !== 1) return;
-      await tx.subscription.updateMany({
-        where: { companyId, pendingPaymentId: String(payment.id) },
-        data: {
+      const subscription = await tx.subscription.findUnique({ where: { companyId } });
+      if (!subscription) return;
+      const remoteStatus = String(payment.status || 'pending');
+      const paymentRecord = await tx.subscriptionPayment.upsert({
+        where: { mercadoPagoId: String(payment.id) },
+        update: {
           plan: plan as SubscriptionPlan,
-          status: SubscriptionStatus.active,
-          currentPeriodEnd: end,
+          amount: Number(payment.transaction_amount),
+          status: remoteStatus,
+          paidAt:
+            remoteStatus === 'approved' ? new Date(payment.date_approved || Date.now()) : null,
+        },
+        create: {
+          subscriptionId: subscription.id,
           mercadoPagoId: String(payment.id),
-          pendingPaymentId: null,
-          pendingPlan: null,
+          plan: plan as SubscriptionPlan,
+          amount: Number(payment.transaction_amount),
+          status: remoteStatus,
+          paidAt:
+            remoteStatus === 'approved' ? new Date(payment.date_approved || Date.now()) : null,
         },
       });
+      if (remoteStatus !== 'approved') return;
+
+      const hasPaidPeriod = hasCurrentPaidPeriod(subscription);
+      const isCurrentPayment = subscription.mercadoPagoId === String(payment.id);
+      if (!hasPaidPeriod) {
+        await tx.subscription.update({
+          where: { companyId },
+          data: {
+            plan: plan as SubscriptionPlan,
+            status: SubscriptionStatus.active,
+            currentPeriodEnd: end,
+            mercadoPagoId: String(payment.id),
+            pendingPaymentId: null,
+            pendingPlan: null,
+          },
+        });
+      } else if (isCurrentPayment || subscription.pendingPaymentId === String(payment.id)) {
+        await tx.subscription.update({
+          where: { companyId },
+          data: {
+            status: SubscriptionStatus.active,
+            pendingPaymentId:
+              subscription.pendingPaymentId === String(payment.id)
+                ? null
+                : subscription.pendingPaymentId,
+            pendingPlan:
+              subscription.pendingPaymentId === String(payment.id)
+                ? null
+                : subscription.pendingPlan,
+          },
+        });
+      } else {
+        this.logger.warn(
+          `Pagamento aprovado duplicado ${paymentRecord.mercadoPagoId}; período vigente preservado.`,
+        );
+      }
     });
+  }
+
+  async refundPayment(auth: AuthContext, paymentId: string) {
+    if (auth.role === 'employee')
+      throw new ForbiddenException('Apenas administradores podem estornar pagamentos.');
+    const subscriptionPayment = await prisma.subscriptionPayment.findUnique({
+      where: { mercadoPagoId: paymentId },
+      include: { subscription: true },
+    });
+    if (!subscriptionPayment || subscriptionPayment.subscription.companyId !== auth.companyId)
+      throw new BadRequestException('Pagamento não encontrado.');
+    if (subscriptionPayment.status === 'refunded') return this.getStatus(auth.companyId);
+    if (!env.mercadoPagoAccessToken)
+      throw new BadRequestException('Mercado Pago ainda não está configurado.');
+    const remote = await this.getPixPayment(paymentId);
+    if (!remote || remote.status !== 'approved')
+      throw new BadRequestException('Somente pagamentos aprovados podem ser estornados.');
+    const response = await fetch(
+      `https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}/refunds`,
+      { method: 'POST', headers: { Authorization: `Bearer ${env.mercadoPagoAccessToken}` } },
+    );
+    const refund = (await response.json()) as { id?: string };
+    if (!response.ok) {
+      this.logger.error(`Não foi possível estornar o pagamento ${paymentId} (${response.status}).`);
+      throw new BadRequestException('Não foi possível estornar o pagamento. Tente novamente.');
+    }
+    await prisma.subscriptionPayment.update({
+      where: { mercadoPagoId: paymentId },
+      data: {
+        status: 'refunded',
+        refundedAt: new Date(),
+        refundId: refund.id ? String(refund.id) : null,
+      },
+    });
+    this.logger.log(`Pagamento ${paymentId} estornado para a empresa ${auth.companyId}.`);
+    return this.getStatus(auth.companyId);
   }
 
   validateWebhookSignature(

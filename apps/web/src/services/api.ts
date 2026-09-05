@@ -36,12 +36,15 @@ export interface BillingStatus {
   currentPeriodEnd: string | null;
   pendingPaymentId?: string | null;
   pendingPlan?: 'monthly' | 'annual' | null;
+  mercadoPagoId?: string | null;
   payments?: {
     mercadoPagoId: string;
     plan: 'monthly' | 'annual';
     amount: number;
     status: string;
     paidAt: string | null;
+    refundedAt?: string | null;
+    refundId?: string | null;
     createdAt: string;
   }[];
 }
@@ -114,13 +117,22 @@ export const api = {
     return request<BillingStatus>('/billing');
   },
   async syncBilling(): Promise<BillingStatus> {
-    return request<BillingStatus>('/billing/sync', { method: 'POST' });
+    return request<BillingStatus>('/billing/sync', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
   },
   async cancelPendingBilling(paymentId?: string): Promise<BillingStatus> {
     return request<BillingStatus>(
       `/billing/pending-payment${paymentId ? `?paymentId=${encodeURIComponent(paymentId)}` : ''}`,
       { method: 'DELETE' },
     );
+  },
+  async refundBillingPayment(paymentId: string): Promise<BillingStatus> {
+    return request<BillingStatus>(`/billing/payments/${encodeURIComponent(paymentId)}/refund`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
   },
   async createPixPayment(plan: 'monthly' | 'annual'): Promise<PixPayment> {
     return request<PixPayment>('/billing/pix', { method: 'POST', body: JSON.stringify({ plan }) });

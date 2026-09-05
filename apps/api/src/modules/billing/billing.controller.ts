@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
   Query,
   UseGuards,
@@ -70,6 +71,13 @@ export class BillingController {
   @Delete('pending-payment')
   cancelPendingPayment(@CurrentUser() auth: AuthContext, @Query('paymentId') paymentId?: string) {
     return this.billing.cancelPendingPayment(auth.companyId, paymentId);
+  }
+
+  @UseGuards(AuthGuard)
+  @UseInterceptors(CompanyContextInterceptor)
+  @Post('payments/:paymentId/refund')
+  refund(@CurrentUser() auth: AuthContext, @Param('paymentId') paymentId: string) {
+    return this.billing.refundPayment(auth, paymentId);
   }
 
   @UseGuards(AuthGuard)
