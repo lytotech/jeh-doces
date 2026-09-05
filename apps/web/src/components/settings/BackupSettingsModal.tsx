@@ -117,6 +117,8 @@ export const BackupSettingsModal: React.FC<BackupSettingsModalProps> = ({ isOpen
           {deletion?.deletionScheduledFor ? <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-[#6B4D4D]">Exclusão agendada para <strong>{new Date(deletion.deletionScheduledFor).toLocaleDateString('pt-BR')}</strong>. Você pode recuperar a empresa antes dessa data.</p><Button variant="outline" size="sm" onClick={() => void cancelDeletion()}>Cancelar exclusão</Button></div> : <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-[#6B4D4D]">Cancele o plano e agende a inativação da empresa. Seus dados ficam recuperáveis por 90 dias.</p><Button variant="outline" size="sm" onClick={() => setDeleteOpen(true)}>Excluir dados e cancelar plano</Button></div>}
         </section>
 
+        {billing?.plan === 'basic' && <div className="-mt-4"><Button size="sm" disabled={billingLoading} onClick={() => void startPayment('annual')}>Pix anual · R$ 179,80</Button></div>}
+
         {/* Form Configurações */}
         <form onSubmit={handleSaveSettings} className="space-y-3.5">
           <h4 className="text-xs uppercase font-bold text-[#7A4B1D] tracking-wider flex items-center gap-1.5">
