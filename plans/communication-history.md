@@ -11,7 +11,7 @@ visibilidade ao atendimento da empresa.
 - [x] Registrar o aviso de WhatsApp depois de abrir a conversa.
 - [x] Garantir isolamento por empresa no backend.
 - [x] Exibir a linha do tempo no detalhe da encomenda.
-- [ ] Adicionar lembretes automáticos de entrega e cobrança.
+- [x] Adicionar lembretes automáticos de entrega e cobrança.
 
 ## Validação
 

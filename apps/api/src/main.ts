@@ -12,6 +12,7 @@ import { env } from './config/env';
 import { LegacyHttpExceptionFilter } from './common/legacy-http-exception.filter';
 import { RateLimitGuard } from './common/rate-limit.guard';
 import { prisma } from './infrastructure/database/client';
+import { reconcileAutomaticReminders } from './modules/communications/communications.controller';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -89,5 +90,12 @@ export async function bootstrap() {
     24 * 60 * 60 * 1000,
   );
   cleanup.unref();
+  const reminders = setInterval(
+    () => {
+      void reconcileAutomaticReminders().catch(() => undefined);
+    },
+    15 * 60 * 1000,
+  );
+  reminders.unref();
   return app;
 }

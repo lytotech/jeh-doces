@@ -104,6 +104,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     pixKeyType: 'E-mail',
     defaultProfitMargin: 100,
     currencySymbol: 'R$',
+    automaticDeliveryReminders: false,
+    automaticPaymentReminders: false,
+    deliveryReminderHours: 24,
+    paymentReminderDays: 1,
   });
 
   const [activeTab, setActiveTab] = useState<string>('orders');

@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.62] - 2026-09-05
+
+### Adicionado
+
+- Preferências de lembretes automáticos de entrega e cobrança.
+- Fila idempotente de lembretes e ação de envio pelo WhatsApp no painel.
+
 ## [1.0.61] - 2026-09-05
 
 ### Adicionado

@@ -12,7 +12,7 @@ escritas manualmente e deixando o cliente informado sobre cada etapa.
 - [x] Validar telefone ausente sem abrir um link inválido.
 - [x] Registrar histórico de mensagens enviadas.
 - [x] Criar lembretes manuais de entrega e cobrança.
-- [ ] Automatizar lembretes de entrega e cobrança com preferências da empresa.
+- [x] Automatizar lembretes de entrega e cobrança com preferências da empresa.
 
 ## Validação
 

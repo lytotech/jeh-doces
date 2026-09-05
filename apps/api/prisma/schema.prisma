@@ -25,6 +25,7 @@ model Company {
   products    Product[]
   orders      Order[]
   communications Communication[]
+  automaticReminders AutomaticReminder[]
   setting     Setting?
   customers   Customer[]
   commitments Commitment[]
@@ -382,6 +383,7 @@ model Order {
   materials           OrderMaterial[]
   payments            Payment[]
   communications      Communication[]
+  automaticReminders  AutomaticReminder[]
 
   @@map("orders")
   @@unique([companyId, orderNumber])
@@ -477,6 +479,23 @@ model Communication {
   @@map("communications")
 }
 
+model AutomaticReminder {
+  id        String   @id @default(cuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  kind      String
+  dueAt     DateTime
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([orderId, kind])
+  @@index([companyId, status, dueAt])
+  @@map("automatic_reminders")
+}
+
 model Setting {
   id                  String   @id @default(cuid())
   companyId           String   @unique
@@ -487,6 +506,10 @@ model Setting {
   pixKeyType          String?  @default("E-mail")
   defaultProfitMargin Float    @default(100)
   currencySymbol      String   @default("R$")
+  automaticDeliveryReminders Boolean @default(false)
+  automaticPaymentReminders  Boolean @default(false)
+  deliveryReminderHours      Int     @default(24)
+  paymentReminderDays        Int     @default(1)
   updatedAt           DateTime @updatedAt
 
   @@map("settings")
