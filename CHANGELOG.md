@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.47] - 2026-09-05
+
+### Alterado
+
+- Onboarding passou a reutilizar cadastros existentes e evitar duplicação do kit inicial.
+- Adicionado roadmap das próximas fases de evolução do produto.
+
 ## [1.0.46] - 2026-09-05
 
 ### Corrigido
