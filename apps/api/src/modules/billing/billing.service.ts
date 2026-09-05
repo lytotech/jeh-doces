@@ -58,6 +58,16 @@ export class BillingService {
     return prisma.subscription.findUniqueOrThrow({ where: { id: subscription.id }, include: { payments: { orderBy: { createdAt: 'desc' }, take: 12 } } });
   }
 
+  async syncPendingPayment(companyId: string) {
+    const subscription = await this.ensureSubscription(companyId);
+    if (subscription.pendingPaymentId) {
+      await this.processWebhook(subscription.pendingPaymentId);
+    } else if (subscription.status === SubscriptionStatus.pending && subscription.mercadoPagoSubscriptionId) {
+      await this.processRecurringWebhook(subscription.mercadoPagoSubscriptionId);
+    }
+    return this.getStatus(companyId);
+  }
+
   async cancelRenewal(companyId: string) {
     const subscription = await this.ensureSubscription(companyId);
     if (subscription.plan === SubscriptionPlan.basic || !subscription.currentPeriodEnd || subscription.currentPeriodEnd <= new Date()) {

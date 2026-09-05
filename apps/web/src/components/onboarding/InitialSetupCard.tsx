@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useApp } from '../../context/AppContext';
+import { Ingredient, Material } from '../../types';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import {
@@ -44,12 +45,23 @@ const exampleProducts = [
   },
 ];
 
+const exampleIngredients: Partial<Ingredient>[] = [
+  { name: 'Chocolate em pó', isComposite: false, unit: 'g', packageQuantity: 500, paidPrice: 25, unitCost: 0.05, priceHistory: [] },
+  { name: 'Leite condensado', isComposite: false, unit: 'g', packageQuantity: 395, paidPrice: 7.9, unitCost: 0.02, priceHistory: [] },
+  { name: 'Creme de leite', isComposite: false, unit: 'g', packageQuantity: 200, paidPrice: 4.5, unitCost: 0.0225, priceHistory: [] },
+];
+
+const exampleMaterials: Partial<Material>[] = [
+  { name: 'Caixa para bolo', category: 'Embalagens', unit: 'un', baseQuantity: 10, totalCost: 25, unitCost: 2.5, trackStock: true, stockQuantity: 10, minStockAlert: 2 },
+  { name: 'Forminha para doce', category: 'Embalagens', unit: 'un', baseQuantity: 100, totalCost: 8, unitCost: 0.08, trackStock: true, stockQuantity: 100, minStockAlert: 20 },
+];
+
 export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
   onNewOrder,
   onOpenSettings,
 }) => {
   const { auth } = useAuth();
-  const { setActiveTab, saveProductAction, showToast } = useApp();
+  const { setActiveTab, saveIngredientAction, saveMaterialAction, saveProductAction, showToast } = useApp();
   const [dismissed, setDismissed] = useState(false);
   const [addingExamples, setAddingExamples] = useState(false);
 
@@ -69,10 +81,24 @@ export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
   const addExampleProducts = async () => {
     setAddingExamples(true);
     try {
-      for (const product of exampleProducts) {
-        await saveProductAction(product);
+      const ingredients: Ingredient[] = [];
+      for (const ingredient of exampleIngredients) {
+        const saved = await saveIngredientAction(ingredient);
+        if (saved) ingredients.push(saved);
       }
-      showToast('Produtos de exemplo adicionados. Você pode editá-los no cardápio!');
+      const materials: Material[] = [];
+      for (const material of exampleMaterials) {
+        const saved = await saveMaterialAction(material);
+        if (saved) materials.push(saved);
+      }
+      for (const product of exampleProducts) {
+        await saveProductAction({
+          ...product,
+          ingredients: ingredients.slice(0, 2).map((ingredient) => ({ ingredientId: ingredient.id, quantity: 50 })),
+          materials: materials.slice(0, 1).map((material) => ({ materialId: material.id, quantity: 1 })),
+        });
+      }
+      showToast('Kit inicial adicionado: ingredientes, materiais e produtos de exemplo.');
     } finally {
       setAddingExamples(false);
     }
@@ -158,7 +184,7 @@ export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button size="sm" onClick={addExampleProducts} disabled={addingExamples}>
             <CakeSlice className="h-4 w-4" />
-            {addingExamples ? 'Adicionando...' : 'Começar com produtos de exemplo'}
+            {addingExamples ? 'Adicionando kit inicial...' : 'Começar com dados de exemplo'}
           </Button>
           <Button size="sm" variant="ghost" onClick={onOpenSettings}>
             Personalizar confeitaria

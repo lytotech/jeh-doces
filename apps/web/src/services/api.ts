@@ -99,6 +99,9 @@ export const api = {
   async getBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing');
   },
+  async syncBilling(): Promise<BillingStatus> {
+    return request<BillingStatus>('/billing/sync', { method: 'POST' });
+  },
   async createPixPayment(plan: 'monthly' | 'annual'): Promise<PixPayment> {
     return request<PixPayment>('/billing/pix', { method: 'POST', body: JSON.stringify({ plan }) });
   },

@@ -27,6 +27,9 @@ export class BillingController {
   @Get() status(@CurrentUser() auth: AuthContext) { return this.billing.getStatus(auth.companyId); }
 
   @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
+  @Post('sync') sync(@CurrentUser() auth: AuthContext) { return this.billing.syncPendingPayment(auth.companyId); }
+
+  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
   @Post('pix') createPix(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
     return this.billing.createPixPayment(auth, plan);
   }
@@ -36,6 +39,7 @@ export class BillingController {
     return this.billing.createRecurringSubscription(auth, plan);
   }
 
+  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
   @Delete('subscription') cancel(@CurrentUser() auth: AuthContext) {
     return this.billing.cancelRenewal(auth.companyId);
   }

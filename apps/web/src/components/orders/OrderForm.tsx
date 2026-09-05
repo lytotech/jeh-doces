@@ -163,6 +163,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [discount, setDiscount] = useState(order ? order.discount.toString() : '0');
   const [notes, setNotes] = useState(order?.notes || '');
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
@@ -336,7 +337,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientName.trim() || saving) return;
+    if (saving) return;
+    if (!clientName.trim()) {
+      setFormError('Selecione um cliente cadastrado ou clique em “Novo” para adicionar um cliente antes de salvar.');
+      return;
+    }
+    setFormError('');
     setSaving(true);
 
     try {
@@ -436,7 +442,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                                 : '',
                             );
                           }}
-                          onChange={(e) => {
+                        onChange={(e) => {
+                            setFormError('');
                             setCustomerSearch(e.target.value);
                             setCustomerId('');
                             setClientName('');
@@ -464,6 +471,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                             key={c.id}
                             className="w-full text-left px-3 py-2.5 hover:bg-[#F5ECE0] border-b border-[#F4EFEA]"
                             onClick={() => {
+                              setFormError('');
                               setCustomerId(c.id);
                               setCustomerSearch(c.name);
                               setClientName(c.name);
@@ -481,6 +489,11 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                           </button>
                         ))}
                       </div>
+                    )}
+                    {formError && (
+                      <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                        {formError}
+                      </p>
                     )}
                   </div>
                   {(customerId || isEditing) && (
@@ -553,6 +566,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                             address: quickCustomerAddress,
                           });
                           if (c) {
+                            setFormError('');
                             setCustomerId(c.id);
                             setCustomerSearch(c.name);
                             setClientName(c.name);

@@ -52,7 +52,7 @@ interface AppContextType {
   showToast: (message: string, type?: 'success' | 'info' | 'warning' | 'error') => void;
 
   // Ingredient Actions
-  saveIngredientAction: (ing: Partial<Ingredient>) => Promise<void>;
+  saveIngredientAction: (ing: Partial<Ingredient>) => Promise<Ingredient | null>;
   deleteIngredientAction: (id: string) => Promise<void>;
   addPriceHistoryAction: (
     ingredientId: string,
@@ -60,7 +60,7 @@ interface AppContextType {
   ) => Promise<void>;
 
   // Material Actions
-  saveMaterialAction: (mat: Partial<Material>) => Promise<void>;
+  saveMaterialAction: (mat: Partial<Material>) => Promise<Material | null>;
   deleteMaterialAction: (id: string) => Promise<void>;
   adjustMaterialStockAction: (id: string, newStock: number, reason?: string) => Promise<void>;
 
@@ -190,7 +190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [ingredients, materials]);
 
   // === Ingredient Handlers ===
-  const saveIngredientAction = async (data: Partial<Ingredient>) => {
+  const saveIngredientAction = async (data: Partial<Ingredient>): Promise<Ingredient | null> => {
     try {
       const saved = await api.saveIngredient(data);
       setIngredients((prev) => {
@@ -201,9 +201,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return [saved, ...prev];
       });
       showToast('Ingrediente salvo com sucesso!');
+      return saved;
     } catch (e) {
       console.error(e);
       showToast('Erro ao salvar no servidor.', 'error');
+      return null;
     }
   };
 
@@ -233,7 +235,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // === Material Handlers ===
-  const saveMaterialAction = async (data: Partial<Material>) => {
+  const saveMaterialAction = async (data: Partial<Material>): Promise<Material | null> => {
     try {
       const saved = await api.saveMaterial(data);
       setMaterials((prev) => {
@@ -244,9 +246,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return [saved, ...prev];
       });
       showToast('Material salvo com sucesso!');
+      return saved;
     } catch (e) {
       console.error(e);
       showToast('Erro ao salvar material.', 'error');
+      return null;
     }
   };
 
