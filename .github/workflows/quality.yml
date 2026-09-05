@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -15,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -30,3 +36,9 @@ jobs:
         run: npm run build
       - name: Run API smoke tests
         run: npm run test:smoke -w @jeh-doces/api
+      - name: Run billing tests
+        run: npm run test:billing -w @jeh-doces/api
+      - name: Run webhook tests
+        run: npm run test:webhook -w @jeh-doces/api
+      - name: Run payment tests
+        run: npm run test:payment -w @jeh-doces/api
