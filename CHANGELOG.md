@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.61] - 2026-09-05
+
+### Adicionado
+
+- Filtros independentes para os relatórios financeiros e operacionais.
+- Exportações e impressão passam a respeitar o período selecionado.
+
 ## [1.0.51] - 2026-09-05
 
 ### Adicionado
