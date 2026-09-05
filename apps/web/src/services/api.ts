@@ -36,7 +36,14 @@ export interface BillingStatus {
   currentPeriodEnd: string | null;
   pendingPaymentId?: string | null;
   pendingPlan?: 'monthly' | 'annual' | null;
-  payments?: { mercadoPagoId: string; plan: 'monthly' | 'annual'; amount: number; status: string; paidAt: string | null; createdAt: string }[];
+  payments?: {
+    mercadoPagoId: string;
+    plan: 'monthly' | 'annual';
+    amount: number;
+    status: string;
+    paidAt: string | null;
+    createdAt: string;
+  }[];
 }
 
 export interface PixPayment {
@@ -49,7 +56,12 @@ export interface PixPayment {
   ticketUrl: string | null;
 }
 
-export interface RecurringSubscription { id: string; plan: 'monthly' | 'annual'; amount: number; checkoutUrl: string; }
+export interface RecurringSubscription {
+  id: string;
+  plan: 'monthly' | 'annual';
+  amount: number;
+  checkoutUrl: string;
+}
 
 export interface AccountDeletionStatus {
   deletionRequestedAt: string | null;
@@ -104,21 +116,36 @@ export const api = {
   async syncBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing/sync', { method: 'POST' });
   },
-  async cancelPendingBilling(): Promise<BillingStatus> {
-    return request<BillingStatus>('/billing/pending-payment', { method: 'DELETE' });
+  async cancelPendingBilling(paymentId?: string): Promise<BillingStatus> {
+    return request<BillingStatus>(
+      `/billing/pending-payment${paymentId ? `?paymentId=${encodeURIComponent(paymentId)}` : ''}`,
+      { method: 'DELETE' },
+    );
   },
   async createPixPayment(plan: 'monthly' | 'annual'): Promise<PixPayment> {
     return request<PixPayment>('/billing/pix', { method: 'POST', body: JSON.stringify({ plan }) });
   },
   async createRecurringSubscription(plan: 'monthly' | 'annual'): Promise<RecurringSubscription> {
-    return request<RecurringSubscription>('/billing/recurring', { method: 'POST', body: JSON.stringify({ plan }) });
+    return request<RecurringSubscription>('/billing/recurring', {
+      method: 'POST',
+      body: JSON.stringify({ plan }),
+    });
   },
   async cancelBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing/subscription', { method: 'DELETE' });
   },
-  async getDeletionStatus(): Promise<AccountDeletionStatus> { return request<AccountDeletionStatus>('/account/deletion'); },
-  async requestDeletion(): Promise<AccountDeletionStatus> { return request<AccountDeletionStatus>('/account/deletion', { method: 'POST', body: JSON.stringify({}) }); },
-  async cancelDeletion(): Promise<AccountDeletionStatus> { return request<AccountDeletionStatus>('/account/deletion', { method: 'DELETE' }); },
+  async getDeletionStatus(): Promise<AccountDeletionStatus> {
+    return request<AccountDeletionStatus>('/account/deletion');
+  },
+  async requestDeletion(): Promise<AccountDeletionStatus> {
+    return request<AccountDeletionStatus>('/account/deletion', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+  },
+  async cancelDeletion(): Promise<AccountDeletionStatus> {
+    return request<AccountDeletionStatus>('/account/deletion', { method: 'DELETE' });
+  },
   async getCommitments(): Promise<Commitment[]> {
     return request<Commitment[]>('/commitments');
   },
