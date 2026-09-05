@@ -13,4 +13,5 @@
 - [x] Smoke test valida o cabeçalho de correlação.
 - [ ] Dashboard Grafana com latência, tráfego, erros e saturação.
 - [ ] Alertas de indisponibilidade, erro e falha de pagamento.
+- [x] API emite eventos estruturados para falhas do provedor de pagamentos.
 - [ ] Validar coleta no ambiente de produção.
