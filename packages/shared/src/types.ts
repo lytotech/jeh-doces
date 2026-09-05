@@ -169,6 +169,10 @@ export interface AppSettings {
   pixKeyType: string;
   defaultProfitMargin: number;
   currencySymbol: string;
+  automaticDeliveryReminders?: boolean;
+  automaticPaymentReminders?: boolean;
+  deliveryReminderHours?: number;
+  paymentReminderDays?: number;
 }
 
 export interface DatabaseSchema {

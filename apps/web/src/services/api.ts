@@ -120,6 +120,23 @@ export interface CommunicationRecord {
   createdAt: string;
 }
 
+export interface AutomaticReminder {
+  id: string;
+  orderId: string;
+  kind: 'delivery' | 'payment';
+  dueAt: string;
+  order: {
+    id: string;
+    orderNumber: string;
+    clientName: string | null;
+    clientPhone: string | null;
+    deliveryDate: string;
+    status: OrderStatus;
+    totalCharged: number;
+    payments: { amount: number }[];
+  };
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -163,6 +180,15 @@ async function requestOnce<T>(endpoint: string, options?: RequestInit): Promise<
 export const api = {
   async getBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing');
+  },
+  async getAutomaticReminders(): Promise<AutomaticReminder[]> {
+    return request<AutomaticReminder[]>('/communications/reminders');
+  },
+  async updateAutomaticReminder(id: string, action: 'complete' | 'dismiss') {
+    return request<{ success: boolean }>(`/communications/reminders/${id}/${action}`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
   },
   async syncBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing/sync', {

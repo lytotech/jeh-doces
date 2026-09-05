@@ -15,6 +15,16 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [storePhone, setStorePhone] = useState(maskPhone(settings.storePhone));
   const [pixKey, setPixKey] = useState(settings.pixKey);
   const [pixKeyType, setPixKeyType] = useState(settings.pixKeyType);
+  const [automaticDeliveryReminders, setAutomaticDeliveryReminders] = useState(
+    settings.automaticDeliveryReminders ?? false,
+  );
+  const [automaticPaymentReminders, setAutomaticPaymentReminders] = useState(
+    settings.automaticPaymentReminders ?? false,
+  );
+  const [deliveryReminderHours, setDeliveryReminderHours] = useState(
+    settings.deliveryReminderHours ?? 24,
+  );
+  const [paymentReminderDays, setPaymentReminderDays] = useState(settings.paymentReminderDays ?? 1);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -38,6 +48,10 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         pixKey: pixKey.trim(),
         pixKeyType: pixKeyType.trim(),
         defaultProfitMargin: settings.defaultProfitMargin,
+        automaticDeliveryReminders,
+        automaticPaymentReminders,
+        deliveryReminderHours,
+        paymentReminderDays,
       });
     } finally {
       setSaving(false);
@@ -139,6 +153,65 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               {saving ? 'Salvando…' : 'Salvar configurações'}
             </Button>
           </form>
+        </Card>
+        <Card className="border-[#E8DECF] bg-white p-5 md:p-6">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-[#72203F]">Lembretes automáticos</h2>
+            <p className="mt-1 text-sm text-[#8C7665]">
+              O Confeiti prepara lembretes na fila para você abrir no WhatsApp sem duplicar avisos.
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="flex items-start gap-3 rounded-2xl border border-[#E8DECF] p-4 text-sm">
+              <input
+                type="checkbox"
+                checked={automaticDeliveryReminders}
+                onChange={(event) => setAutomaticDeliveryReminders(event.target.checked)}
+                className="mt-1 accent-[#96315C]"
+              />
+              <span>
+                <strong className="block text-[#302116]">Lembrete de entrega</strong>
+                <span className="text-[#8C7665]">Avisar antes da data combinada.</span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 rounded-2xl border border-[#E8DECF] p-4 text-sm">
+              <input
+                type="checkbox"
+                checked={automaticPaymentReminders}
+                onChange={(event) => setAutomaticPaymentReminders(event.target.checked)}
+                className="mt-1 accent-[#96315C]"
+              />
+              <span>
+                <strong className="block text-[#302116]">Lembrete de cobrança</strong>
+                <span className="text-[#8C7665]">Lembrar pedidos com saldo pendente.</span>
+              </span>
+            </label>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <FormField label="Antecedência da entrega">
+              <select
+                className="w-full bg-transparent text-base font-medium text-[#302116] focus:outline-none"
+                value={deliveryReminderHours}
+                onChange={(event) => setDeliveryReminderHours(Number(event.target.value))}
+              >
+                <option value={12}>12 horas</option>
+                <option value={24}>24 horas</option>
+                <option value={48}>48 horas</option>
+                <option value={72}>72 horas</option>
+              </select>
+            </FormField>
+            <FormField label="Lembrar cobrança com antecedência">
+              <select
+                className="w-full bg-transparent text-base font-medium text-[#302116] focus:outline-none"
+                value={paymentReminderDays}
+                onChange={(event) => setPaymentReminderDays(Number(event.target.value))}
+              >
+                <option value={1}>1 dia</option>
+                <option value={2}>2 dias</option>
+                <option value={3}>3 dias</option>
+              </select>
+            </FormField>
+          </div>
         </Card>
         <Card className="border-[#E8DECF] bg-white p-5 md:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

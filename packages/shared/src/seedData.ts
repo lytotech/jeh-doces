@@ -7,6 +7,10 @@ export const initialSettings: AppSettings = {
   pixKeyType: 'E-mail',
   defaultProfitMargin: 100, // 100% markup
   currencySymbol: 'R$',
+  automaticDeliveryReminders: false,
+  automaticPaymentReminders: false,
+  deliveryReminderHours: 24,
+  paymentReminderDays: 1,
 };
 
 export const initialIngredients: Ingredient[] = [

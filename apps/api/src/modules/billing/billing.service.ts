@@ -5,6 +5,7 @@ import { prisma } from '../../infrastructure/database/client';
 import { env } from '../../config/env';
 import { AuthContext } from '../../common/auth.types';
 import { hasCurrentPaidPeriod } from './plan-limits';
+import { billingProviderFailures } from '../../telemetry';
 
 const PRICES: Record<'monthly' | 'annual', number> = { monthly: 19.8, annual: 179.8 };
 
@@ -66,6 +67,7 @@ export class BillingService {
   private readonly logger = new Logger(BillingService.name);
 
   private logBillingFailure(operation: string, fields: Record<string, unknown> = {}) {
+    billingProviderFailures.add(1, { operation, provider: 'mercadopago' });
     this.logger.error(
       JSON.stringify({
         event: 'billing_provider_failure',

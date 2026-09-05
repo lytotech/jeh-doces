@@ -886,6 +886,10 @@ class Database {
       pixKeyType: row.pixKeyType ?? '',
       defaultProfitMargin: row.defaultProfitMargin,
       currencySymbol: row.currencySymbol,
+      automaticDeliveryReminders: row.automaticDeliveryReminders,
+      automaticPaymentReminders: row.automaticPaymentReminders,
+      deliveryReminderHours: row.deliveryReminderHours,
+      paymentReminderDays: row.paymentReminderDays,
     };
   }
   async saveSettings(data: Partial<AppSettings>) {
@@ -903,6 +907,10 @@ class Database {
       pixKeyType: row.pixKeyType ?? '',
       defaultProfitMargin: row.defaultProfitMargin,
       currencySymbol: row.currencySymbol,
+      automaticDeliveryReminders: row.automaticDeliveryReminders,
+      automaticPaymentReminders: row.automaticPaymentReminders,
+      deliveryReminderHours: row.deliveryReminderHours,
+      paymentReminderDays: row.paymentReminderDays,
     };
   }
   async getAllData(): Promise<DatabaseSchema> {

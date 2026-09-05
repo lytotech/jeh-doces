@@ -55,7 +55,8 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 - [x] Logs estruturados com correlação de requisição.
 - [x] Traces automáticos da API via OpenTelemetry.
 - [ ] Alertas de indisponibilidade, erro e falha de pagamento.
-- [ ] Testes E2E dos fluxos críticos e backup restaurável.
+- [ ] Testes E2E dos fluxos críticos.
+- [x] Validação automatizada de backup restaurável no CI.
 
 ## Critérios de entrega
 

@@ -4,7 +4,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
-import { AlertTriangle, Calendar, Download, Plus } from 'lucide-react';
+import { AlertTriangle, Calendar, Download, MessageCircle, Plus } from 'lucide-react';
 import { Order } from '../../types';
 import {
   api,
@@ -12,7 +12,9 @@ import {
   ExpenseRecord,
   FinanceSummary,
   OperationalReport,
+  AutomaticReminder,
 } from '../../services/api';
+import { getWhatsAppUrl } from '../../services/whatsappExporter';
 
 interface DashboardViewProps {
   onSelectOrder: (order: Order) => void;
@@ -31,6 +33,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [finance, setFinance] = useState<FinanceSummary | null>(null);
   const [report, setReport] = useState<OperationalReport | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [reminders, setReminders] = useState<AutomaticReminder[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [expenseDraft, setExpenseDraft] = useState({
     description: '',
@@ -73,6 +76,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .getBilling()
       .then(setBilling)
       .catch(() => setBilling(null));
+    api
+      .getAutomaticReminders()
+      .then(setReminders)
+      .catch(() => setReminders([]));
   }, [reportPeriod]);
 
   const hasCompletePlan =
@@ -106,6 +113,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const removeExpense = async (id: string) => {
     await api.deleteExpense(id);
     refreshFinance();
+  };
+
+  const openAutomaticReminder = async (reminder: AutomaticReminder) => {
+    const remaining = Math.max(
+      0,
+      reminder.order.totalCharged -
+        reminder.order.payments.reduce((sum, payment) => sum + payment.amount, 0),
+    );
+    const message =
+      reminder.kind === 'delivery'
+        ? `Olá, ${reminder.order.clientName || 'tudo bem'}! 😊\n\nLembrete da encomenda *#${reminder.order.orderNumber}*: sua entrega está agendada para *${formatDateTime(reminder.order.deliveryDate)}*.\n\nSe precisar ajustar algum detalhe, avise a gente por aqui! ✨`
+        : `Olá, ${reminder.order.clientName || 'tudo bem'}! 😊\n\nLembrete da encomenda *#${reminder.order.orderNumber}*: ainda falta *${formatCurrency(remaining)}* para completar o pagamento.\n\nObrigada pela preferência! ✨`;
+    window.open(
+      getWhatsAppUrl(reminder.order.clientPhone || undefined, message),
+      '_blank',
+      'noopener,noreferrer',
+    );
+    await api.updateAutomaticReminder(reminder.id, 'complete');
+    setReminders((current) => current.filter((item) => item.id !== reminder.id));
   };
 
   const exportFinanceCsv = () => {
@@ -342,6 +368,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             ))}
           </div>
         </div>
+
+        {reminders.length > 0 && (
+          <section className="rounded-2xl border border-[#E7C9A1] bg-[#FFF8E9] p-4 shadow-xs">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-bold text-[#654A12]">
+                  <MessageCircle className="h-4 w-4" /> Lembretes prontos para enviar
+                </h2>
+                <p className="mt-1 text-xs text-[#8A7565]">
+                  Abra a conversa no WhatsApp e o lembrete será marcado como enviado.
+                </p>
+              </div>
+              <span className="rounded-full bg-[#F5DFA8] px-2 py-1 text-xs font-bold text-[#654A12]">
+                {reminders.length}
+              </span>
+            </div>
+            <div className="grid gap-2 md:grid-cols-2">
+              {reminders.map((reminder) => (
+                <div
+                  key={reminder.id}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-[#E7C9A1] bg-white px-3 py-2"
+                >
+                  <div className="min-w-0 text-xs">
+                    <strong className="block truncate text-[#302116]">
+                      #{reminder.order.orderNumber} ·{' '}
+                      {reminder.order.clientName || 'Cliente avulso'}
+                    </strong>
+                    <span className="text-[#8A7565]">
+                      {reminder.kind === 'delivery'
+                        ? 'Lembrete de entrega'
+                        : 'Lembrete de cobrança'}
+                    </span>
+                  </div>
+                  <Button size="sm" onClick={() => void openAutomaticReminder(reminder)}>
+                    Enviar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {overdueOrders.length > 0 && (
           <button

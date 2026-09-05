@@ -10,7 +10,7 @@ tokens, e-mails, valores ou conteúdo de respostas do provedor.
 - [x] Emitir eventos JSON com operação, provedor, status HTTP e resultado esperado.
 - [x] Cobrir criação Pix, assinatura recorrente, cancelamento, sincronização e estorno.
 - [x] Manter os eventos livres de credenciais, valores e dados pessoais.
-- [ ] Criar alerta Grafana/Loki para `billing_provider_failure`.
+- [x] Criar sinal de métrica e alerta Grafana/Prometheus para falhas do provedor.
 - [ ] Validar um erro controlado no ambiente de produção.
 
 ## Validação

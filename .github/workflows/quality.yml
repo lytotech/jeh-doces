@@ -42,3 +42,11 @@ jobs:
         run: npm run test:webhook -w @jeh-doces/api
       - name: Run payment tests
         run: npm run test:payment -w @jeh-doces/api
+      - name: Run finance tests
+        run: npm run test:finance -w @jeh-doces/api
+      - name: Run inventory tests
+        run: npm run test:inventory -w @jeh-doces/api
+      - name: Run account tests
+        run: npm run test:account -w @jeh-doces/api
+      - name: Run backup validation tests
+        run: npm run test:backup -w @jeh-doces/api
