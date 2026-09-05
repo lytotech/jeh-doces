@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.42] - 2026-09-05
+
+### Alterado
+
+- Configurações & Backup agora são uma tela própria, separada do gerenciamento de assinatura.
+- Removidos o plano da tela de configurações e o banner global de pagamento.
+
 ## [1.0.41] - 2026-09-05
 
 ### Adicionado

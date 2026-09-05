@@ -5,9 +5,8 @@ import { InactiveCompanyView } from './components/account/InactiveCompanyView';
 import { Sidebar } from './components/layout/Sidebar';
 import { BottomNav } from './components/layout/BottomNav';
 import { ToastContainer } from './components/ui/ToastContainer';
-import { BackupSettingsModal } from './components/settings/BackupSettingsModal';
+import { SettingsPage } from './components/settings/SettingsPage';
 import { TeamModal } from './components/settings/TeamModal';
-import { BillingBanner } from './components/billing/BillingBanner';
 import { BillingPage } from './components/billing/BillingPage';
 
 // Orders
@@ -58,7 +57,6 @@ export const App: React.FC = () => {
   const [isCreatingNewMaterial, setIsCreatingNewMaterial] = useState(false);
   const [isCreatingNewProduct, setIsCreatingNewProduct] = useState(false);
   const [isCreatingNewCustomer, setIsCreatingNewCustomer] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showTeamModal, setShowTeamModal] = useState(false);
 
   const selectedOrder = orders.find((o) => o.id === selectedOrderId);
@@ -122,7 +120,7 @@ export const App: React.FC = () => {
           <OrderList
             onSelectOrder={(ord) => setSelectedOrderId(ord.id)}
             onNewOrder={() => setIsCreatingNewOrder(true)}
-            onOpenSettings={() => setShowSettingsModal(true)}
+            onOpenSettings={() => setActiveTab('settings')}
           />
         );
       }
@@ -198,7 +196,7 @@ export const App: React.FC = () => {
               setActiveTab('orders');
               setIsCreatingNewOrder(true);
             }}
-            onOpenSettings={() => setShowSettingsModal(true)}
+            onOpenSettings={() => setActiveTab('settings')}
           />
         );
       }
@@ -231,6 +229,9 @@ export const App: React.FC = () => {
       case 'billing':
         return <BillingPage onBack={() => setActiveTab('orders')} />;
 
+      case 'settings':
+        return <SettingsPage onBack={() => setActiveTab('orders')} />;
+
       default:
         return null;
     }
@@ -240,13 +241,12 @@ export const App: React.FC = () => {
     <div className="min-h-screen bg-[#FAF7F2] flex flex-row">
       {/* Sidebar on desktop */}
       <Sidebar
-        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenSettings={() => setActiveTab('settings')}
         onOpenTeam={() => setShowTeamModal(true)}
       />
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FAF7F2] min-h-screen relative">
-        <BillingBanner />
         <main className="flex-1 w-full pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
           {renderContent()}
         </main>
@@ -254,17 +254,11 @@ export const App: React.FC = () => {
 
       {/* Bottom Nav on mobile */}
       <BottomNav
-        onOpenSettings={() => setShowSettingsModal(true)}
+        onOpenSettings={() => setActiveTab('settings')}
         onOpenTeam={() => setShowTeamModal(true)}
       />
       <ToastContainer />
 
-      {showSettingsModal && (
-        <BackupSettingsModal
-          isOpen={showSettingsModal}
-          onClose={() => setShowSettingsModal(false)}
-        />
-      )}
       {showTeamModal && (
         <TeamModal isOpen={showTeamModal} onClose={() => setShowTeamModal(false)} />
       )}
