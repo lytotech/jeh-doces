@@ -1,36 +1,30 @@
 import React from 'react';
 import { AlertCircle, Check, Copy, CreditCard, X } from 'lucide-react';
 import { api, BillingStatus, PixPayment } from '../../services/api';
-import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 
 export function BillingBanner() {
   const [billing, setBilling] = React.useState<BillingStatus | null>(null);
   const [payment, setPayment] = React.useState<PixPayment | null>(null);
   const [loading, setLoading] = React.useState(false);
-  const [cancelOpen, setCancelOpen] = React.useState(false);
   React.useEffect(() => {
     let mounted = true;
-    const refresh = () => { void api.getBilling().then((value) => { if (mounted) setBilling(value); }).catch(() => undefined); };
-    refresh();
-    const interval = window.setInterval(refresh, 5000);
-    return () => { mounted = false; window.clearInterval(interval); };
+    void api.getBilling().then((value) => { if (mounted) setBilling(value); }).catch(() => undefined);
+    return () => { mounted = false; };
   }, []);
+  React.useEffect(() => {
+    if (!billing || (billing.plan !== 'basic' && billing.status !== 'pending')) return;
+    const interval = window.setInterval(() => {
+      void api.getBilling().then(setBilling).catch(() => undefined);
+    }, 5000);
+    return () => window.clearInterval(interval);
+  }, [billing?.plan, billing?.status]);
   const createPayment = async (plan: 'monthly' | 'annual') => {
     setLoading(true);
     try { setPayment(await api.createPixPayment(plan)); } finally { setLoading(false); }
   };
-  const cancelRenewal = async () => {
-    setLoading(true);
-    try { setBilling(await api.cancelBilling()); } finally { setLoading(false); }
-  };
   if (!billing) return null;
   const active = billing.plan !== 'basic' && billing.currentPeriodEnd && new Date(billing.currentPeriodEnd) > new Date();
-  if (active) return (
-      <><div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-30 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[#EADDE2] bg-white p-3 text-xs text-[#63304B] shadow-lg shadow-[#63304B]/10 md:bottom-5 md:right-6">
-      <div className="flex items-center justify-between gap-3"><span><strong>Plano Completo ativo</strong><span className="ml-1 text-[#756878]">até {new Date(billing.currentPeriodEnd!).toLocaleDateString('pt-BR')}</span></span>{billing.status === 'canceled' ? <span className="font-semibold text-amber-700">Cancelado</span> : <button disabled={loading} onClick={() => setCancelOpen(true)} className="font-semibold underline underline-offset-2">Cancelar renovação</button>}</div>
-    </div>
-    <CancelSubscriptionDialog isOpen={cancelOpen} onClose={() => setCancelOpen(false)} onConfirm={cancelRenewal} /></>
-  );
+  if (active) return null;
   return (
     <>
       <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-30 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-[#E7B84B] bg-[#FFFDF2] p-3 text-[#654A12] shadow-lg shadow-[#654A12]/10 md:bottom-5 md:right-6">
