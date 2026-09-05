@@ -120,6 +120,26 @@ export class BillingService {
     });
   }
 
+  private async getPixPayment(paymentId: string) {
+    const response = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Bearer ${env.mercadoPagoAccessToken}` },
+    });
+    if (!response.ok) return null;
+    return response.json() as Promise<any>;
+  }
+
+  private mapPixPayment(payment: any, plan: 'monthly' | 'annual') {
+    return {
+      id: String(payment.id),
+      plan,
+      amount: PRICES[plan],
+      status: payment.status,
+      qrCode: payment.point_of_interaction?.transaction_data?.qr_code || null,
+      qrCodeBase64: payment.point_of_interaction?.transaction_data?.qr_code_base64 || null,
+      ticketUrl: payment.point_of_interaction?.transaction_data?.ticket_url || null,
+    };
+  }
+
   async createPixPayment(auth: AuthContext, requestedPlan: string) {
     if (requestedPlan !== 'monthly' && requestedPlan !== 'annual') {
       throw new BadRequestException('Plano inválido.');
@@ -128,6 +148,13 @@ export class BillingService {
       throw new BadRequestException('Mercado Pago ainda não está configurado.');
     }
     const plan = requestedPlan as 'monthly' | 'annual';
+    const current = await this.ensureSubscription(auth.companyId);
+    if (current.pendingPaymentId && current.pendingPlan === plan) {
+      const existing = await this.getPixPayment(current.pendingPaymentId);
+      if (existing && !['cancelled', 'canceled', 'rejected'].includes(String(existing.status))) {
+        return this.mapPixPayment(existing, plan);
+      }
+    }
     const reference = `${auth.companyId}:${plan}:${randomUUID()}`;
     const response = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
@@ -156,15 +183,7 @@ export class BillingService {
     });
     const subscription = await prisma.subscription.findUniqueOrThrow({ where: { companyId: auth.companyId } });
     await prisma.subscriptionPayment.create({ data: { subscriptionId: subscription.id, mercadoPagoId: String(payment.id), plan, amount: PRICES[plan], status: String(payment.status || 'pending') } });
-    return {
-      id: String(payment.id),
-      plan,
-      amount: PRICES[plan],
-      status: payment.status,
-      qrCode: payment.point_of_interaction?.transaction_data?.qr_code || null,
-      qrCodeBase64: payment.point_of_interaction?.transaction_data?.qr_code_base64 || null,
-      ticketUrl: payment.point_of_interaction?.transaction_data?.ticket_url || null,
-    };
+    return this.mapPixPayment(payment, plan);
   }
 
   async createRecurringSubscription(auth: AuthContext, requestedPlan: string) {
