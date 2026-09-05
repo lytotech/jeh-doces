@@ -46,7 +46,8 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 - [x] Faturamento, margem e lucro por período.
 - [x] Produtos mais vendidos e clientes recorrentes.
 - [x] Consumo e custo de ingredientes e materiais.
-- [ ] Exportação PDF/CSV conforme o plano.
+- [x] Exportação CSV conforme o plano.
+- [ ] Exportação PDF conforme o plano Completo.
 
 ### 6. Confiabilidade
 

@@ -10,7 +10,8 @@ Transformar os dados de encomendas em decisões práticas para produção, venda
 - [x] Listar os produtos mais vendidos.
 - [x] Listar clientes recorrentes.
 - [x] Listar consumo e custo de materiais.
-- [ ] Exportar relatório operacional em CSV/PDF conforme o plano.
+- [x] Exportar relatório operacional em CSV conforme o plano.
+- [ ] Exportar relatório operacional em PDF conforme o plano Completo.
 - [ ] Adicionar filtros de período independentes do painel de entregas.
 
 ## Validação

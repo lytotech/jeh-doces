@@ -103,6 +103,38 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const exportOperationalReportCsv = () => {
+    if (!report) return;
+    const rows = [
+      ['Indicador', 'Valor'],
+      ['Vendas', report.salesTotal.toFixed(2)],
+      ['Recebido', report.receivedTotal.toFixed(2)],
+      ['A receber', report.receivableTotal.toFixed(2)],
+      ['Custo estimado', report.estimatedCost.toFixed(2)],
+      ['Lucro estimado', report.estimatedProfit.toFixed(2)],
+      ['Margem (%)', report.marginPercent.toFixed(2)],
+      ['Encomendas', report.ordersCount],
+      [],
+      ['Produtos mais vendidos', 'Quantidade', 'Receita'],
+      ...report.topProducts.map((item) => [item.name, item.quantity, item.revenue.toFixed(2)]),
+      [],
+      ['Clientes recorrentes', 'Encomendas', 'Receita'],
+      ...report.recurringCustomers.map((item) => [item.name, item.orders, item.revenue.toFixed(2)]),
+      [],
+      ['Consumo de materiais', 'Quantidade', 'Custo'],
+      ...report.materialConsumption.map((item) => [item.name, item.quantity, item.cost.toFixed(2)]),
+    ];
+    const csv = rows
+      .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `confeiti-relatorio-operacional-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const periodOrders = useMemo(() => {
     const activeOrders = orders.filter((order) => order.status !== 'cancelado');
     if (period === 'all') return activeOrders;
@@ -416,6 +448,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <p className="text-xs text-[#7A6453]">
               Veja o que mais vende, quem retorna e quais materiais concentram seus custos.
             </p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={exportOperationalReportCsv}
+              disabled={!report}
+            >
+              <Download className="h-3.5 w-3.5" /> Exportar relatório CSV
+            </Button>
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <ReportList
