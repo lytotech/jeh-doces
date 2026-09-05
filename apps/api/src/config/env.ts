@@ -18,4 +18,7 @@ export const env = {
   mercadoPagoAccessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
   mercadoPagoWebhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || '',
   mercadoPagoWebhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET || '',
+  otelEnabled: process.env.OTEL_ENABLED === 'true',
+  otelMetricsUrl: process.env.OTEL_METRICS_URL || 'http://192.168.2.51:9090/api/v1/otlp/v1/metrics',
+  otelTracesUrl: process.env.OTEL_TRACES_URL || 'http://192.168.2.51:4318/v1/traces',
 };

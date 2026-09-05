@@ -133,6 +133,10 @@ Configure `MERCADOPAGO_WEBHOOK_SECRET` com a chave secreta exibida no painel de
 notificações do Mercado Pago. Quando preenchida, a API valida a assinatura
 `x-signature` e rejeita notificações adulteradas ou antigas.
 
+Para habilitar observabilidade OpenTelemetry na API, configure `OTEL_ENABLED=true`,
+`OTEL_METRICS_URL` apontando para o receptor OTLP do Prometheus e `OTEL_TRACES_URL`
+apontando para o endpoint OTLP HTTP do Tempo. A coleta fica desativada por padrão.
+
 `APP_URL` também determina se o cookie de sessão será marcado como `Secure`:
 use uma URL `https://` no acesso público e a URL HTTP da LAN apenas durante a
 validação interna.
