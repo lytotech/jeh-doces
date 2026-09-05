@@ -1,11 +1,18 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
-import { AlertTriangle, Calendar, Plus } from 'lucide-react';
+import { AlertTriangle, Calendar, Download, Plus } from 'lucide-react';
 import { Order } from '../../types';
+import {
+  api,
+  BillingStatus,
+  ExpenseRecord,
+  FinanceSummary,
+  OperationalReport,
+} from '../../services/api';
 
 interface DashboardViewProps {
   onSelectOrder: (order: Order) => void;
@@ -18,8 +25,185 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNewOrder,
   onOpenSettings,
 }) => {
-  const { orders, materials, products, ingredients, setActiveTab } = useApp();
+  const { orders, materials, products, ingredients, settings, setActiveTab, showToast } = useApp();
   const [period, setPeriod] = useState<'all' | '30' | '90'>('all');
+  const [finance, setFinance] = useState<FinanceSummary | null>(null);
+  const [report, setReport] = useState<OperationalReport | null>(null);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [expenseDraft, setExpenseDraft] = useState({
+    description: '',
+    category: 'Outros',
+    amount: '',
+    occurredAt: new Date().toISOString().slice(0, 10),
+  });
+  const [savingExpense, setSavingExpense] = useState(false);
+
+  const refreshFinance = () =>
+    Promise.all([api.getFinanceSummary(), api.getExpenses(), api.getOperationalReport()])
+      .then(([summary, items, operationalReport]) => {
+        setFinance(summary);
+        setExpenses(items);
+        setReport(operationalReport);
+      })
+      .catch(() => undefined);
+
+  useEffect(() => {
+    refreshFinance();
+    api
+      .getBilling()
+      .then(setBilling)
+      .catch(() => setBilling(null));
+  }, []);
+
+  const hasCompletePlan =
+    (billing?.plan === 'monthly' || billing?.plan === 'annual') &&
+    billing.status !== 'pending' &&
+    (!billing.currentPeriodEnd || new Date(billing.currentPeriodEnd).getTime() > Date.now());
+
+  const saveExpense = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!expenseDraft.description.trim() || Number(expenseDraft.amount) <= 0) return;
+    setSavingExpense(true);
+    try {
+      await api.saveExpense({
+        description: expenseDraft.description,
+        category: expenseDraft.category,
+        amount: Number(expenseDraft.amount),
+        occurredAt: expenseDraft.occurredAt,
+      });
+      setExpenseDraft({
+        description: '',
+        category: 'Outros',
+        amount: '',
+        occurredAt: new Date().toISOString().slice(0, 10),
+      });
+      refreshFinance();
+    } finally {
+      setSavingExpense(false);
+    }
+  };
+
+  const removeExpense = async (id: string) => {
+    await api.deleteExpense(id);
+    refreshFinance();
+  };
+
+  const exportFinanceCsv = () => {
+    if (!finance) return;
+    const rows = [
+      ['Indicador', 'Valor'],
+      ['Vendas', finance.salesTotal.toFixed(2)],
+      ['Recebido', finance.receivedTotal.toFixed(2)],
+      ['A receber', finance.receivableTotal.toFixed(2)],
+      ['Despesas', finance.expensesTotal.toFixed(2)],
+      ['Caixa líquido', finance.netCash.toFixed(2)],
+      ['Lucro estimado', finance.estimatedProfit.toFixed(2)],
+      [],
+      ['Data', 'Categoria', 'Descrição', 'Valor'],
+      ...expenses.map((expense) => [
+        new Date(expense.occurredAt).toLocaleDateString('pt-BR'),
+        expense.category,
+        expense.description,
+        expense.amount.toFixed(2),
+      ]),
+    ];
+    const csv = rows
+      .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `confeiti-financeiro-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportOperationalReportCsv = () => {
+    if (!report) return;
+    const rows = [
+      ['Indicador', 'Valor'],
+      ['Vendas', report.salesTotal.toFixed(2)],
+      ['Recebido', report.receivedTotal.toFixed(2)],
+      ['A receber', report.receivableTotal.toFixed(2)],
+      ['Custo estimado', report.estimatedCost.toFixed(2)],
+      ['Lucro estimado', report.estimatedProfit.toFixed(2)],
+      ['Margem (%)', report.marginPercent.toFixed(2)],
+      ['Encomendas', report.ordersCount],
+      [],
+      ['Produtos mais vendidos', 'Quantidade', 'Receita'],
+      ...report.topProducts.map((item) => [item.name, item.quantity, item.revenue.toFixed(2)]),
+      [],
+      ['Clientes recorrentes', 'Encomendas', 'Receita'],
+      ...report.recurringCustomers.map((item) => [item.name, item.orders, item.revenue.toFixed(2)]),
+      [],
+      ['Consumo de materiais', 'Quantidade', 'Custo'],
+      ...report.materialConsumption.map((item) => [item.name, item.quantity, item.cost.toFixed(2)]),
+    ];
+    const csv = rows
+      .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `confeiti-relatorio-operacional-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const printOperationalReport = () => {
+    if (!report || !hasCompletePlan) {
+      showToast('A exportação PDF está disponível no plano Completo.', 'warning');
+      return;
+    }
+    const escapeHtml = (value: string) =>
+      value.replace(/[&<>'"]/g, (character) => {
+        const entities: Record<string, string> = {
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;',
+        };
+        return entities[character];
+      });
+    const list = (
+      items: { name: string; quantity: number; value: number }[],
+      valueLabel: string,
+    ) =>
+      items.length
+        ? `<table><thead><tr><th>Nome</th><th>Quantidade</th><th>${valueLabel}</th></tr></thead><tbody>${items
+            .map(
+              (item) =>
+                `<tr><td>${escapeHtml(item.name)}</td><td>${formatDecimal(item.quantity)}</td><td>${formatCurrency(item.value)}</td></tr>`,
+            )
+            .join('')}</tbody></table>`
+        : '<p>Nenhum registro no período.</p>';
+    const reportWindow = window.open('', '_blank', 'noopener,noreferrer');
+    if (!reportWindow) {
+      showToast('Permita pop-ups para gerar o PDF.', 'warning');
+      return;
+    }
+    reportWindow.document.write(
+      `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório operacional - ${escapeHtml(settings.storeName)}</title><style>body{font-family:Arial,sans-serif;color:#302116;margin:40px}h1{color:#8d3157}h2{margin-top:28px;color:#6b1f3b}table{border-collapse:collapse;width:100%;margin-top:10px}th,td{border-bottom:1px solid #eadde2;padding:8px;text-align:left}th{background:#fff1e8}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.card{border:1px solid #eadde2;border-radius:12px;padding:12px}.value{font-size:20px;font-weight:700;color:#8d3157}@media print{body{margin:20px}}</style></head><body><h1>${escapeHtml(settings.storeName)}</h1><p>Relatório operacional · gerado em ${new Date().toLocaleString('pt-BR')}</p><div class="summary"><div class="card">Vendas<div class="value">${formatCurrency(report.salesTotal)}</div></div><div class="card">Recebido<div class="value">${formatCurrency(report.receivedTotal)}</div></div><div class="card">Lucro estimado<div class="value">${formatCurrency(report.estimatedProfit)}</div></div></div><h2>Produtos mais vendidos</h2>${list(
+        report.topProducts.map((item) => ({ ...item, value: item.revenue })),
+        'Receita',
+      )}<h2>Clientes recorrentes</h2>${list(
+        report.recurringCustomers.map((item) => ({
+          ...item,
+          quantity: item.orders,
+          value: item.revenue,
+        })),
+        'Receita',
+      )}<h2>Consumo de materiais</h2>${list(
+        report.materialConsumption.map((item) => ({ ...item, value: item.cost })),
+        'Custo',
+      )}</body></html>`,
+    );
+    reportWindow.document.close();
+    reportWindow.focus();
+    reportWindow.print();
+  };
 
   const periodOrders = useMemo(() => {
     const activeOrders = orders.filter((order) => order.status !== 'cancelado');
@@ -72,7 +256,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         title="Painel & Relatórios"
         onOpenSettings={onOpenSettings}
         rightAction={
-          <Button size="sm" onClick={onNewOrder} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+          <Button
+            size="sm"
+            onClick={onNewOrder}
+            className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]"
+          >
             <Plus className="w-4 h-4" /> Nova Encomenda
           </Button>
         }
@@ -192,6 +380,204 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
+        <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-7">
+            <div className="flex items-center justify-between px-1">
+              <div>
+                <h3 className="text-base font-bold text-[#302116]">Controle financeiro</h3>
+                <p className="text-xs text-[#7A6453]">Resumo do caixa e das despesas deste mês.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[#F6ECE0] px-3 py-1 text-xs font-semibold text-[#96642F]">
+                  {finance?.ordersCount ?? 0} encomendas
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={exportFinanceCsv}
+                  disabled={!finance}
+                >
+                  <Download className="h-3.5 w-3.5" /> Exportar CSV
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                ['Recebido', finance?.receivedTotal ?? 0, 'text-emerald-700'],
+                ['A receber', finance?.receivableTotal ?? 0, 'text-amber-700'],
+                ['Despesas', finance?.expensesTotal ?? 0, 'text-red-700'],
+                ['Caixa líquido', finance?.netCash ?? 0, 'text-[#96642F]'],
+              ].map(([label, value, color]) => (
+                <div
+                  key={String(label)}
+                  className="rounded-2xl border border-[#E5DACD] bg-white p-3 shadow-xs"
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-wide text-[#8A7565]">
+                    {label}
+                  </span>
+                  <strong className={`mt-1 block text-lg ${color}`}>
+                    {formatCurrency(Number(value))}
+                  </strong>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-[#E5DACD] bg-white p-4 shadow-xs">
+              <h4 className="mb-3 text-sm font-bold text-[#302116]">Despesas recentes</h4>
+              {expenses.length === 0 ? (
+                <p className="text-xs text-[#8A7565]">Nenhuma despesa lançada neste mês.</p>
+              ) : (
+                <div className="space-y-2">
+                  {expenses.slice(0, 5).map((expense) => (
+                    <div
+                      key={expense.id}
+                      className="flex items-center justify-between gap-3 border-b border-[#F2ECE1] pb-2 text-xs last:border-0 last:pb-0"
+                    >
+                      <span className="min-w-0 truncate text-[#5C4533]">
+                        {expense.description}{' '}
+                        <em className="not-italic text-[#A89484]">· {expense.category}</em>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-2 font-semibold text-red-700">
+                        {formatCurrency(expense.amount)}
+                        <button
+                          type="button"
+                          onClick={() => void removeExpense(expense.id)}
+                          className="text-[10px] text-[#A89484] hover:text-red-700"
+                        >
+                          Excluir
+                        </button>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <form
+            onSubmit={saveExpense}
+            className="space-y-3 rounded-3xl border border-[#E5DACD] bg-white p-5 shadow-xs lg:col-span-5"
+          >
+            <div>
+              <h3 className="text-base font-bold text-[#302116]">Adicionar despesa</h3>
+              <p className="text-xs text-[#7A6453]">Registre compras e custos fora da encomenda.</p>
+            </div>
+            <input
+              value={expenseDraft.description}
+              onChange={(event) =>
+                setExpenseDraft({ ...expenseDraft, description: event.target.value })
+              }
+              placeholder="Descrição"
+              className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+            />
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={expenseDraft.amount}
+                onChange={(event) =>
+                  setExpenseDraft({ ...expenseDraft, amount: event.target.value })
+                }
+                placeholder="Valor"
+                className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+              />
+              <input
+                type="date"
+                value={expenseDraft.occurredAt}
+                onChange={(event) =>
+                  setExpenseDraft({ ...expenseDraft, occurredAt: event.target.value })
+                }
+                className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+              />
+            </div>
+            <input
+              value={expenseDraft.category}
+              onChange={(event) =>
+                setExpenseDraft({ ...expenseDraft, category: event.target.value })
+              }
+              placeholder="Categoria"
+              className="w-full rounded-xl border border-[#E5DACD] px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={
+                savingExpense ||
+                !expenseDraft.description.trim() ||
+                Number(expenseDraft.amount) <= 0
+              }
+            >
+              {savingExpense ? 'Salvando…' : 'Lançar despesa'}
+            </Button>
+          </form>
+        </section>
+
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-[#302116]">Relatório operacional</h3>
+            <p className="text-xs text-[#7A6453]">
+              Veja o que mais vende, quem retorna e quais materiais concentram seus custos.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={exportOperationalReportCsv}
+                disabled={!report}
+              >
+                <Download className="h-3.5 w-3.5" /> Exportar CSV
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={printOperationalReport}
+                disabled={!report || !hasCompletePlan}
+                title={
+                  hasCompletePlan ? 'Imprimir ou salvar como PDF' : 'Disponível no plano Completo'
+                }
+              >
+                Imprimir / PDF
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <ReportList
+              title="Produtos mais vendidos"
+              empty="Ainda não há produtos vendidos no período."
+              items={
+                report?.topProducts.map((item) => ({
+                  label: item.name,
+                  detail: `${formatDecimal(item.quantity)} un · ${formatCurrency(item.revenue)}`,
+                })) || []
+              }
+            />
+            <ReportList
+              title="Clientes recorrentes"
+              empty="Nenhum cliente recorrente no período."
+              items={
+                report?.recurringCustomers.map((item) => ({
+                  label: item.name,
+                  detail: `${item.orders} encomendas · ${formatCurrency(item.revenue)}`,
+                })) || []
+              }
+            />
+            <ReportList
+              title="Consumo de materiais"
+              empty="Nenhum material consumido no período."
+              items={
+                report?.materialConsumption.map((item) => ({
+                  label: item.name,
+                  detail: `${formatDecimal(item.quantity)} un · ${formatCurrency(item.cost)}`,
+                })) || []
+              }
+            />
+          </div>
+        </section>
+
         {/* 2-Column Desktop Grid for Deliveries and Stock Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Upcoming Orders (col-span-7) */}
@@ -304,3 +690,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     </div>
   );
 };
+
+const ReportList: React.FC<{
+  title: string;
+  empty: string;
+  items: { label: string; detail: string }[];
+}> = ({ title, empty, items }) => (
+  <div className="rounded-2xl border border-[#E5DACD] bg-white p-4 shadow-xs">
+    <h4 className="mb-3 text-sm font-bold text-[#302116]">{title}</h4>
+    {items.length === 0 ? (
+      <p className="text-xs text-[#8A7565]">{empty}</p>
+    ) : (
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div
+            key={`${item.label}-${item.detail}`}
+            className="flex items-center justify-between gap-3 border-b border-[#F2ECE1] pb-2 text-xs last:border-0 last:pb-0"
+          >
+            <span className="min-w-0 truncate font-semibold text-[#5C4533]">{item.label}</span>
+            <span className="shrink-0 text-right text-[#8A7565]">{item.detail}</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);

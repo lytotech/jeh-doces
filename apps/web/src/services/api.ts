@@ -72,6 +72,54 @@ export interface AccountDeletionStatus {
   deactivatedAt: string | null;
 }
 
+export interface ExpenseRecord {
+  id: string;
+  description: string;
+  category: string;
+  amount: number;
+  occurredAt: string;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FinanceSummary {
+  from: string;
+  to: string;
+  salesTotal: number;
+  receivedTotal: number;
+  receivableTotal: number;
+  expensesTotal: number;
+  netCash: number;
+  estimatedProfit: number;
+  ordersCount: number;
+}
+
+export interface OperationalReport {
+  from: string;
+  to: string;
+  salesTotal: number;
+  receivedTotal: number;
+  receivableTotal: number;
+  estimatedCost: number;
+  estimatedProfit: number;
+  marginPercent: number;
+  ordersCount: number;
+  topProducts: { name: string; quantity: number; revenue: number }[];
+  recurringCustomers: { name: string; orders: number; revenue: number }[];
+  materialConsumption: { name: string; quantity: number; cost: number }[];
+}
+
+export interface CommunicationRecord {
+  id: string;
+  orderId: string;
+  channel: string;
+  template: string;
+  status: OrderStatus;
+  recipient?: string | null;
+  createdAt: string;
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -317,6 +365,41 @@ export const api = {
     return request<Order[]>('/orders');
   },
 
+  async getExpenses(from?: string, to?: string): Promise<ExpenseRecord[]> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return request<ExpenseRecord[]>(`/expenses${query ? `?${query}` : ''}`);
+  },
+
+  async saveExpense(data: Partial<ExpenseRecord>): Promise<ExpenseRecord> {
+    return request<ExpenseRecord>(data.id ? `/expenses/${data.id}` : '/expenses', {
+      method: data.id ? 'PUT' : 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteExpense(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/expenses/${id}`, { method: 'DELETE' });
+  },
+
+  async getFinanceSummary(from?: string, to?: string): Promise<FinanceSummary> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return request<FinanceSummary>(`/finance/summary${query ? `?${query}` : ''}`);
+  },
+
+  async getOperationalReport(from?: string, to?: string): Promise<OperationalReport> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return request<OperationalReport>(`/finance/report${query ? `?${query}` : ''}`);
+  },
+
   async createOrderShareLink(id: string): Promise<{ token: string }> {
     return request<{ token: string }>(`/orders/${id}/share-link`, {
       method: 'POST',
@@ -361,6 +444,19 @@ export const api = {
     return request<Order>(`/orders/${orderId}/payments/${paymentId}`, {
       method: 'DELETE',
     });
+  },
+
+  async recordCommunication(data: {
+    orderId: string;
+    status: OrderStatus;
+    template: string;
+    recipient?: string;
+  }): Promise<void> {
+    await request('/communications', { method: 'POST', body: JSON.stringify(data) });
+  },
+
+  async getCommunications(orderId: string): Promise<CommunicationRecord[]> {
+    return request<CommunicationRecord[]>(`/communications/orders/${encodeURIComponent(orderId)}`);
   },
 
   // === Settings ===

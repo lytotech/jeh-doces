@@ -9,6 +9,8 @@ import { CustomersModule } from '../modules/customers/customers.module';
 import { SettingsModule } from '../modules/settings/settings.module';
 import { BillingModule } from '../modules/billing/billing.module';
 import { AccountModule } from '../modules/account/account.module';
+import { FinanceModule } from '../modules/finance/finance.module';
+import { CommunicationsModule } from '../modules/communications/communications.module';
 
 /** Root module. Feature modules are migrated here incrementally. */
 @Module({
@@ -23,6 +25,8 @@ import { AccountModule } from '../modules/account/account.module';
     SettingsModule,
     BillingModule,
     AccountModule,
+    FinanceModule,
+    CommunicationsModule,
   ],
 })
 export class AppModule {}

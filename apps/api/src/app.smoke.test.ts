@@ -22,6 +22,7 @@ test('recusa acesso sem sessão em endpoint protegido', async () => {
   assert.equal(response.headers['x-content-type-options'], 'nosniff');
   assert.equal(response.headers['x-frame-options'], 'SAMEORIGIN');
   assert.equal(response.headers['cache-control'], 'no-store');
+  assert.match(String(response.headers['x-request-id']), /^[0-9a-f-]{36}$/);
 });
 
 test('retorna 404 JSON para endpoint inexistente da API', async () => {

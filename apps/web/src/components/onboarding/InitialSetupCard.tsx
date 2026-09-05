@@ -46,14 +46,58 @@ const exampleProducts = [
 ];
 
 const exampleIngredients: Partial<Ingredient>[] = [
-  { name: 'Chocolate em pó', isComposite: false, unit: 'g', packageQuantity: 500, paidPrice: 25, unitCost: 0.05, priceHistory: [] },
-  { name: 'Leite condensado', isComposite: false, unit: 'g', packageQuantity: 395, paidPrice: 7.9, unitCost: 0.02, priceHistory: [] },
-  { name: 'Creme de leite', isComposite: false, unit: 'g', packageQuantity: 200, paidPrice: 4.5, unitCost: 0.0225, priceHistory: [] },
+  {
+    name: 'Chocolate em pó',
+    isComposite: false,
+    unit: 'g',
+    packageQuantity: 500,
+    paidPrice: 25,
+    unitCost: 0.05,
+    priceHistory: [],
+  },
+  {
+    name: 'Leite condensado',
+    isComposite: false,
+    unit: 'g',
+    packageQuantity: 395,
+    paidPrice: 7.9,
+    unitCost: 0.02,
+    priceHistory: [],
+  },
+  {
+    name: 'Creme de leite',
+    isComposite: false,
+    unit: 'g',
+    packageQuantity: 200,
+    paidPrice: 4.5,
+    unitCost: 0.0225,
+    priceHistory: [],
+  },
 ];
 
 const exampleMaterials: Partial<Material>[] = [
-  { name: 'Caixa para bolo', category: 'Embalagens', unit: 'un', baseQuantity: 10, totalCost: 25, unitCost: 2.5, trackStock: true, stockQuantity: 10, minStockAlert: 2 },
-  { name: 'Forminha para doce', category: 'Embalagens', unit: 'un', baseQuantity: 100, totalCost: 8, unitCost: 0.08, trackStock: true, stockQuantity: 100, minStockAlert: 20 },
+  {
+    name: 'Caixa para bolo',
+    category: 'Embalagens',
+    unit: 'un',
+    baseQuantity: 10,
+    totalCost: 25,
+    unitCost: 2.5,
+    trackStock: true,
+    stockQuantity: 10,
+    minStockAlert: 2,
+  },
+  {
+    name: 'Forminha para doce',
+    category: 'Embalagens',
+    unit: 'un',
+    baseQuantity: 100,
+    totalCost: 8,
+    unitCost: 0.08,
+    trackStock: true,
+    stockQuantity: 100,
+    minStockAlert: 20,
+  },
 ];
 
 export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
@@ -61,15 +105,27 @@ export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
   onOpenSettings,
 }) => {
   const { auth } = useAuth();
-  const { setActiveTab, saveIngredientAction, saveMaterialAction, saveProductAction, showToast } = useApp();
+  const {
+    ingredients,
+    materials: existingMaterials,
+    products: existingProducts,
+    setActiveTab,
+    saveIngredientAction,
+    saveMaterialAction,
+    saveProductAction,
+    showToast,
+  } = useApp();
   const [dismissed, setDismissed] = useState(false);
   const [addingExamples, setAddingExamples] = useState(false);
+  const [examplesAdded, setExamplesAdded] = useState(false);
 
   const storageKey = `confeiti-initial-setup-dismissed:${auth?.activeCompanyId || 'default'}`;
+  const examplesKey = `confeiti-initial-setup-examples:${auth?.activeCompanyId || 'default'}`;
 
   useEffect(() => {
     setDismissed(window.localStorage.getItem(storageKey) === 'true');
-  }, [storageKey]);
+    setExamplesAdded(window.localStorage.getItem(examplesKey) === 'true');
+  }, [examplesKey, storageKey]);
 
   if (dismissed) return null;
 
@@ -79,26 +135,48 @@ export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
   };
 
   const addExampleProducts = async () => {
+    if (examplesAdded) return;
     setAddingExamples(true);
     try {
-      const ingredients: Ingredient[] = [];
+      const savedIngredients: Ingredient[] = [];
       for (const ingredient of exampleIngredients) {
-        const saved = await saveIngredientAction(ingredient);
-        if (saved) ingredients.push(saved);
+        const existing = ingredients.find(
+          (candidate) =>
+            candidate.name.trim().toLowerCase() === ingredient.name?.trim().toLowerCase(),
+        );
+        const saved = existing || (await saveIngredientAction(ingredient));
+        if (saved) savedIngredients.push(saved);
       }
       const materials: Material[] = [];
       for (const material of exampleMaterials) {
-        const saved = await saveMaterialAction(material);
+        const existing = existingMaterials.find(
+          (candidate) =>
+            candidate.name.trim().toLowerCase() === material.name?.trim().toLowerCase(),
+        );
+        const saved = existing || (await saveMaterialAction(material));
         if (saved) materials.push(saved);
       }
       for (const product of exampleProducts) {
-        await saveProductAction({
-          ...product,
-          ingredients: ingredients.slice(0, 2).map((ingredient) => ({ ingredientId: ingredient.id, quantity: 50 })),
-          materials: materials.slice(0, 1).map((material) => ({ materialId: material.id, quantity: 1 })),
-        });
+        const existing = existingProducts.some(
+          (candidate) => candidate.name.trim().toLowerCase() === product.name.toLowerCase(),
+        );
+        if (!existing) {
+          await saveProductAction({
+            ...product,
+            ingredients: savedIngredients
+              .slice(0, 2)
+              .map((ingredient) => ({ ingredientId: ingredient.id, quantity: 50 })),
+            materials: materials
+              .slice(0, 1)
+              .map((material) => ({ materialId: material.id, quantity: 1 })),
+          });
+        }
       }
+      window.localStorage.setItem(examplesKey, 'true');
+      setExamplesAdded(true);
       showToast('Kit inicial adicionado: ingredientes, materiais e produtos de exemplo.');
+    } catch {
+      showToast('Não foi possível concluir o kit inicial. Tente novamente.', 'error');
     } finally {
       setAddingExamples(false);
     }
@@ -157,8 +235,8 @@ export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
           Vamos preparar sua confeitaria?
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#7A6453]">
-          Siga esta ordem para aproveitar melhor o Confeiti. Você pode pular qualquer etapa e
-          voltar quando quiser.
+          Siga esta ordem para aproveitar melhor o Confeiti. Você pode pular qualquer etapa e voltar
+          quando quiser.
         </p>
 
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
@@ -189,7 +267,11 @@ export const InitialSetupCard: React.FC<InitialSetupCardProps> = ({
           <Button size="sm" variant="ghost" onClick={onOpenSettings}>
             Personalizar confeitaria
           </Button>
-          <button type="button" onClick={close} className="text-xs font-semibold text-[#96642F] sm:ml-auto">
+          <button
+            type="button"
+            onClick={close}
+            className="text-xs font-semibold text-[#96642F] sm:ml-auto"
+          >
             Entendi, começar sozinho
           </button>
         </div>
