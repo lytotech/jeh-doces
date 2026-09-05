@@ -63,6 +63,17 @@ export class BillingService {
     if (subscription.plan === SubscriptionPlan.basic || !subscription.currentPeriodEnd || subscription.currentPeriodEnd <= new Date()) {
       throw new BadRequestException('Não existe uma assinatura ativa para cancelar.');
     }
+    if (subscription.mercadoPagoSubscriptionId && env.mercadoPagoAccessToken) {
+      const response = await fetch(`https://api.mercadopago.com/preapproval/${encodeURIComponent(subscription.mercadoPagoSubscriptionId)}`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${env.mercadoPagoAccessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'cancelled' }),
+      });
+      if (!response.ok) {
+        this.logger.error(`Não foi possível cancelar a assinatura recorrente (${response.status}).`);
+        throw new BadRequestException('Não foi possível cancelar a renovação. Tente novamente.');
+      }
+    }
     return prisma.subscription.update({
       where: { companyId },
       data: { status: SubscriptionStatus.canceled },
@@ -114,6 +125,51 @@ export class BillingService {
       qrCodeBase64: payment.point_of_interaction?.transaction_data?.qr_code_base64 || null,
       ticketUrl: payment.point_of_interaction?.transaction_data?.ticket_url || null,
     };
+  }
+
+  async createRecurringSubscription(auth: AuthContext, requestedPlan: string) {
+    if (requestedPlan !== 'monthly' && requestedPlan !== 'annual') throw new BadRequestException('Plano inválido.');
+    if (!env.mercadoPagoAccessToken) throw new BadRequestException('Mercado Pago ainda não está configurado.');
+    const plan = requestedPlan as 'monthly' | 'annual';
+    const reference = `${auth.companyId}:${plan}:${randomUUID()}`;
+    const response = await fetch('https://api.mercadopago.com/preapproval', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.mercadoPagoAccessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        reason: `Confeiti — assinatura ${plan === 'monthly' ? 'mensal' : 'anual'}`,
+        external_reference: reference,
+        payer_email: auth.email,
+        auto_recurring: { frequency: plan === 'annual' ? 12 : 1, frequency_type: 'months', transaction_amount: PRICES[plan], currency_id: 'BRL' },
+        back_url: `${env.appUrl}/?billing=return`,
+        notification_url: env.mercadoPagoWebhookUrl || `${env.appUrl}/api/billing/webhook`,
+      }),
+    });
+    const subscription = await response.json() as any;
+    if (!response.ok || !subscription.id || !subscription.init_point) {
+      this.logger.error(`Mercado Pago recusou a assinatura recorrente (${response.status}).`);
+      throw new BadRequestException('Não foi possível iniciar a assinatura automática. Tente novamente.');
+    }
+    await prisma.subscription.update({ where: { companyId: auth.companyId }, data: { status: SubscriptionStatus.pending, pendingPlan: plan, mercadoPagoSubscriptionId: String(subscription.id) } });
+    return { id: String(subscription.id), plan, amount: PRICES[plan], checkoutUrl: String(subscription.init_point) };
+  }
+
+  async processRecurringWebhook(subscriptionId: string) {
+    if (!subscriptionId || !env.mercadoPagoAccessToken) return;
+    const response = await fetch(`https://api.mercadopago.com/preapproval/${encodeURIComponent(subscriptionId)}`, { headers: { Authorization: `Bearer ${env.mercadoPagoAccessToken}` } });
+    if (!response.ok) return;
+    const remote = await response.json() as any;
+    const [companyId, plan] = String(remote.external_reference || '').split(':');
+    if (!companyId || !['monthly', 'annual'].includes(plan)) return;
+    const current = await prisma.subscription.findUnique({ where: { companyId } });
+    if (!current || current.mercadoPagoSubscriptionId !== String(remote.id)) return;
+    if (remote.status === 'authorized' || remote.status === 'active') {
+      const end = new Date();
+      if (plan === 'annual') end.setFullYear(end.getFullYear() + 1);
+      else end.setMonth(end.getMonth() + 1);
+      await prisma.subscription.update({ where: { companyId }, data: { plan: plan as SubscriptionPlan, status: SubscriptionStatus.active, currentPeriodEnd: end, pendingPlan: null } });
+    } else if (['paused', 'cancelled', 'canceled'].includes(String(remote.status))) {
+      await prisma.subscription.update({ where: { companyId }, data: { status: SubscriptionStatus.canceled } });
+    }
   }
 
   async processWebhook(paymentId: string) {

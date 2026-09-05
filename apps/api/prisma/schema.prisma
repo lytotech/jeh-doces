@@ -60,6 +60,7 @@ model Subscription {
   status            SubscriptionStatus @default(active)
   currentPeriodEnd  DateTime?
   mercadoPagoId     String?
+  mercadoPagoSubscriptionId String?
   pendingPaymentId  String?
   pendingPlan       SubscriptionPlan?
   payments          SubscriptionPayment[]

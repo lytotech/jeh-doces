@@ -20,7 +20,7 @@ export class AccountService {
     const scheduled = deletionDateFrom(new Date());
     await prisma.$transaction([
       prisma.company.update({ where: { id: companyId }, data: { deletionRequestedAt: new Date(), deletionScheduledFor: scheduled } }),
-      prisma.subscription.upsert({ where: { companyId }, update: { plan: SubscriptionPlan.basic, status: SubscriptionStatus.canceled, currentPeriodEnd: null, pendingPaymentId: null, pendingPlan: null }, create: { companyId, plan: SubscriptionPlan.basic, status: SubscriptionStatus.canceled } }),
+      prisma.subscription.upsert({ where: { companyId }, update: { plan: SubscriptionPlan.basic, status: SubscriptionStatus.canceled, currentPeriodEnd: null, pendingPaymentId: null, pendingPlan: null, mercadoPagoSubscriptionId: null }, create: { companyId, plan: SubscriptionPlan.basic, status: SubscriptionStatus.canceled } }),
     ]);
     return { deletionScheduledFor: scheduled.toISOString() };
   }

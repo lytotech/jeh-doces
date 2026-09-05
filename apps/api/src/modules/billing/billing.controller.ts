@@ -18,7 +18,8 @@ export class BillingController {
     if (env.mercadoPagoWebhookSecret && !this.billing.validateWebhookSignature(signature, requestId, dataId)) {
       throw new BadRequestException('Assinatura do webhook inválida.');
     }
-    await this.billing.processWebhook(String(paymentId || ''));
+    if (body?.type === 'subscription_preapproval' || body?.action?.startsWith('subscription_preapproval')) await this.billing.processRecurringWebhook(String(paymentId || ''));
+    else await this.billing.processWebhook(String(paymentId || ''));
     return { received: true };
   }
 
@@ -28,6 +29,11 @@ export class BillingController {
   @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
   @Post('pix') createPix(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
     return this.billing.createPixPayment(auth, plan);
+  }
+
+  @UseGuards(AuthGuard) @UseInterceptors(CompanyContextInterceptor)
+  @Post('recurring') createRecurring(@CurrentUser() auth: AuthContext, @Body('plan') plan: string) {
+    return this.billing.createRecurringSubscription(auth, plan);
   }
 
   @Delete('subscription') cancel(@CurrentUser() auth: AuthContext) {

@@ -47,6 +47,8 @@ export interface PixPayment {
   ticketUrl: string | null;
 }
 
+export interface RecurringSubscription { id: string; plan: 'monthly' | 'annual'; amount: number; checkoutUrl: string; }
+
 export interface AccountDeletionStatus {
   deletionRequestedAt: string | null;
   deletionScheduledFor: string | null;
@@ -99,6 +101,9 @@ export const api = {
   },
   async createPixPayment(plan: 'monthly' | 'annual'): Promise<PixPayment> {
     return request<PixPayment>('/billing/pix', { method: 'POST', body: JSON.stringify({ plan }) });
+  },
+  async createRecurringSubscription(plan: 'monthly' | 'annual'): Promise<RecurringSubscription> {
+    return request<RecurringSubscription>('/billing/recurring', { method: 'POST', body: JSON.stringify({ plan }) });
   },
   async cancelBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing/subscription', { method: 'DELETE' });
