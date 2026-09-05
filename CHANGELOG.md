@@ -6,6 +6,12 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.50] - 2026-09-05
+
+### Adicionado
+
+- Exportação CSV dos indicadores e despesas do controle financeiro.
+
 ## [1.0.49] - 2026-09-05
 
 ### Corrigido

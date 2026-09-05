@@ -4,7 +4,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
-import { AlertTriangle, Calendar, Plus } from 'lucide-react';
+import { AlertTriangle, Calendar, Download, Plus } from 'lucide-react';
 import { Order } from '../../types';
 import { api, ExpenseRecord, FinanceSummary } from '../../services/api';
 
@@ -69,6 +69,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const removeExpense = async (id: string) => {
     await api.deleteExpense(id);
     refreshFinance();
+  };
+
+  const exportFinanceCsv = () => {
+    if (!finance) return;
+    const rows = [
+      ['Indicador', 'Valor'],
+      ['Vendas', finance.salesTotal.toFixed(2)],
+      ['Recebido', finance.receivedTotal.toFixed(2)],
+      ['A receber', finance.receivableTotal.toFixed(2)],
+      ['Despesas', finance.expensesTotal.toFixed(2)],
+      ['Caixa líquido', finance.netCash.toFixed(2)],
+      ['Lucro estimado', finance.estimatedProfit.toFixed(2)],
+      [],
+      ['Data', 'Categoria', 'Descrição', 'Valor'],
+      ...expenses.map((expense) => [
+        new Date(expense.occurredAt).toLocaleDateString('pt-BR'),
+        expense.category,
+        expense.description,
+        expense.amount.toFixed(2),
+      ]),
+    ];
+    const csv = rows
+      .map((row) => row.map((value) => `"${String(value ?? '').replace(/"/g, '""')}"`).join(';'))
+      .join('\n');
+    const url = URL.createObjectURL(new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `confeiti-financeiro-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const periodOrders = useMemo(() => {
@@ -253,9 +283,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <h3 className="text-base font-bold text-[#302116]">Controle financeiro</h3>
                 <p className="text-xs text-[#7A6453]">Resumo do caixa e das despesas deste mês.</p>
               </div>
-              <span className="rounded-full bg-[#F6ECE0] px-3 py-1 text-xs font-semibold text-[#96642F]">
-                {finance?.ordersCount ?? 0} encomendas
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-[#F6ECE0] px-3 py-1 text-xs font-semibold text-[#96642F]">
+                  {finance?.ordersCount ?? 0} encomendas
+                </span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={exportFinanceCsv}
+                  disabled={!finance}
+                >
+                  <Download className="h-3.5 w-3.5" /> Exportar CSV
+                </Button>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[

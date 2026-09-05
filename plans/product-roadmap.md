@@ -24,7 +24,7 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 - [x] Criar lançamentos de despesas e consolidar receitas dos pagamentos.
 - [x] Separar recebido e pendente no resumo financeiro.
 - [x] Exibir caixa líquido e lucro estimado por período no painel.
-- [ ] Exportar relatório financeiro.
+- [x] Exportar relatório financeiro em CSV.
 
 ### 3. Estoque automático
 
