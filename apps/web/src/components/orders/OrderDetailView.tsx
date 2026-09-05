@@ -14,7 +14,9 @@ import {
   formatDateTime,
   ORDER_STATUS_MAP,
 } from '../../services/costEngine';
-import { FileText, Edit3, Plus, Trash2, Package, Cookie } from 'lucide-react';
+import { generateWhatsAppStatusMessage, getWhatsAppUrl } from '../../services/whatsappExporter';
+import { api } from '../../services/api';
+import { FileText, Edit3, Plus, Trash2, Package, Cookie, Send } from 'lucide-react';
 
 interface OrderDetailViewProps {
   order: Order;
@@ -23,7 +25,7 @@ interface OrderDetailViewProps {
 }
 
 export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack, onEdit }) => {
-  const { updateOrderStatusAction, removePaymentAction } = useApp();
+  const { settings, updateOrderStatusAction, removePaymentAction, showToast } = useApp();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -40,6 +42,28 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
   const handleCancelOrder = () => {
     updateOrderStatusAction(order.id, 'cancelado');
     setShowCancelConfirm(false);
+  };
+
+  const handleNotifyCustomer = async () => {
+    if (!order.clientPhone) {
+      showToast('Cadastre um telefone para avisar o cliente pelo WhatsApp.', 'warning');
+      return;
+    }
+
+    const url = getWhatsAppUrl(order.clientPhone, generateWhatsAppStatusMessage(order, settings));
+    window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      await api.recordCommunication({
+        orderId: order.id,
+        status: order.status,
+        template: `status_${order.status}`,
+        recipient: order.clientPhone,
+      });
+    } catch {
+      showToast('WhatsApp aberto, mas não foi possível registrar o histórico.', 'warning');
+      return;
+    }
+    showToast('Aviso registrado no histórico de comunicação.', 'success');
   };
 
   return (
@@ -325,6 +349,19 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
                 >
                   <FileText className="w-5 h-5 mr-2 stroke-[2.2]" /> Enviar orçamento (WhatsApp /
                   PDF)
+                </Button>
+              </div>
+
+              <div className="pt-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  size="lg"
+                  onClick={handleNotifyCustomer}
+                  className="font-semibold py-4"
+                >
+                  <Send className="w-5 h-5 mr-2 stroke-[2.2]" /> Avisar cliente sobre o status
                 </Button>
               </div>
             </div>

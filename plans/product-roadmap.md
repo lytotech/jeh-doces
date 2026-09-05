@@ -36,9 +36,10 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 ### 4. Vendas e comunicação
 
 - [ ] Converter orçamento em encomenda confirmada.
-- [ ] Criar templates de WhatsApp por status.
+- [x] Criar templates de WhatsApp por status.
+- [x] Avisar o cliente sobre o status atual com um clique.
 - [ ] Enviar lembretes de entrega e cobrança.
-- [ ] Registrar o histórico de comunicação.
+- [x] Registrar o histórico de comunicação.
 
 ### 5. Relatórios
 
