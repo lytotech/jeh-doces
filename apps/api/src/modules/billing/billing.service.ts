@@ -450,7 +450,10 @@ export class BillingService {
             pendingPlan: null,
           },
         });
-      } else if (isCurrentPayment || subscription.pendingPaymentId === String(payment.id)) {
+      } else if (
+        (isCurrentPayment && subscription.status !== SubscriptionStatus.active) ||
+        subscription.pendingPaymentId === String(payment.id)
+      ) {
         await tx.subscription.update({
           where: { companyId },
           data: {

@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.46] - 2026-09-05
+
+### Corrigido
+
+- Tornado o processamento de webhooks aprovados idempotente também para o mesmo pagamento repetido.
+- Adicionados testes de conciliação, sincronização e estorno de pagamentos.
+
 ## [1.0.45] - 2026-09-05
 
 ### Corrigido

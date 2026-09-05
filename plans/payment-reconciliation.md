@@ -1,8 +1,8 @@
 # Conciliação de pagamentos e estorno de duplicidades
 
-- Status: `In progress`
-- Branch: `fix/payment-reconciliation`
-- Versão: `1.0.45`
+- Status: `Completed`
+- Branch: `test/payment-reconciliation`
+- Versão: `1.0.46`
 
 ## Objetivo
 
@@ -15,7 +15,7 @@ Registrar todos os pagamentos aprovados pelo Mercado Pago, tolerar webhooks fora
 - [x] Sincronização verifica a cobrança pendente, a cobrança vigente e o histórico recente.
 - [x] Período vigente é preservado quando outra cobrança aprovada é identificada como duplicada.
 - [x] Estorno exige pagamento aprovado pertencente à empresa e usuário administrativo.
-- [ ] Reparar os dois pagamentos aprovados identificados em produção, mantendo o primeiro e estornando o segundo.
+- [x] Reparar os dois pagamentos aprovados identificados em produção, mantendo o primeiro e estornando o segundo.
 
 ## Impacto e rollback
 
@@ -27,5 +27,5 @@ Registrar todos os pagamentos aprovados pelo Mercado Pago, tolerar webhooks fora
 
 - [x] Build shared, web e API.
 - [x] Teste de validade do período pago em estados active, pending e canceled.
-- [ ] Testes de webhook fora de ordem, duplicado, sincronização e estorno.
-- [ ] Validação pós-deploy em produção.
+- [x] Testes de webhook fora de ordem, duplicado, sincronização e estorno.
+- [x] Validação pós-deploy em produção.
