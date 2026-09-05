@@ -20,7 +20,10 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"*.{js,json}\"",
-    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\" \"*.{js,json}\"",
+    "format:check": "sh scripts/check-format.sh",
+    "verify": "npm run format:check && npm run lint && npm run build && npm run test:smoke -w @jeh-doces/api",
+    "prepare": "husky",
+    "check:commit": "node scripts/check-commit-message.mjs",
     "dev:web": "npm run dev -w @jeh-doces/web -- --host",
     "dev:api": "npm run dev -w @jeh-doces/api",
     "start": "npm run start -w @jeh-doces/api"
@@ -28,6 +31,7 @@
   "devDependencies": {
     "concurrently": "^9.1.2",
     "eslint": "^9.39.5",
+    "husky": "^9.1.7",
     "prettier": "^3.9.6",
     "typescript-eslint": "^8.69.0"
   }

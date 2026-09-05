@@ -3,6 +3,10 @@ name: Quality
 on:
   push:
     branches: [main]
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
   pull_request:
     branches: [main]
 
@@ -30,3 +34,9 @@ jobs:
         run: npm run build
       - name: Run API smoke tests
         run: npm run test:smoke -w @jeh-doces/api
+      - name: Run billing tests
+        run: npm run test:billing -w @jeh-doces/api
+      - name: Run webhook tests
+        run: npm run test:webhook -w @jeh-doces/api
+      - name: Run payment tests
+        run: npm run test:payment -w @jeh-doces/api
