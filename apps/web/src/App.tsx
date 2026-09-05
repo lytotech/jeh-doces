@@ -8,6 +8,7 @@ import { ToastContainer } from './components/ui/ToastContainer';
 import { BackupSettingsModal } from './components/settings/BackupSettingsModal';
 import { TeamModal } from './components/settings/TeamModal';
 import { BillingBanner } from './components/billing/BillingBanner';
+import { BillingPage } from './components/billing/BillingPage';
 
 // Orders
 import { OrderList } from './components/orders/OrderList';
@@ -226,6 +227,9 @@ export const App: React.FC = () => {
             }}
           />
         );
+
+      case 'billing':
+        return <BillingPage onBack={() => setActiveTab('orders')} />;
 
       default:
         return null;

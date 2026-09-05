@@ -10,6 +10,7 @@ import {
   CalendarDays,
   LogOut,
   Settings as SettingsIcon,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -144,6 +145,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
             className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#5C4533] hover:bg-[#F5ECE0]"
           >
             Configurações & Backup
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setSettingsOpen(false);
+              setActiveTab('billing');
+              setSelectedOrderId(null);
+            }}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#72203F] hover:bg-[#F5E5EC]"
+          >
+            <CreditCard className="h-4 w-4" />
+            Meu plano
           </button>
           <button
             type="button"

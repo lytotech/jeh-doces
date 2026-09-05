@@ -35,6 +35,7 @@ export interface BillingStatus {
   status: 'active' | 'pending' | 'past_due' | 'canceled';
   currentPeriodEnd: string | null;
   pendingPaymentId?: string | null;
+  pendingPlan?: 'monthly' | 'annual' | null;
   payments?: { mercadoPagoId: string; plan: 'monthly' | 'annual'; amount: number; status: string; paidAt: string | null; createdAt: string }[];
 }
 
