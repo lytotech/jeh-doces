@@ -6,7 +6,7 @@ import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
 import { AlertTriangle, Calendar, Download, Plus } from 'lucide-react';
 import { Order } from '../../types';
-import { api, ExpenseRecord, FinanceSummary } from '../../services/api';
+import { api, ExpenseRecord, FinanceSummary, OperationalReport } from '../../services/api';
 
 interface DashboardViewProps {
   onSelectOrder: (order: Order) => void;
@@ -22,6 +22,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const { orders, materials, products, ingredients, setActiveTab } = useApp();
   const [period, setPeriod] = useState<'all' | '30' | '90'>('all');
   const [finance, setFinance] = useState<FinanceSummary | null>(null);
+  const [report, setReport] = useState<OperationalReport | null>(null);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [expenseDraft, setExpenseDraft] = useState({
     description: '',
@@ -32,10 +33,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [savingExpense, setSavingExpense] = useState(false);
 
   const refreshFinance = () =>
-    Promise.all([api.getFinanceSummary(), api.getExpenses()])
-      .then(([summary, items]) => {
+    Promise.all([api.getFinanceSummary(), api.getExpenses(), api.getOperationalReport()])
+      .then(([summary, items, operationalReport]) => {
         setFinance(summary);
         setExpenses(items);
+        setReport(operationalReport);
       })
       .catch(() => undefined);
 
@@ -408,6 +410,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </form>
         </section>
 
+        <section className="space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-[#302116]">Relatório operacional</h3>
+            <p className="text-xs text-[#7A6453]">
+              Veja o que mais vende, quem retorna e quais materiais concentram seus custos.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <ReportList
+              title="Produtos mais vendidos"
+              empty="Ainda não há produtos vendidos no período."
+              items={
+                report?.topProducts.map((item) => ({
+                  label: item.name,
+                  detail: `${formatDecimal(item.quantity)} un · ${formatCurrency(item.revenue)}`,
+                })) || []
+              }
+            />
+            <ReportList
+              title="Clientes recorrentes"
+              empty="Nenhum cliente recorrente no período."
+              items={
+                report?.recurringCustomers.map((item) => ({
+                  label: item.name,
+                  detail: `${item.orders} encomendas · ${formatCurrency(item.revenue)}`,
+                })) || []
+              }
+            />
+            <ReportList
+              title="Consumo de materiais"
+              empty="Nenhum material consumido no período."
+              items={
+                report?.materialConsumption.map((item) => ({
+                  label: item.name,
+                  detail: `${formatDecimal(item.quantity)} un · ${formatCurrency(item.cost)}`,
+                })) || []
+              }
+            />
+          </div>
+        </section>
+
         {/* 2-Column Desktop Grid for Deliveries and Stock Alerts */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Upcoming Orders (col-span-7) */}
@@ -520,3 +563,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     </div>
   );
 };
+
+const ReportList: React.FC<{
+  title: string;
+  empty: string;
+  items: { label: string; detail: string }[];
+}> = ({ title, empty, items }) => (
+  <div className="rounded-2xl border border-[#E5DACD] bg-white p-4 shadow-xs">
+    <h4 className="mb-3 text-sm font-bold text-[#302116]">{title}</h4>
+    {items.length === 0 ? (
+      <p className="text-xs text-[#8A7565]">{empty}</p>
+    ) : (
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div
+            key={`${item.label}-${item.detail}`}
+            className="flex items-center justify-between gap-3 border-b border-[#F2ECE1] pb-2 text-xs last:border-0 last:pb-0"
+          >
+            <span className="min-w-0 truncate font-semibold text-[#5C4533]">{item.label}</span>
+            <span className="shrink-0 text-right text-[#8A7565]">{item.detail}</span>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);

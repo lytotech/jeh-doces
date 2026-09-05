@@ -52,6 +52,75 @@ export const expenseData = (body: any) => {
   };
 };
 
+export const buildOperationalReport = (orders: any[]) => {
+  const products = new Map<string, { name: string; quantity: number; revenue: number }>();
+  const customers = new Map<string, { name: string; orders: number; revenue: number }>();
+  const materials = new Map<string, { name: string; quantity: number; cost: number }>();
+
+  let salesTotal = 0;
+  let receivedTotal = 0;
+  let estimatedCost = 0;
+  let estimatedProfit = 0;
+
+  for (const order of orders) {
+    salesTotal += order.totalCharged;
+    estimatedCost += order.estimatedCost;
+    estimatedProfit += order.estimatedProfit;
+    receivedTotal += (order.payments || []).reduce(
+      (sum: number, payment: any) => sum + payment.amount,
+      0,
+    );
+
+    const customerKey = order.customerId || order.clientName || order.id;
+    const customer = customers.get(customerKey) || {
+      name: order.clientName || 'Cliente avulso',
+      orders: 0,
+      revenue: 0,
+    };
+    customer.orders += 1;
+    customer.revenue += order.totalCharged;
+    customers.set(customerKey, customer);
+
+    for (const item of order.items || []) {
+      const product = products.get(item.productId) || {
+        name: item.productName,
+        quantity: 0,
+        revenue: 0,
+      };
+      product.quantity += item.quantity;
+      product.revenue += item.totalPrice;
+      products.set(item.productId, product);
+    }
+
+    for (const item of order.materials || []) {
+      const material = materials.get(item.materialId) || {
+        name: item.materialName,
+        quantity: 0,
+        cost: 0,
+      };
+      material.quantity += item.quantity;
+      material.cost += item.totalCost;
+      materials.set(item.materialId, material);
+    }
+  }
+
+  return {
+    salesTotal,
+    receivedTotal,
+    receivableTotal: Math.max(0, salesTotal - receivedTotal),
+    estimatedCost,
+    estimatedProfit,
+    marginPercent: salesTotal > 0 ? (estimatedProfit / salesTotal) * 100 : 0,
+    ordersCount: orders.length,
+    topProducts: [...products.values()].sort((a, b) => b.quantity - a.quantity).slice(0, 10),
+    recurringCustomers: [...customers.values()]
+      .filter((customer) => customer.orders > 1)
+      .sort((a, b) => b.orders - a.orders || b.revenue - a.revenue)
+      .slice(0, 10),
+    materialConsumption: [...materials.values()].sort((a, b) => b.cost - a.cost).slice(0, 10),
+  };
+};
+
 @Controller('api')
 @UseGuards(AuthGuard)
 @UseInterceptors(CompanyContextInterceptor)
@@ -127,5 +196,33 @@ export class FinanceController {
         orders.reduce((sum, order) => sum + order.estimatedProfit, 0) - expensesTotal,
       ordersCount: orders.length,
     };
+  }
+
+  @Get('finance/report')
+  async report(@Query('from') from?: string, @Query('to') to?: string) {
+    const { start, end } = range(from, to);
+    const orders = await prisma.order.findMany({
+      where: {
+        companyId: getCompanyId(),
+        createdAt: { gte: start, lte: end },
+        status: { not: 'cancelado' },
+      },
+      select: {
+        id: true,
+        customerId: true,
+        clientName: true,
+        totalCharged: true,
+        estimatedCost: true,
+        estimatedProfit: true,
+        items: {
+          select: { productId: true, productName: true, quantity: true, totalPrice: true },
+        },
+        materials: {
+          select: { materialId: true, materialName: true, quantity: true, totalCost: true },
+        },
+        payments: { where: { paidAt: { gte: start, lte: end } }, select: { amount: true } },
+      },
+    });
+    return { from: start.toISOString(), to: end.toISOString(), ...buildOperationalReport(orders) };
   }
 }

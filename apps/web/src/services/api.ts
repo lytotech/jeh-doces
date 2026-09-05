@@ -95,6 +95,21 @@ export interface FinanceSummary {
   ordersCount: number;
 }
 
+export interface OperationalReport {
+  from: string;
+  to: string;
+  salesTotal: number;
+  receivedTotal: number;
+  receivableTotal: number;
+  estimatedCost: number;
+  estimatedProfit: number;
+  marginPercent: number;
+  ordersCount: number;
+  topProducts: { name: string; quantity: number; revenue: number }[];
+  recurringCustomers: { name: string; orders: number; revenue: number }[];
+  materialConsumption: { name: string; quantity: number; cost: number }[];
+}
+
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const method = options?.method || 'GET';
   const key = `${method}:${endpoint}:${options?.body || ''}`;
@@ -365,6 +380,14 @@ export const api = {
     if (to) params.set('to', to);
     const query = params.toString();
     return request<FinanceSummary>(`/finance/summary${query ? `?${query}` : ''}`);
+  },
+
+  async getOperationalReport(from?: string, to?: string): Promise<OperationalReport> {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const query = params.toString();
+    return request<OperationalReport>(`/finance/report${query ? `?${query}` : ''}`);
   },
 
   async createOrderShareLink(id: string): Promise<{ token: string }> {

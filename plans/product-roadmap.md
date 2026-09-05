@@ -43,9 +43,9 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 
 ### 5. Relatórios
 
-- [ ] Faturamento, margem e lucro por período.
-- [ ] Produtos mais vendidos e clientes recorrentes.
-- [ ] Consumo e custo de ingredientes e materiais.
+- [x] Faturamento, margem e lucro por período.
+- [x] Produtos mais vendidos e clientes recorrentes.
+- [x] Consumo e custo de ingredientes e materiais.
 - [ ] Exportação PDF/CSV conforme o plano.
 
 ### 6. Confiabilidade
