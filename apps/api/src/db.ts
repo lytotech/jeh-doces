@@ -799,9 +799,10 @@ class Database {
 
   async getSettings(): Promise<AppSettings> {
     const companyId = this.companyId();
+    const company = await prisma.company.findUnique({ where: { id: companyId }, select: { name: true } });
     const row = await prisma.setting.upsert({
       where: { companyId },
-      create: { companyId, ...initialSettings },
+      create: { companyId, ...initialSettings, storeName: company?.name?.trim() || initialSettings.storeName },
       update: {},
     });
     return {
