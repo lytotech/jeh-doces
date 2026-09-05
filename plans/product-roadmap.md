@@ -28,10 +28,10 @@ controle financeiro, estoque, comunicação, relatórios e operação confiável
 
 ### 3. Estoque automático
 
-- [ ] Baixar ingredientes e materiais ao concluir uma encomenda.
-- [ ] Reverter a baixa ao cancelar ou reabrir a encomenda.
-- [ ] Exibir histórico e alertas de estoque mínimo.
-- [ ] Cobrir concorrência e idempotência com testes.
+- [x] Baixar materiais ao confirmar/iniciar uma encomenda.
+- [x] Reverter a baixa ao cancelar ou reabrir a encomenda.
+- [x] Exibir histórico e alertas de estoque mínimo.
+- [x] Cobrir idempotência e composição com testes unitários.
 
 ### 4. Vendas e comunicação
 

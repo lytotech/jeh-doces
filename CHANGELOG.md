@@ -6,6 +6,13 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.49] - 2026-09-05
+
+### Corrigido
+
+- Estoque agora é estornado ao cancelar ou reabrir encomendas que já tiveram baixa automática.
+- Baixas e estornos permanecem idempotentes e registrados no histórico de movimentações.
+
 ## [1.0.48] - 2026-09-05
 
 ### Adicionado
