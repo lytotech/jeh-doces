@@ -24,6 +24,7 @@
     "verify": "npm run format:check && npm run lint && npm run build && npm run test:smoke -w @jeh-doces/api && npm run test:backup -w @jeh-doces/api",
     "prepare": "husky",
     "check:commit": "node scripts/check-commit-message.mjs",
+    "check:production": "node scripts/check-production.mjs",
     "dev:web": "npm run dev -w @jeh-doces/web -- --host",
     "dev:api": "npm run dev -w @jeh-doces/api",
     "start": "npm run start -w @jeh-doces/api"

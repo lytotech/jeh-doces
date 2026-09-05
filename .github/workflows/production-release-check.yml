@@ -1,0 +1,22 @@
+name: Production release check
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_version:
+        description: 'Versão exibida no bundle publicado'
+        required: true
+        default: '1.0.64'
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate production release
+        run: node scripts/check-production.mjs "${{ inputs.expected_version }}"
