@@ -28,8 +28,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenSettings,
 }) => {
   const { orders, materials, products, ingredients, settings, setActiveTab, showToast } = useApp();
-  const [period, setPeriod] = useState<'all' | '30' | '90'>('all');
-  const [reportPeriod, setReportPeriod] = useState<'month' | '30' | '90' | 'all'>('month');
+  const [period, setPeriod] = useState<'month' | '30' | '90' | 'all'>('month');
   const [finance, setFinance] = useState<FinanceSummary | null>(null);
   const [report, setReport] = useState<OperationalReport | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
@@ -43,11 +42,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   });
   const [savingExpense, setSavingExpense] = useState(false);
 
-  const getReportRange = (selected: typeof reportPeriod) => {
+  const getReportRange = (selected: typeof period) => {
     if (selected === 'all')
       return { from: '2000-01-01T00:00:00.000Z', to: new Date().toISOString() };
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    if (selected === 'month') {
+      return { from: start.toISOString(), to: now.toISOString() };
+    }
     if (selected === '30' || selected === '90') {
       start.setHours(0, 0, 0, 0);
       start.setDate(start.getDate() - (Number(selected) - 1));
@@ -56,7 +58,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   };
 
   const refreshFinance = () => {
-    const { from, to } = getReportRange(reportPeriod);
+    const { from, to } = getReportRange(period);
     return Promise.all([
       api.getFinanceSummary(from, to),
       api.getExpenses(from, to),
@@ -80,7 +82,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       .getAutomaticReminders()
       .then(setReminders)
       .catch(() => setReminders([]));
-  }, [reportPeriod]);
+  }, [period]);
 
   const hasCompletePlan =
     (billing?.plan === 'monthly' || billing?.plan === 'annual') &&
@@ -256,12 +258,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
     const end = new Date(today);
-    end.setDate(end.getDate() + Number(period));
+    if (period === 'month') {
+      start.setDate(1);
+      end.setMonth(end.getMonth() + 1, 0);
+      end.setHours(23, 59, 59, 999);
+    } else {
+      end.setDate(end.getDate() + Number(period));
+    }
 
     return activeOrders.filter((order) => {
       const deliveryDate = new Date(order.deliveryDate);
-      return deliveryDate >= today && deliveryDate <= end;
+      return deliveryDate >= start && deliveryDate <= end;
     });
   }, [orders, period]);
 
@@ -316,51 +325,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <p className="text-sm font-semibold text-[#302116]">Visão geral</p>
             <p className="text-xs text-[#7A6453]">
-              Filtre os indicadores pela data de entrega das encomendas.
+              Um único período para entregas, indicadores e relatórios.
             </p>
           </div>
           <div className="flex rounded-2xl border border-[#E5DACD] bg-white p-1 shadow-xs">
             {[
-              ['all', 'Tudo'],
-              ['30', 'Próximos 30 dias'],
-              ['90', 'Próximos 90 dias'],
-            ].map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setPeriod(value as 'all' | '30' | '90')}
-                className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
-                  period === value ? 'bg-[#96315C] text-white' : 'text-[#7A6453] hover:bg-[#FAF1EC]'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 rounded-2xl border border-[#E5DACD] bg-white p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-[#302116]">Período dos relatórios</p>
-            <p className="text-xs text-[#7A6453]">
-              Este filtro altera os indicadores, exportações e impressão, sem mudar as entregas.
-            </p>
-          </div>
-          <div className="flex flex-wrap rounded-2xl border border-[#E5DACD] bg-[#FAF7F2] p-1">
-            {[
               ['month', 'Mês atual'],
-              ['30', 'Últimos 30 dias'],
-              ['90', 'Últimos 90 dias'],
+              ['30', '30 dias'],
+              ['90', '90 dias'],
               ['all', 'Todo o histórico'],
             ].map(([value, label]) => (
               <button
                 key={value}
                 type="button"
-                onClick={() => setReportPeriod(value as typeof reportPeriod)}
+                onClick={() => setPeriod(value as typeof period)}
                 className={`rounded-xl px-3 py-2 text-xs font-semibold transition-colors ${
-                  reportPeriod === value
-                    ? 'bg-[#96315C] text-white'
-                    : 'text-[#7A6453] hover:bg-white'
+                  period === value ? 'bg-[#96315C] text-white' : 'text-[#7A6453] hover:bg-[#FAF1EC]'
                 }`}
               >
                 {label}

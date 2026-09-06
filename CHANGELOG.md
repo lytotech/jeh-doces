@@ -6,6 +6,12 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+## [1.0.65] - 2026-09-06
+
+### Alterado
+
+- Unificado o período do dashboard em um único seletor para entregas, indicadores e relatórios.
+
 ## [1.0.64] - 2026-09-05
 
 ### Adicionado
