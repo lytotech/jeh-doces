@@ -9,6 +9,7 @@ import { LegalDocument, LegalPage } from './components/legal/LegalPage';
 import './index.css';
 import { PublicOrderPage } from './components/public/PublicOrderPage';
 import { InstallAppPrompt } from './components/pwa/InstallAppPrompt';
+import { AdminPanel } from './components/admin/AdminPanel';
 
 function Root() {
   const { auth, loading } = useAuth();
@@ -33,6 +34,10 @@ function Root() {
     else if (auth) document.title = 'Painel | Confeiti';
     else document.title = 'Confeiti | Sistema de gestão para confeitaria';
   }, [auth, legal, params, publicMatch]);
+
+  if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
+    return <AdminPanel />;
+  }
 
   if (publicMatch) return <PublicOrderPage token={publicMatch[1]} />;
   if (loading)
