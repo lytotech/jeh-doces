@@ -11,6 +11,7 @@ import { BillingModule } from '../modules/billing/billing.module';
 import { AccountModule } from '../modules/account/account.module';
 import { FinanceModule } from '../modules/finance/finance.module';
 import { CommunicationsModule } from '../modules/communications/communications.module';
+import { AdminAuthModule } from '../modules/admin-auth/admin-auth.module';
 
 /** Root module. Feature modules are migrated here incrementally. */
 @Module({
@@ -27,6 +28,7 @@ import { CommunicationsModule } from '../modules/communications/communications.m
     AccountModule,
     FinanceModule,
     CommunicationsModule,
+    AdminAuthModule,
   ],
 })
 export class AppModule {}
