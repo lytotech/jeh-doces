@@ -104,7 +104,7 @@ export class AdminAuthService implements OnModuleInit {
 
   async dashboard() {
     const paidCompanyWhere = {
-      subscription: { is: { status: 'active' as const, plan: { in: ['monthly', 'annual'] as const } } },
+      subscription: { is: { status: 'active' as const, plan: { in: ['monthly', 'annual'] } } },
     };
     const [companies, activeCompanies, users, paidCompanies, paidMemberships, orders, revenue, recentCompanies] =
       await Promise.all([
