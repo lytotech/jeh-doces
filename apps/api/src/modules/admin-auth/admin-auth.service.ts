@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
-import { BadRequestException, Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 
@@ -25,7 +25,7 @@ async function verifyPassword(password: string, stored: string) {
 
 @Injectable()
 export class AdminAuthService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
     const email = normalize(process.env.ADMIN_EMAIL);
