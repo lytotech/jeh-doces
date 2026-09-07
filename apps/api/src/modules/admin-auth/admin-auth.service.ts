@@ -102,6 +102,47 @@ export class AdminAuthService implements OnModuleInit {
     });
   }
 
+  async dashboard() {
+    const paidCompanyWhere = {
+      subscription: { is: { status: 'active' as const, plan: { in: ['monthly', 'annual'] as const } } },
+    };
+    const [companies, activeCompanies, users, paidCompanies, paidMemberships, orders, revenue, recentCompanies] =
+      await Promise.all([
+        this.prisma.client.company.count(),
+        this.prisma.client.company.count({ where: { deactivatedAt: null } }),
+        this.prisma.client.user.count(),
+        this.prisma.client.company.count({ where: paidCompanyWhere }),
+        this.prisma.client.membership.findMany({ where: { company: paidCompanyWhere }, select: { userId: true }, distinct: ['userId'] }),
+        this.prisma.client.order.count(),
+        this.prisma.client.order.aggregate({ _sum: { totalCharged: true } }),
+        this.prisma.client.company.findMany({
+          take: 8,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            createdAt: true,
+            deactivatedAt: true,
+            _count: { select: { memberships: true, orders: true } },
+            subscription: { select: { plan: true, status: true } },
+          },
+        }),
+      ]);
+
+    return {
+      kpis: {
+        companies,
+        activeCompanies,
+        users,
+        paidCompanies,
+        paidUsers: paidMemberships.length,
+        orders,
+        revenue: revenue._sum.totalCharged ?? 0,
+      },
+      recentCompanies,
+    };
+  }
+
   async createUser(body: Record<string, unknown>) {
     const name = String(body.name ?? '').trim();
     const email = normalize(body.email);
