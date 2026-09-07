@@ -60,11 +60,17 @@ function Root() {
   );
 }
 
+const isAdminRoute = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <Root />
-    </AuthProvider>
+    {isAdminRoute ? (
+      <AdminPanel />
+    ) : (
+      <AuthProvider>
+        <Root />
+      </AuthProvider>
+    )}
   </React.StrictMode>,
 );
 
