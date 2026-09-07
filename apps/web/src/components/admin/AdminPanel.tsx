@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, CircleOff, LogOut, Plus, ShieldCheck, Users } from 'lucide-react';
+import { Building2, CheckCircle2, CircleOff, CreditCard, LogOut, Plus, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 
 type AdminUser = {
   id: string;
@@ -8,6 +8,26 @@ type AdminUser = {
   active: boolean;
   lastLoginAt: string | null;
   createdAt: string;
+};
+
+type AdminDashboard = {
+  kpis: {
+    companies: number;
+    activeCompanies: number;
+    users: number;
+    paidCompanies: number;
+    paidUsers: number;
+    orders: number;
+    revenue: number;
+  };
+  recentCompanies: {
+    id: string;
+    name: string;
+    createdAt: string;
+    deactivatedAt: string | null;
+    _count: { memberships: number; orders: number };
+    subscription: { plan: string; status: string } | null;
+  }[];
 };
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -20,10 +40,12 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 const date = (value: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) : 'Nunca';
+const money = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 export function AdminPanel() {
   const [admin, setAdmin] = useState<{ id: string; name: string; email: string } | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -34,7 +56,12 @@ export function AdminPanel() {
     try {
       const me = await request<{ user: { id: string; name: string; email: string } }>('/me');
       setAdmin(me.user);
-      setUsers(await request<AdminUser[]>('/users'));
+      const [adminUsers, metrics] = await Promise.all([
+        request<AdminUser[]>('/users'),
+        request<AdminDashboard>('/dashboard'),
+      ]);
+      setUsers(adminUsers);
+      setDashboard(metrics);
     } catch (err) {
       setAdmin(null);
       if (err instanceof Error && !err.message.includes('administrador')) setError(err.message);
@@ -86,7 +113,15 @@ export function AdminPanel() {
       <div className="flex items-center gap-4"><div className="hidden text-right sm:block"><p className="text-sm font-bold">{admin.name}</p><p className="text-xs text-[#756878]">{admin.email}</p></div><button onClick={() => void request('/logout', { method: 'POST', body: '{}' }).then(() => setAdmin(null))} className="rounded-xl p-2 text-[#8D3157] hover:bg-[#F7E5EA]" aria-label="Sair"><LogOut size={19} /></button></div>
     </div></header>
     <div className="mx-auto max-w-6xl px-5 py-8">
-      <div className="grid gap-4 sm:grid-cols-3"><div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><Users className="text-[#8D3157]" size={20} /><p className="mt-4 text-3xl font-bold">{users.length}</p><p className="text-sm text-[#756878]">Administradores cadastrados</p></div><div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><CheckCircle2 className="text-emerald-600" size={20} /><p className="mt-4 text-3xl font-bold">{users.filter((user) => user.active).length}</p><p className="text-sm text-[#756878]">Acessos ativos</p></div><div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><ShieldCheck className="text-[#8D3157]" size={20} /><p className="mt-4 text-3xl font-bold">Protegido</p><p className="text-sm text-[#756878]">Sessão exclusiva de admin</p></div></div>
+      {dashboard && <>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><Building2 className="text-[#8D3157]" size={20} /><p className="mt-4 text-3xl font-bold">{dashboard.kpis.companies}</p><p className="text-sm text-[#756878]">Empresas cadastradas</p><p className="mt-2 text-xs text-emerald-700">{dashboard.kpis.activeCompanies} ativas</p></div>
+          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><CreditCard className="text-emerald-600" size={20} /><p className="mt-4 text-3xl font-bold">{dashboard.kpis.paidCompanies}</p><p className="text-sm text-[#756878]">Empresas pagantes</p><p className="mt-2 text-xs text-[#756878]">{dashboard.kpis.paidUsers} usuários em planos pagos</p></div>
+          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><Users className="text-[#8D3157]" size={20} /><p className="mt-4 text-3xl font-bold">{dashboard.kpis.users}</p><p className="text-sm text-[#756878]">Usuários cadastrados</p><p className="mt-2 text-xs text-[#756878]">{users.filter((user) => user.active).length} administradores ativos</p></div>
+          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><TrendingUp className="text-[#8D3157]" size={20} /><p className="mt-4 text-2xl font-bold">{money(dashboard.kpis.revenue)}</p><p className="text-sm text-[#756878]">Volume em pedidos</p><p className="mt-2 text-xs text-[#756878]">{dashboard.kpis.orders} pedidos registrados</p></div>
+        </div>
+        <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm"><div className="border-b border-[#EADDE2] p-5"><h2 className="text-lg font-bold">Empresas cadastradas</h2><p className="mt-1 text-sm text-[#756878]">Visão rápida da base mais recente.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-[#FCFAF7] text-xs uppercase tracking-wide text-[#756878]"><tr><th className="px-5 py-4">Empresa</th><th className="px-5 py-4">Plano</th><th className="px-5 py-4">Usuários</th><th className="px-5 py-4">Pedidos</th><th className="px-5 py-4">Cadastro</th></tr></thead><tbody className="divide-y divide-[#EADDE2]">{dashboard.recentCompanies.map((company) => <tr key={company.id}><td className="px-5 py-4"><p className="font-semibold">{company.name}</p><p className={`text-xs ${company.deactivatedAt ? 'text-rose-600' : 'text-emerald-700'}`}>{company.deactivatedAt ? 'Inativa' : 'Ativa'}</p></td><td className="px-5 py-4 capitalize text-[#756878]">{company.subscription?.plan === 'monthly' ? 'Mensal' : company.subscription?.plan === 'annual' ? 'Anual' : 'Básico'}</td><td className="px-5 py-4 text-[#756878]">{company._count.memberships}</td><td className="px-5 py-4 text-[#756878]">{company._count.orders}</td><td className="px-5 py-4 text-[#756878]">{date(company.createdAt)}</td></tr>)}</tbody></table></div></section>
+      </>}
       <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EADDE2] p-5"><div><h2 className="text-lg font-bold">Usuários administradores</h2><p className="mt-1 text-sm text-[#756878]">Contas que podem entrar nesta área.</p></div><button onClick={() => { setShowForm(!showForm); setError(''); }} className="inline-flex items-center gap-2 rounded-xl bg-[#8D3157] px-4 py-2.5 text-sm font-bold text-white"><Plus size={17} /> Novo administrador</button></div>
         {showForm && <form onSubmit={(event) => void createUser(event)} className="grid gap-3 border-b border-[#EADDE2] bg-[#FCFAF7] p-5 sm:grid-cols-4"><input required placeholder="Nome completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm" /><input required type="email" placeholder="E-mail" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm" /><input required minLength={8} type="password" placeholder="Senha (mín. 8)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm" /><button disabled={busy} className="rounded-xl bg-[#63304B] px-3 py-2.5 text-sm font-bold text-white">Criar conta</button></form>}
         {error && <p className="m-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}

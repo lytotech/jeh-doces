@@ -17,6 +17,7 @@ export class AdminAuthController {
   logout(@Req() request: FastifyRequest & { adminAuth?: any }, @Res({ passthrough: true }) reply: FastifyReply) { return this.service.logout(request.adminAuth, reply); }
 
   @UseGuards(AdminAuthGuard) @Get('users') users() { return this.service.users(); }
+  @UseGuards(AdminAuthGuard) @Get('dashboard') dashboard() { return this.service.dashboard(); }
   @UseGuards(AdminAuthGuard) @Post('users') createUser(@Body() body: Record<string, unknown>) { return this.service.createUser(body); }
   @UseGuards(AdminAuthGuard) @Patch('users/:id/status') toggle(@Param('id') id: string, @Body('active') active: boolean) { return this.service.toggleUser(id, active); }
 }
