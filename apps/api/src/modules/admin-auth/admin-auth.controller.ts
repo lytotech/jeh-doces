@@ -1,11 +1,11 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Patch, Post, Res, UseGuards } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AdminAuthGuard } from './admin-auth.guard';
 import { AdminAuthService } from './admin-auth.service';
 
 @Controller('api/admin-auth')
 export class AdminAuthController {
-  constructor(private readonly service: AdminAuthService) {}
+  constructor(@Inject(AdminAuthService) private readonly service: AdminAuthService) {}
 
   @Post('login') @HttpCode(HttpStatus.OK)
   login(@Body() body: Record<string, unknown>, @Res({ passthrough: true }) reply: FastifyReply) { return this.service.login(body, reply); }
