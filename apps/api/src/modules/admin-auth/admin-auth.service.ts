@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { promisify } from 'node:util';
 import { BadRequestException, Inject, Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 
@@ -103,8 +104,9 @@ export class AdminAuthService implements OnModuleInit {
   }
 
   async dashboard() {
+    const paidPlans: SubscriptionPlan[] = [SubscriptionPlan.monthly, SubscriptionPlan.annual];
     const paidCompanyWhere = {
-      subscription: { is: { status: 'active' as const, plan: { in: ['monthly', 'annual'] } } },
+      subscription: { is: { status: SubscriptionStatus.active, plan: { in: paidPlans } } },
     };
     const [companies, activeCompanies, users, paidCompanies, paidMemberships, orders, revenue, recentCompanies] =
       await Promise.all([
