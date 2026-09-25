@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
@@ -8,6 +8,7 @@ import { Plus, Search, Cake, ChevronRight, Copy } from 'lucide-react';
 import { Product } from '../../types';
 import { api } from '../../services/api';
 import { CategoryManager } from '../catalog/CategoryManager';
+import { compareNames, sortByName } from '../../services/sorting';
 
 interface ProductListProps {
   onSelectProduct: (product: Product) => void;
@@ -22,21 +23,33 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
   const [persistedCategories, setPersistedCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    void api.getCatalogCategories('product').then((items) => setPersistedCategories(items.map((item) => item.name))).catch(() => undefined);
+    void api
+      .getCatalogCategories('product')
+      .then((items) => setPersistedCategories(items.map((item) => item.name)))
+      .catch(() => undefined);
   }, [products.length]);
 
-  const categories = ['todos', ...Array.from(new Set([
-    ...persistedCategories,
-    ...products.map((p) => p.category || 'Geral'),
-  ]))];
+  const categories = [
+    'todos',
+    ...Array.from(
+      new Set([...persistedCategories, ...products.map((p) => p.category || 'Geral')]),
+    ).sort(compareNames),
+  ];
 
-  const filtered = products.filter((prod) => {
-    const matchesSearch =
-      prod.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (prod.category && prod.category.toLowerCase().includes(searchTerm.toLowerCase()));
-    const matchesCategory = selectedCategory === 'todos' || prod.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filtered = useMemo(
+    () =>
+      sortByName(
+        products.filter((prod) => {
+          const matchesSearch =
+            prod.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (prod.category && prod.category.toLowerCase().includes(searchTerm.toLowerCase()));
+          const matchesCategory =
+            selectedCategory === 'todos' || prod.category === selectedCategory;
+          return matchesSearch && matchesCategory;
+        }),
+      ),
+    [products, searchTerm, selectedCategory],
+  );
 
   const handleDuplicate = async (event: React.MouseEvent, product: Product) => {
     event.stopPropagation();
@@ -62,7 +75,11 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
             <Button size="sm" variant="secondary" onClick={() => setCategoryManagerOpen(true)}>
               Categorias
             </Button>
-            <Button size="sm" onClick={onNewProduct} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+            <Button
+              size="sm"
+              onClick={onNewProduct}
+              className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]"
+            >
               <Plus className="w-4 h-4" /> Novo Produto
             </Button>
           </div>
@@ -180,7 +197,11 @@ export const ProductList: React.FC<ProductListProps> = ({ onSelectProduct, onNew
           </div>
         )}
       </div>
-      <CategoryManager isOpen={categoryManagerOpen} onClose={() => setCategoryManagerOpen(false)} initialType="product" />
+      <CategoryManager
+        isOpen={categoryManagerOpen}
+        onClose={() => setCategoryManagerOpen(false)}
+        initialType="product"
+      />
     </div>
   );
 };

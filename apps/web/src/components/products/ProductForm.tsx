@@ -8,6 +8,7 @@ import { Card } from '../ui/Card';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { formatCurrency, formatDecimal, calculateProductCost } from '../../services/costEngine';
 import { Trash2, Plus, UtensilsCrossed, Package } from 'lucide-react';
+import { sortByName } from '../../services/sorting';
 
 interface ProductFormProps {
   product?: Product | null;
@@ -16,6 +17,7 @@ interface ProductFormProps {
 
 export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => {
   const { ingredients, materials, saveProductAction, deleteProductAction } = useApp();
+  const orderedMaterials = useMemo(() => sortByName(materials), [materials]);
 
   const isEditing = !!product?.id;
 
@@ -80,8 +82,8 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
 
   // Material list handlers
   const handleAddMaterial = () => {
-    if (materials.length === 0) return;
-    setRecipeMaterials([...recipeMaterials, { materialId: materials[0].id, quantity: 1 }]);
+    if (orderedMaterials.length === 0) return;
+    setRecipeMaterials([...recipeMaterials, { materialId: orderedMaterials[0].id, quantity: 1 }]);
   };
 
   const handleUpdateMaterial = (
@@ -296,7 +298,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
                               handleUpdateMaterial(index, 'materialId', e.target.value)
                             }
                           >
-                            {materials.map((opt) => (
+                            {orderedMaterials.map((opt) => (
                               <option key={opt.id} value={opt.id}>
                                 {opt.name} ({formatCurrency(opt.unitCost)}/{opt.unit})
                               </option>
