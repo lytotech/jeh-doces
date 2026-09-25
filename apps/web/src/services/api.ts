@@ -30,6 +30,30 @@ export interface CatalogCategorySummary {
   itemCount: number;
 }
 
+export interface PublicCatalogProduct {
+  id: string;
+  name: string;
+  category: string;
+  description?: string | null;
+  icon?: string | null;
+  salePrice: number;
+}
+
+export interface PublicCatalog {
+  storeName: string;
+  storePhone: string;
+  slug: string;
+  categories: string[];
+  products: PublicCatalogProduct[];
+}
+
+export interface PublicCatalogOrderResult {
+  id: string;
+  orderNumber: string;
+  totalCharged: number;
+  createdAt: string;
+}
+
 export interface BillingStatus {
   plan: 'basic' | 'monthly' | 'annual';
   status: 'active' | 'pending' | 'past_due' | 'canceled';
@@ -460,6 +484,25 @@ export const api = {
     return request<{ token: string }>(`/orders/${id}/share-link`, {
       method: 'POST',
       body: JSON.stringify({}),
+    });
+  },
+
+  async getPublicCatalog(slug: string): Promise<PublicCatalog> {
+    return request<PublicCatalog>(`/public/catalog/${encodeURIComponent(slug)}`);
+  },
+
+  async submitPublicCatalogOrder(
+    slug: string,
+    data: {
+      customer: { name: string; phone: string };
+      items: Array<{ productId: string; quantity: number }>;
+      notes?: string;
+      deliveryDate?: string;
+    },
+  ): Promise<PublicCatalogOrderResult> {
+    return request<PublicCatalogOrderResult>(`/public/catalog/${encodeURIComponent(slug)}/orders`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 

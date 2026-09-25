@@ -161,7 +161,7 @@ function mapOrder(row: OrderRow): Order {
     clientPhone: row.customer?.phone ?? row.clientPhone ?? undefined,
     clientAddress: row.customer?.address ?? row.clientAddress ?? undefined,
     customerId: row.customerId ?? undefined,
-    deliveryDate: iso(row.deliveryDate),
+    deliveryDate: row.deliveryDate ? iso(row.deliveryDate) : null,
     status: row.status as OrderStatus,
     items: row.items.map(({ orderId: _, ...item }) => item),
     materials: row.materials.map(({ orderId: _, ...item }) => item),
@@ -217,7 +217,7 @@ const orderFields = (data: Partial<Order>, orderNumber: string) => ({
   clientName: data.clientName?.trim() || null,
   clientPhone: data.clientPhone?.trim() || null,
   clientAddress: data.clientAddress?.trim() || null,
-  deliveryDate: new Date(data.deliveryDate ?? Date.now()),
+  deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
   status: (data.status ?? 'orcamento') as PrismaOrderStatus,
   subtotal: data.subtotal ?? 0,
   discount: data.discount ?? 0,
@@ -585,6 +585,113 @@ class Database {
     });
     return row ? mapOrder(row) : null;
   }
+  async getPublicCatalog(slug: string) {
+    const setting = await prisma.setting.findFirst({
+      where: { publicCatalogSlug: slug, publicCatalogEnabled: true },
+      select: { companyId: true, storeName: true, storePhone: true, publicCatalogSlug: true },
+    });
+    if (!setting) return null;
+    const products = await prisma.product.findMany({
+      where: { companyId: setting.companyId },
+      orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        description: true,
+        icon: true,
+        salePrice: true,
+      },
+    });
+    return {
+      storeName: setting.storeName,
+      storePhone: setting.storePhone ?? '',
+      slug: setting.publicCatalogSlug ?? slug,
+      categories: [...new Set(products.map((product) => product.category || 'Geral'))].sort(
+        (a, b) => a.localeCompare(b, 'pt-BR'),
+      ),
+      products: products.map((product) => ({ ...product, category: product.category || 'Geral' })),
+    };
+  }
+  async createPublicCatalogOrder(
+    slug: string,
+    data: {
+      customer: { name: string; phone: string };
+      items: Array<{ productId: string; quantity: number }>;
+      notes?: string;
+      deliveryDate?: string;
+    },
+  ) {
+    const setting = await prisma.setting.findFirst({
+      where: { publicCatalogSlug: slug, publicCatalogEnabled: true },
+      select: { companyId: true },
+    });
+    if (!setting) return null;
+    const companyId = setting.companyId;
+    return prisma.$transaction(async (tx) => {
+      const ids = [...new Set(data.items.map((item) => item.productId))];
+      const products = await tx.product.findMany({ where: { companyId, id: { in: ids } } });
+      if (products.length !== ids.length)
+        throw new Error('Um ou mais produtos não estão disponíveis.');
+      const byId = new Map(products.map((product) => [product.id, product]));
+      const items = data.items.map((item) => {
+        const product = byId.get(item.productId)!;
+        return {
+          productId: product.id,
+          productName: product.name,
+          quantity: item.quantity,
+          unitPrice: product.salePrice,
+          totalPrice: product.salePrice * item.quantity,
+          unitCost: product.calculatedCost,
+          totalCost: product.calculatedCost * item.quantity,
+        };
+      });
+      const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+      const estimatedCost = items.reduce((sum, item) => sum + item.totalCost, 0);
+      const customerPhone = data.customer.phone.trim();
+      const customer = await tx.customer.findFirst({ where: { companyId, phone: customerPhone } });
+      const savedCustomer = customer
+        ? await tx.customer.update({
+            where: { id: customer.id },
+            data: { name: data.customer.name.trim() },
+          })
+        : await tx.customer.create({
+            data: { companyId, name: data.customer.name.trim(), phone: customerPhone },
+          });
+      const start = new Date();
+      start.setDate(1);
+      start.setHours(0, 0, 0, 0);
+      await assertCanCreate(
+        companyId,
+        'ordersPerMonth',
+        await tx.order.count({ where: { companyId, createdAt: { gte: start } } }),
+      );
+      const order = await tx.order.create({
+        data: {
+          companyId,
+          orderNumber: `#${(await tx.order.count({ where: { companyId } })) + 1001}`,
+          clientName: data.customer.name.trim(),
+          clientPhone: customerPhone,
+          customerId: savedCustomer.id,
+          deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
+          status: 'orcamento',
+          subtotal,
+          totalCharged: subtotal,
+          estimatedCost,
+          estimatedProfit: subtotal - estimatedCost,
+          profitMarginPercent: subtotal ? ((subtotal - estimatedCost) / subtotal) * 100 : 0,
+          notes: data.notes?.trim() || null,
+          items: { create: items },
+        },
+      });
+      return {
+        id: order.id,
+        orderNumber: order.orderNumber,
+        totalCharged: order.totalCharged,
+        createdAt: order.createdAt.toISOString(),
+      };
+    });
+  }
   async getCustomers(includeArchived = false, search = ''): Promise<Customer[]> {
     const term = search.trim();
     const rows = await prisma.customer.findMany({
@@ -890,15 +997,20 @@ class Database {
       automaticPaymentReminders: row.automaticPaymentReminders,
       deliveryReminderHours: row.deliveryReminderHours,
       paymentReminderDays: row.paymentReminderDays,
+      publicCatalogEnabled: row.publicCatalogEnabled,
+      publicCatalogSlug: row.publicCatalogSlug ?? '',
     };
   }
   async saveSettings(data: Partial<AppSettings>) {
     const companyId = this.companyId();
     const value = { ...(await this.getSettings()), ...data };
+    const publicCatalogSlug = value.publicCatalogSlug?.trim().toLowerCase() || null;
+    if (publicCatalogSlug && !/^[a-z0-9](?:[a-z0-9-]{1,58}[a-z0-9])?$/.test(publicCatalogSlug))
+      throw new Error('O identificador do catálogo deve conter apenas letras, números e hífens.');
     const row = await prisma.setting.upsert({
       where: { companyId },
-      create: { companyId, ...value },
-      update: value,
+      create: { companyId, ...value, publicCatalogSlug },
+      update: { ...value, publicCatalogSlug },
     });
     return {
       storeName: row.storeName,
@@ -911,6 +1023,8 @@ class Database {
       automaticPaymentReminders: row.automaticPaymentReminders,
       deliveryReminderHours: row.deliveryReminderHours,
       paymentReminderDays: row.paymentReminderDays,
+      publicCatalogEnabled: row.publicCatalogEnabled,
+      publicCatalogSlug: row.publicCatalogSlug ?? '',
     };
   }
   async getAllData(): Promise<DatabaseSchema> {

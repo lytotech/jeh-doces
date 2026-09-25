@@ -7,6 +7,7 @@ export const initialSettings: AppSettings = {
   pixKeyType: 'E-mail',
   defaultProfitMargin: 100, // 100% markup
   currencySymbol: 'R$',
+  publicCatalogEnabled: false,
   automaticDeliveryReminders: false,
   automaticPaymentReminders: false,
   deliveryReminderHours: 24,

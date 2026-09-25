@@ -27,15 +27,17 @@ export const PublicOrderPage: React.FC<{ token: string }> = ({ token }) => {
       <main className="min-h-screen bg-[#FAF7F2] flex items-center justify-center text-[#96642F]">
         Carregando pedido…
       </main>
-      );
+    );
   const displayOrderNumber = order.orderNumber.replace(/^#+/, '');
   return (
     <main className="min-h-screen bg-[#FAF7F2] p-4 sm:p-8">
       <div className="max-w-2xl mx-auto space-y-4">
         <header className="bg-[#B57E44] text-white rounded-3xl p-6">
           <p className="text-amber-100 text-sm">Confeiti</p>
-        <h1 className="font-serif text-3xl mt-1">Pedido #{displayOrderNumber}</h1>
-          <p className="mt-3 text-sm">Entrega: {formatDateTime(order.deliveryDate)}</p>
+          <h1 className="font-serif text-3xl mt-1">Pedido #{displayOrderNumber}</h1>
+          <p className="mt-3 text-sm">
+            Entrega: {order.deliveryDate ? formatDateTime(order.deliveryDate) : 'A definir'}
+          </p>
         </header>
         <section className="bg-white rounded-3xl border border-[#E5DACD] p-5">
           <p className="text-xs uppercase tracking-wider font-bold text-[#7A4B1D]">

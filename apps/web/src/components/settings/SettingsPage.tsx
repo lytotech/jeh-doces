@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, ShieldCheck, Store } from 'lucide-react';
+import { Copy, Download, ShieldCheck, Store } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { api, AccountDeletionStatus } from '../../services/api';
 import { maskPhone } from '../../services/formatters';
@@ -25,6 +25,10 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     settings.deliveryReminderHours ?? 24,
   );
   const [paymentReminderDays, setPaymentReminderDays] = useState(settings.paymentReminderDays ?? 1);
+  const [publicCatalogEnabled, setPublicCatalogEnabled] = useState(
+    settings.publicCatalogEnabled ?? false,
+  );
+  const [publicCatalogSlug, setPublicCatalogSlug] = useState(settings.publicCatalogSlug ?? '');
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -52,6 +56,8 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         automaticPaymentReminders,
         deliveryReminderHours,
         paymentReminderDays,
+        publicCatalogEnabled,
+        publicCatalogSlug: publicCatalogSlug.trim().toLowerCase(),
       });
     } finally {
       setSaving(false);
@@ -153,6 +159,53 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               {saving ? 'Salvando…' : 'Salvar configurações'}
             </Button>
           </form>
+        </Card>
+        <Card className="border-[#E8DECF] bg-white p-5 md:p-6">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-[#72203F]">Catálogo público</h2>
+            <p className="mt-1 text-sm text-[#8C7665]">
+              Compartilhe seus produtos para o cliente montar o carrinho e enviar um orçamento.
+            </p>
+          </div>
+          <label className="flex items-start gap-3 rounded-2xl border border-[#E8DECF] p-4 text-sm">
+            <input
+              type="checkbox"
+              checked={publicCatalogEnabled}
+              onChange={(event) => setPublicCatalogEnabled(event.target.checked)}
+              className="mt-1 accent-[#96315C]"
+            />
+            <span>
+              <strong className="block text-[#302116]">Publicar catálogo</strong>
+              <span className="text-[#8C7665]">
+                O link ficará disponível sem exigir login do cliente.
+              </span>
+            </span>
+          </label>
+          <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+            <TextInput
+              label="Identificador do link"
+              value={publicCatalogSlug}
+              onChange={(event) =>
+                setPublicCatalogSlug(
+                  event.target.value.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase(),
+                )
+              }
+              placeholder="minha-loja"
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={!publicCatalogSlug.trim()}
+              onClick={() => {
+                void navigator.clipboard?.writeText(
+                  `${window.location.origin}/catalogo/${publicCatalogSlug.trim()}`,
+                );
+                showToast('Link do catálogo copiado!');
+              }}
+            >
+              <Copy className="h-4 w-4" /> Copiar link
+            </Button>
+          </div>
         </Card>
         <Card className="border-[#E8DECF] bg-white p-5 md:p-6">
           <div className="mb-4">

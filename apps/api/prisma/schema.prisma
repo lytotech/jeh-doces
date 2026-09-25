@@ -399,7 +399,7 @@ enum OrderStatus {
 model Order {
   id                  String          @id @default(cuid())
   orderNumber         String
-  deliveryDate        DateTime
+  deliveryDate        DateTime?
   status              OrderStatus     @default(orcamento)
   subtotal            Float           @default(0)
   discount            Float           @default(0)
@@ -551,6 +551,8 @@ model Setting {
   automaticPaymentReminders  Boolean @default(false)
   deliveryReminderHours      Int     @default(24)
   paymentReminderDays        Int     @default(1)
+  publicCatalogEnabled       Boolean @default(false)
+  publicCatalogSlug           String? @unique
   updatedAt           DateTime @updatedAt
 
   @@map("settings")

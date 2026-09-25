@@ -62,7 +62,12 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({ order, isOpe
           <header className="print-quote-header">
             <h1>{settings.storeName || 'Confeiti'}</h1>
             <p>Orçamento da sua encomenda</p>
-            <p>Entrega: {new Date(order.deliveryDate).toLocaleString('pt-BR')}</p>
+            <p>
+              Entrega:{' '}
+              {order.deliveryDate
+                ? new Date(order.deliveryDate).toLocaleString('pt-BR')
+                : 'A definir'}
+            </p>
           </header>
           <section className="print-quote-section">
             <h2>Dados do cliente</h2>

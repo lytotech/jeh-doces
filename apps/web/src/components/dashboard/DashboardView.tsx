@@ -340,6 +340,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     }
 
     return activeOrders.filter((order) => {
+      if (!order.deliveryDate) return false;
       const deliveryDate = new Date(order.deliveryDate);
       return deliveryDate >= start && deliveryDate <= end;
     });
@@ -368,11 +369,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const ordersQuote = periodOrders.filter((o) => o.status === 'orcamento');
   const overdueOrders = orders.filter((order) => {
     if (['cancelado', 'entregue'].includes(order.status)) return false;
-    return new Date(order.deliveryDate).getTime() < Date.now();
+    return Boolean(order.deliveryDate && new Date(order.deliveryDate).getTime() < Date.now());
   });
   const upcomingOrders = [...periodOrders].sort(
     (first, second) =>
-      new Date(first.deliveryDate).getTime() - new Date(second.deliveryDate).getTime(),
+      new Date(first.deliveryDate || 0).getTime() - new Date(second.deliveryDate || 0).getTime(),
   );
 
   return (
@@ -888,7 +889,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </div>
                     <p className="text-xs text-[#7A6453] flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-[#96642F]" />
-                      {formatDateTime(ord.deliveryDate)}
+                      {ord.deliveryDate ? formatDateTime(ord.deliveryDate) : 'Entrega a definir'}
                     </p>
                   </div>
 
