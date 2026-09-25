@@ -87,7 +87,9 @@ export const CustomerList: React.FC<{
                   <UserRound className="w-5 h-5" />
                 </div>
                 <button onClick={() => onSelectCustomer(c)} className="flex-1 min-w-0 text-left">
-                  <p className="font-semibold text-[#302116] truncate">{c.name}</p>
+                  <p className="whitespace-normal break-words font-semibold leading-tight text-[#302116]">
+                    {c.name}
+                  </p>
                   <p className="text-xs text-[#7A6453] truncate">
                     {c.phone || c.email || 'Sem contato cadastrado'}
                   </p>

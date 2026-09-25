@@ -176,7 +176,7 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
                 >
                   <div className="space-y-1.5 flex-1 pr-2 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-base text-[#302116] truncate">
+                      <span className="min-w-0 flex-1 whitespace-normal break-words font-semibold text-base leading-tight text-[#302116]">
                         {mat.name}
                       </span>
                       <TagBadge variant="material">{mat.category || 'Geral'}</TagBadge>
