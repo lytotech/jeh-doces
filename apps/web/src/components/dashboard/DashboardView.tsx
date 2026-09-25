@@ -4,11 +4,20 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/Badge';
 import { formatCurrency, formatDateTime, formatDecimal } from '../../services/costEngine';
-import { AlertTriangle, Calendar, Download, MessageCircle, Plus } from 'lucide-react';
+import {
+  AlertTriangle,
+  Calendar,
+  Download,
+  MessageCircle,
+  Pencil,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { Order } from '../../types';
 import {
   api,
   BillingStatus,
+  CashOpeningBalanceRecord,
   ExpenseRecord,
   FinanceSummary,
   OperationalReport,
@@ -34,6 +43,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [reminders, setReminders] = useState<AutomaticReminder[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [cashOpenings, setCashOpenings] = useState<CashOpeningBalanceRecord[]>([]);
+  const [cashOpeningDraft, setCashOpeningDraft] = useState({
+    amount: '',
+    occurredAt: new Date().toISOString().slice(0, 10),
+    notes: '',
+  });
+  const [editingCashOpeningId, setEditingCashOpeningId] = useState<string | null>(null);
+  const [savingCashOpening, setSavingCashOpening] = useState(false);
   const [expenseDraft, setExpenseDraft] = useState({
     description: '',
     category: 'Outros',
@@ -63,11 +80,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       api.getFinanceSummary(from, to),
       api.getExpenses(from, to),
       api.getOperationalReport(from, to),
+      api.getCashOpenings(),
     ])
-      .then(([summary, items, operationalReport]) => {
+      .then(([summary, items, operationalReport, openings]) => {
         setFinance(summary);
         setExpenses(items);
         setReport(operationalReport);
+        setCashOpenings(openings);
       })
       .catch(() => undefined);
   };
@@ -117,6 +136,57 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     refreshFinance();
   };
 
+  const saveCashOpening = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const amount = Number(cashOpeningDraft.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || savingCashOpening) return;
+    setSavingCashOpening(true);
+    try {
+      await api.saveCashOpening({
+        id: editingCashOpeningId || undefined,
+        amount,
+        occurredAt: cashOpeningDraft.occurredAt,
+        notes: cashOpeningDraft.notes,
+      });
+      setCashOpeningDraft({
+        amount: '',
+        occurredAt: new Date().toISOString().slice(0, 10),
+        notes: '',
+      });
+      setEditingCashOpeningId(null);
+      await refreshFinance();
+      showToast('Saldo inicial salvo com sucesso!');
+    } catch {
+      showToast('Não foi possível salvar o saldo inicial.', 'error');
+    } finally {
+      setSavingCashOpening(false);
+    }
+  };
+
+  const editCashOpening = (opening: CashOpeningBalanceRecord) => {
+    setEditingCashOpeningId(opening.id);
+    setCashOpeningDraft({
+      amount: String(opening.amount),
+      occurredAt: new Date(opening.occurredAt).toISOString().slice(0, 10),
+      notes: opening.notes || '',
+    });
+  };
+
+  const removeCashOpening = async (id: string) => {
+    if (!window.confirm('Excluir este saldo inicial?')) return;
+    await api.deleteCashOpening(id);
+    if (editingCashOpeningId === id) {
+      setEditingCashOpeningId(null);
+      setCashOpeningDraft({
+        amount: '',
+        occurredAt: new Date().toISOString().slice(0, 10),
+        notes: '',
+      });
+    }
+    await refreshFinance();
+    showToast('Saldo inicial excluído.', 'info');
+  };
+
   const openAutomaticReminder = async (reminder: AutomaticReminder) => {
     const remaining = Math.max(
       0,
@@ -143,6 +213,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       ['Vendas', finance.salesTotal.toFixed(2)],
       ['Recebido', finance.receivedTotal.toFixed(2)],
       ['A receber', finance.receivableTotal.toFixed(2)],
+      ['Saldo inicial', finance.openingBalance.toFixed(2)],
       ['Despesas', finance.expensesTotal.toFixed(2)],
       ['Caixa líquido', finance.netCash.toFixed(2)],
       ['Lucro estimado', finance.estimatedProfit.toFixed(2)],
@@ -517,6 +588,119 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </strong>
                 </div>
               ))}
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <form
+                onSubmit={(event) => void saveCashOpening(event)}
+                className="space-y-3 rounded-2xl border border-[#E5DACD] bg-[#FCFAF8] p-4"
+              >
+                <div>
+                  <h4 className="text-sm font-bold text-[#302116]">
+                    {editingCashOpeningId ? 'Editar saldo inicial' : 'Adicionar saldo inicial'}
+                  </h4>
+                  <p className="mt-1 text-xs text-[#7A6453]">
+                    Informe quanto já havia no caixa na data de abertura.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={cashOpeningDraft.amount}
+                    onChange={(event) =>
+                      setCashOpeningDraft({ ...cashOpeningDraft, amount: event.target.value })
+                    }
+                    placeholder="Valor"
+                    className="w-full rounded-xl border border-[#E5DACD] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+                  />
+                  <input
+                    type="date"
+                    value={cashOpeningDraft.occurredAt}
+                    onChange={(event) =>
+                      setCashOpeningDraft({ ...cashOpeningDraft, occurredAt: event.target.value })
+                    }
+                    className="w-full rounded-xl border border-[#E5DACD] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+                  />
+                </div>
+                <input
+                  value={cashOpeningDraft.notes}
+                  onChange={(event) =>
+                    setCashOpeningDraft({ ...cashOpeningDraft, notes: event.target.value })
+                  }
+                  placeholder="Observação (opcional)"
+                  className="w-full rounded-xl border border-[#E5DACD] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#96642F]"
+                />
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm" disabled={savingCashOpening}>
+                    {savingCashOpening
+                      ? 'Salvando…'
+                      : editingCashOpeningId
+                        ? 'Atualizar'
+                        : 'Adicionar'}
+                  </Button>
+                  {editingCashOpeningId && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setEditingCashOpeningId(null);
+                        setCashOpeningDraft({
+                          amount: '',
+                          occurredAt: new Date().toISOString().slice(0, 10),
+                          notes: '',
+                        });
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
+                </div>
+              </form>
+              <div className="rounded-2xl border border-[#E5DACD] bg-[#FCFAF8] p-4">
+                <h4 className="mb-3 text-sm font-bold text-[#302116]">Aberturas cadastradas</h4>
+                {cashOpenings.length === 0 ? (
+                  <p className="text-xs text-[#8A7565]">Nenhum saldo inicial cadastrado.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {cashOpenings.slice(0, 5).map((opening) => (
+                      <div
+                        key={opening.id}
+                        className="flex items-center justify-between gap-3 border-b border-[#E5DACD] pb-2 text-xs last:border-0 last:pb-0"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-semibold text-[#302116]">
+                            {formatCurrency(opening.amount)} ·{' '}
+                            {new Date(opening.occurredAt).toLocaleDateString('pt-BR')}
+                          </p>
+                          {opening.notes && (
+                            <p className="truncate text-[#8A7565]">{opening.notes}</p>
+                          )}
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            type="button"
+                            title="Editar saldo inicial"
+                            onClick={() => editCashOpening(opening)}
+                            className="rounded-lg p-1.5 text-[#96642F] hover:bg-[#F5ECE0]"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            title="Excluir saldo inicial"
+                            onClick={() => void removeCashOpening(opening.id)}
+                            className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="rounded-2xl border border-[#E5DACD] bg-white p-4 shadow-xs">
               <h4 className="mb-3 text-sm font-bold text-[#302116]">Despesas recentes</h4>
