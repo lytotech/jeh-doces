@@ -7,6 +7,7 @@ import { formatCurrency, formatDateTime } from '../../services/costEngine';
 import { Plus, Search, ClipboardList, Calendar, AlertTriangle } from 'lucide-react';
 import { Order } from '../../types';
 import { InitialSetupCard } from '../onboarding/InitialSetupCard';
+import { compareNames } from '../../services/sorting';
 
 interface OrderListProps {
   onSelectOrder: (order: Order) => void;
@@ -23,13 +24,19 @@ export const OrderList: React.FC<OrderListProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
 
-  const filtered = orders.filter((ord) => {
-    const matchesSearch =
-      ord.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ord.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'todos' || ord.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filtered = orders
+    .filter((ord) => {
+      const matchesSearch =
+        ord.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ord.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'todos' || ord.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort(
+      (left, right) =>
+        compareNames(left.clientName, right.clientName) ||
+        compareNames(left.orderNumber, right.orderNumber),
+    );
 
   const filterTabs = [
     { id: 'todos', label: 'Todas' },
@@ -46,7 +53,11 @@ export const OrderList: React.FC<OrderListProps> = ({
         title="Encomendas & Orçamentos"
         onOpenSettings={onOpenSettings}
         rightAction={
-          <Button size="sm" onClick={onNewOrder} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+          <Button
+            size="sm"
+            onClick={onNewOrder}
+            className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]"
+          >
             <Plus className="w-4 h-4" /> Nova Encomenda
           </Button>
         }
