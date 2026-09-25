@@ -28,7 +28,11 @@ export const IngredientList: React.FC<IngredientListProps> = ({
       <AppHeader
         title="Ingredientes & Insumos"
         rightAction={
-          <Button size="sm" onClick={onNewIngredient} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+          <Button
+            size="sm"
+            onClick={onNewIngredient}
+            className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]"
+          >
             <Plus className="w-4 h-4" /> Novo Ingrediente
           </Button>
         }
@@ -73,11 +77,11 @@ export const IngredientList: React.FC<IngredientListProps> = ({
               <div
                 key={ing.id}
                 onClick={() => onSelectIngredient(ing)}
-                className="bg-white hover:bg-white p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#E5DACD] shadow-xs hover:shadow-card cursor-pointer transition-shadow flex items-center justify-between active:scale-[0.99] group"
+                className="bg-white hover:bg-white p-4 sm:p-5 rounded-3xl border border-[#E5DACD] hover:border-[#E5DACD] shadow-xs hover:shadow-card cursor-pointer transition-shadow flex flex-col gap-4 active:scale-[0.99] group"
               >
-                <div className="space-y-1.5 min-w-0 pr-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-base text-[#302116] truncate">
+                <div className="min-w-0 space-y-2">
+                  <div className="flex flex-wrap items-start gap-2">
+                    <span className="basis-full whitespace-normal break-words font-semibold text-base leading-tight text-[#302116]">
                       {ing.name}
                     </span>
                     {ing.isComposite && (
@@ -95,7 +99,7 @@ export const IngredientList: React.FC<IngredientListProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center justify-end gap-3 border-t border-[#F2ECE1] pt-3">
                   <div className="text-right">
                     <span className="text-[11px] text-[#7A6453] uppercase block">
                       Custo Unitário
