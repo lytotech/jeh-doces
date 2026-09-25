@@ -6,6 +6,11 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 
 ## [Não publicado]
 
+### Corrigido
+
+- Imagem de produção agora declara a porta 3001 da API para roteamento correto
+  pelo proxy do Dokploy.
+
 ## [1.0.65] - 2026-09-06
 
 ### Alterado

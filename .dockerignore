@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log*
+.git
+.gitignore
+apps/*/dist
+apps/*/.env
+apps/*/.env.*
+packages/*/dist
+coverage
+data
+*.tsbuildinfo
+confeiti-assets-png-v2
