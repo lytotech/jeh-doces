@@ -83,12 +83,22 @@ export interface ExpenseRecord {
   updatedAt: string;
 }
 
+export interface CashOpeningBalanceRecord {
+  id: string;
+  amount: number;
+  occurredAt: string;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface FinanceSummary {
   from: string;
   to: string;
   salesTotal: number;
   receivedTotal: number;
   receivableTotal: number;
+  openingBalance: number;
   expensesTotal: number;
   netCash: number;
   estimatedProfit: number;
@@ -397,6 +407,26 @@ export const api = {
     if (to) params.set('to', to);
     const query = params.toString();
     return request<ExpenseRecord[]>(`/expenses${query ? `?${query}` : ''}`);
+  },
+
+  async getCashOpenings(): Promise<CashOpeningBalanceRecord[]> {
+    return request<CashOpeningBalanceRecord[]>('/cash-openings');
+  },
+
+  async saveCashOpening(
+    data: Partial<CashOpeningBalanceRecord>,
+  ): Promise<CashOpeningBalanceRecord> {
+    return request<CashOpeningBalanceRecord>(
+      data.id ? `/cash-openings/${data.id}` : '/cash-openings',
+      {
+        method: data.id ? 'PUT' : 'POST',
+        body: JSON.stringify(data),
+      },
+    );
+  },
+
+  async deleteCashOpening(id: string): Promise<{ success: boolean }> {
+    return request<{ success: boolean }>(`/cash-openings/${id}`, { method: 'DELETE' });
   },
 
   async saveExpense(data: Partial<ExpenseRecord>): Promise<ExpenseRecord> {

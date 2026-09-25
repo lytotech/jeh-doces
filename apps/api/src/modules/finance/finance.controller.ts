@@ -52,6 +52,25 @@ export const expenseData = (body: any) => {
   };
 };
 
+export const cashOpeningData = (body: any) => {
+  const amount = Number(body?.amount);
+  const occurredAt = new Date(body?.occurredAt || Date.now());
+  if (!Number.isFinite(amount) || amount <= 0)
+    throw new BadRequestException('O saldo inicial deve ser maior que zero.');
+  if (Number.isNaN(occurredAt.getTime())) throw new BadRequestException('Data inválida.');
+  return {
+    amount,
+    occurredAt,
+    notes: typeof body?.notes === 'string' ? body.notes.trim().slice(0, 500) || null : null,
+  };
+};
+
+export const calculateNetCash = (
+  openingBalance: number,
+  receivedTotal: number,
+  expensesTotal: number,
+) => openingBalance + receivedTotal - expensesTotal;
+
 export const buildOperationalReport = (orders: any[]) => {
   const products = new Map<string, { name: string; quantity: number; revenue: number }>();
   const customers = new Map<string, { name: string; orders: number; revenue: number }>();
@@ -125,6 +144,43 @@ export const buildOperationalReport = (orders: any[]) => {
 @UseGuards(AuthGuard)
 @UseInterceptors(CompanyContextInterceptor)
 export class FinanceController {
+  @Get('cash-openings')
+  listOpenings() {
+    return prisma.cashOpeningBalance.findMany({
+      where: { companyId: getCompanyId() },
+      orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  @Post('cash-openings')
+  createOpening(@Body() body: any) {
+    return prisma.cashOpeningBalance.create({
+      data: { ...cashOpeningData(body), companyId: getCompanyId() },
+    });
+  }
+
+  @Put('cash-openings/:id')
+  updateOpening(@Param('id') id: string, @Body() body: any) {
+    return prisma.cashOpeningBalance
+      .updateMany({
+        where: { id, companyId: getCompanyId() },
+        data: cashOpeningData(body),
+      })
+      .then(async (result) => {
+        if (!result.count) throw new BadRequestException('Saldo inicial não encontrado.');
+        return prisma.cashOpeningBalance.findUniqueOrThrow({ where: { id } });
+      });
+  }
+
+  @Delete('cash-openings/:id')
+  async removeOpening(@Param('id') id: string) {
+    const result = await prisma.cashOpeningBalance.deleteMany({
+      where: { id, companyId: getCompanyId() },
+    });
+    if (!result.count) throw new BadRequestException('Saldo inicial não encontrado.');
+    return { success: true };
+  }
+
   @Get('expenses')
   list(@Query('from') from?: string, @Query('to') to?: string) {
     const { start, end } = range(from, to);
@@ -163,9 +219,14 @@ export class FinanceController {
   async summary(@Query('from') from?: string, @Query('to') to?: string) {
     const { start, end } = range(from, to);
     const companyId = getCompanyId();
+    const opening = await prisma.cashOpeningBalance.findFirst({
+      where: { companyId, occurredAt: { lte: end } },
+      orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
+    });
+    const movementStart = opening && opening.occurredAt > start ? opening.occurredAt : start;
     const [expenses, orders] = await Promise.all([
       prisma.expense.findMany({
-        where: { companyId, occurredAt: { gte: start, lte: end } },
+        where: { companyId, occurredAt: { gte: movementStart, lte: end } },
         select: { amount: true },
       }),
       prisma.order.findMany({
@@ -173,7 +234,10 @@ export class FinanceController {
         select: {
           totalCharged: true,
           estimatedProfit: true,
-          payments: { where: { paidAt: { gte: start, lte: end } }, select: { amount: true } },
+          payments: {
+            where: { paidAt: { gte: movementStart, lte: end } },
+            select: { amount: true },
+          },
         },
       }),
     ]);
@@ -190,8 +254,9 @@ export class FinanceController {
       salesTotal,
       receivedTotal,
       receivableTotal: Math.max(0, salesTotal - receivedTotal),
+      openingBalance: opening?.amount ?? 0,
       expensesTotal,
-      netCash: receivedTotal - expensesTotal,
+      netCash: calculateNetCash(opening?.amount ?? 0, receivedTotal, expensesTotal),
       estimatedProfit:
         orders.reduce((sum, order) => sum + order.estimatedProfit, 0) - expensesTotal,
       ordersCount: orders.length,

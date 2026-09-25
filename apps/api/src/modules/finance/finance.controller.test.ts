@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BadRequestException } from '@nestjs/common';
-import { buildOperationalReport, expenseData, range } from './finance.controller';
+import {
+  buildOperationalReport,
+  calculateNetCash,
+  cashOpeningData,
+  expenseData,
+  range,
+} from './finance.controller';
 
 test('normaliza um lançamento financeiro válido', () => {
   const data = expenseData({
@@ -23,6 +29,28 @@ test('recusa despesas sem descrição, valor ou com data inválida', () => {
   assert.throws(() => expenseData({ description: 'Taxa', amount: 0 }), BadRequestException);
   assert.throws(
     () => expenseData({ description: 'Taxa', amount: 10, occurredAt: 'data inválida' }),
+    BadRequestException,
+  );
+});
+
+test('normaliza uma abertura de caixa válida', () => {
+  const data = cashOpeningData({
+    amount: '200.00',
+    occurredAt: '2026-09-01',
+    notes: 'Dinheiro já disponível',
+  });
+  assert.equal(data.amount, 200);
+  assert.equal(data.occurredAt.toISOString(), '2026-09-01T00:00:00.000Z');
+  assert.equal(data.notes, 'Dinheiro já disponível');
+  assert.equal(calculateNetCash(data.amount, 150, 0), 350);
+  assert.equal(calculateNetCash(data.amount, 150, 30), 320);
+});
+
+test('recusa saldo inicial sem valor positivo ou com data inválida', () => {
+  assert.throws(() => cashOpeningData({ amount: 0 }), BadRequestException);
+  assert.throws(() => cashOpeningData({ amount: -10 }), BadRequestException);
+  assert.throws(
+    () => cashOpeningData({ amount: 200, occurredAt: 'data inválida' }),
     BadRequestException,
   );
 });
