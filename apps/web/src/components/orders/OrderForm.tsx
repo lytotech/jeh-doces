@@ -12,6 +12,7 @@ import { DateTimePicker } from '../ui/DateTimePicker';
 import { maskPhone } from '../../services/formatters';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
 import { Plus, UserPlus, Search, Trash2, Cookie, Package, User } from 'lucide-react';
+import { sortByName } from '../../services/sorting';
 
 interface OrderFormProps {
   order?: Order | null;
@@ -105,6 +106,8 @@ const CatalogPicker: React.FC<{
 export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) => {
   const { products, materials, customers, saveOrderAction, deleteOrderAction, saveCustomerAction } =
     useApp();
+  const orderedProducts = useMemo(() => sortByName(products), [products]);
+  const orderedMaterials = useMemo(() => sortByName(materials), [materials]);
 
   const isEditing = !!order?.id;
 
@@ -339,7 +342,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     e.preventDefault();
     if (saving) return;
     if (!clientName.trim()) {
-      setFormError('Selecione um cliente cadastrado ou clique em “Novo” para adicionar um cliente antes de salvar.');
+      setFormError(
+        'Selecione um cliente cadastrado ou clique em “Novo” para adicionar um cliente antes de salvar.',
+      );
       return;
     }
     setFormError('');
@@ -442,7 +447,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                                 : '',
                             );
                           }}
-                        onChange={(e) => {
+                          onChange={(e) => {
                             setFormError('');
                             setCustomerSearch(e.target.value);
                             setCustomerId('');
@@ -491,7 +496,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                       </div>
                     )}
                     {formError && (
-                      <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                      <p
+                        role="alert"
+                        className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700"
+                      >
                         {formError}
                       </p>
                     )}
@@ -647,7 +655,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                           <CatalogPicker
                             value={item.productId}
                             placeholder="Buscar doce ou produto..."
-                            options={products.map((p) => ({
+                            options={orderedProducts.map((p) => ({
                               id: p.id,
                               name: p.name,
                               detail: formatCurrency(p.salePrice),
@@ -730,7 +738,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                         <CatalogPicker
                           value={mat.materialId}
                           placeholder="Buscar material ou embalagem..."
-                          options={materials.map((m) => ({
+                          options={orderedMaterials.map((m) => ({
                             id: m.id,
                             name: m.name,
                             detail: `Custo: ${formatCurrency(m.unitCost)}`,

@@ -13,6 +13,7 @@ import {
   Trash2,
   ChevronRight,
 } from 'lucide-react';
+import { sortByName } from '../../services/sorting';
 
 export const CustomerList: React.FC<{
   onSelectCustomer: (customer: Customer) => void;
@@ -24,10 +25,12 @@ export const CustomerList: React.FC<{
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const visible = useMemo(
     () =>
-      customers.filter(
-        (c) =>
-          (showArchived || !c.archivedAt) &&
-          [c.name, c.phone, c.email].some((v) => v?.toLowerCase().includes(term.toLowerCase())),
+      sortByName(
+        customers.filter(
+          (c) =>
+            (showArchived || !c.archivedAt) &&
+            [c.name, c.phone, c.email].some((v) => v?.toLowerCase().includes(term.toLowerCase())),
+        ),
       ),
     [customers, term, showArchived],
   );
@@ -36,7 +39,11 @@ export const CustomerList: React.FC<{
       <AppHeader
         title="Clientes"
         rightAction={
-          <Button size="sm" onClick={onNewCustomer} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+          <Button
+            size="sm"
+            onClick={onNewCustomer}
+            className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]"
+          >
             <Plus className="w-4 h-4" /> Novo cliente
           </Button>
         }

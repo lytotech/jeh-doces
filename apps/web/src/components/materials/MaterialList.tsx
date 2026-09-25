@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
@@ -16,6 +16,7 @@ import {
 import { Material, StockMovement } from '../../types';
 import { api } from '../../services/api';
 import { CategoryManager } from '../catalog/CategoryManager';
+import { compareNames, sortByName } from '../../services/sorting';
 
 interface MaterialListProps {
   onSelectMaterial: (material: Material) => void;
@@ -37,27 +38,33 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
 
   const categories = [
     'Todos',
-    ...Array.from(new Set([
-      ...persistedCategories,
-      ...materials.map((mat) => mat.category || 'Geral'),
-    ])).sort((a, b) =>
-      a.localeCompare(b),
-    ),
+    ...Array.from(
+      new Set([...persistedCategories, ...materials.map((mat) => mat.category || 'Geral')]),
+    ).sort(compareNames),
   ];
 
   useEffect(() => {
-    void api.getCatalogCategories('material').then((items) => setPersistedCategories(items.map((item) => item.name))).catch(() => undefined);
+    void api
+      .getCatalogCategories('material')
+      .then((items) => setPersistedCategories(items.map((item) => item.name)))
+      .catch(() => undefined);
   }, [materials.length]);
 
-  const filtered = materials.filter((mat) => {
-    const category = mat.category || 'Geral';
-    const term = searchTerm.toLowerCase();
-    const matchesSearch =
-      mat.name.toLowerCase().includes(term) || category.toLowerCase().includes(term);
-    const matchesCategory = selectedCategory === 'Todos' || category === selectedCategory;
+  const filtered = useMemo(
+    () =>
+      sortByName(
+        materials.filter((mat) => {
+          const category = mat.category || 'Geral';
+          const term = searchTerm.toLowerCase();
+          const matchesSearch =
+            mat.name.toLowerCase().includes(term) || category.toLowerCase().includes(term);
+          const matchesCategory = selectedCategory === 'Todos' || category === selectedCategory;
 
-    return matchesSearch && matchesCategory;
-  });
+          return matchesSearch && matchesCategory;
+        }),
+      ),
+    [materials, searchTerm, selectedCategory],
+  );
 
   const openStockAdjust = (material: Material) => {
     setStockMaterial(material);
@@ -95,7 +102,11 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
             <Button size="sm" variant="secondary" onClick={() => setCategoryManagerOpen(true)}>
               Categorias
             </Button>
-            <Button size="sm" onClick={onNewMaterial} className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]">
+            <Button
+              size="sm"
+              onClick={onNewMaterial}
+              className="!bg-[#6B1F3B] font-semibold shadow-md ring-1 ring-white/30 hover:!bg-[#54172F]"
+            >
               <Plus className="w-4 h-4" /> Novo Material
             </Button>
           </div>
@@ -298,7 +309,11 @@ export const MaterialList: React.FC<MaterialListProps> = ({ onSelectMaterial, on
           </div>
         </div>
       </Modal>
-      <CategoryManager isOpen={categoryManagerOpen} onClose={() => setCategoryManagerOpen(false)} initialType="material" />
+      <CategoryManager
+        isOpen={categoryManagerOpen}
+        onClose={() => setCategoryManagerOpen(false)}
+        initialType="material"
+      />
     </div>
   );
 };

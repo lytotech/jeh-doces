@@ -357,7 +357,7 @@ class Database {
     return (
       await prisma.material.findMany({
         where: { companyId: this.companyId() },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { name: 'asc' },
       })
     ).map(mapMaterial);
   }
@@ -480,7 +480,7 @@ class Database {
       await prisma.product.findMany({
         where: { companyId: this.companyId() },
         include: productInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { name: 'asc' },
       })
     ).map(mapProduct);
   }

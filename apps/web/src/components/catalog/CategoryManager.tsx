@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { api, CatalogCategorySummary } from '../../services/api';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
+import { sortByName } from '../../services/sorting';
 
 type CategoryType = 'product' | 'material';
 
@@ -22,7 +23,7 @@ export const CategoryManager: React.FC<{
   const loadCategories = async () => {
     setLoading(true);
     try {
-      setCategories(await api.getCatalogCategories(type));
+      setCategories(sortByName(await api.getCatalogCategories(type)));
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,10 @@ export const CategoryManager: React.FC<{
         ) : (
           <div className="space-y-2">
             {categories.map((category) => (
-              <div key={category.name} className="flex items-center gap-2 rounded-2xl border border-[#E5DACD] bg-white p-3">
+              <div
+                key={category.name}
+                className="flex items-center gap-2 rounded-2xl border border-[#E5DACD] bg-white p-3"
+              >
                 {editing === category.name ? (
                   <input
                     autoFocus
@@ -107,17 +111,35 @@ export const CategoryManager: React.FC<{
                 ) : (
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-[#302116]">{category.name}</p>
-                    <p className="text-xs text-[#7A6453]">{category.itemCount} {category.itemCount === 1 ? 'item vinculado' : 'itens vinculados'}</p>
+                    <p className="text-xs text-[#7A6453]">
+                      {category.itemCount}{' '}
+                      {category.itemCount === 1 ? 'item vinculado' : 'itens vinculados'}
+                    </p>
                   </div>
                 )}
                 {editing === category.name ? (
-                  <Button size="sm" onClick={() => void rename(category.name)}>Salvar</Button>
+                  <Button size="sm" onClick={() => void rename(category.name)}>
+                    Salvar
+                  </Button>
                 ) : (
-                  <button type="button" title="Renomear categoria" onClick={() => { setEditing(category.name); setDraft(category.name); }} className="rounded-xl p-2 text-[#8C7665] hover:bg-[#F7E5EA] hover:text-[#8D3157]">
+                  <button
+                    type="button"
+                    title="Renomear categoria"
+                    onClick={() => {
+                      setEditing(category.name);
+                      setDraft(category.name);
+                    }}
+                    className="rounded-xl p-2 text-[#8C7665] hover:bg-[#F7E5EA] hover:text-[#8D3157]"
+                  >
                     <Pencil className="h-4 w-4" />
                   </button>
                 )}
-                <button type="button" title="Excluir categoria" onClick={() => void remove(category.name, category.itemCount)} className="rounded-xl p-2 text-[#8C7665] hover:bg-rose-50 hover:text-rose-600">
+                <button
+                  type="button"
+                  title="Excluir categoria"
+                  onClick={() => void remove(category.name, category.itemCount)}
+                  className="rounded-xl p-2 text-[#8C7665] hover:bg-rose-50 hover:text-rose-600"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -125,7 +147,8 @@ export const CategoryManager: React.FC<{
           </div>
         )}
         <div className="flex items-center gap-2 border-t border-[#E5DACD] pt-3 text-xs text-[#7A6453]">
-          <Plus className="h-4 w-4" /> Novas categorias são criadas ao salvar um produto ou material.
+          <Plus className="h-4 w-4" /> Novas categorias são criadas ao salvar um produto ou
+          material.
         </div>
       </div>
     </Modal>
