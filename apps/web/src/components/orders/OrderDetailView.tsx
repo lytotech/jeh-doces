@@ -161,7 +161,9 @@ export const OrderDetailView: React.FC<OrderDetailViewProps> = ({ order, onBack,
                   <div>
                     <span className="text-[#7A6453] text-xs block">Data e Hora de Entrega</span>
                     <span className="text-[#302116] font-semibold">
-                      {formatDateTime(order.deliveryDate)}
+                      {order.deliveryDate
+                        ? formatDateTime(order.deliveryDate)
+                        : 'Entrega a definir'}
                     </span>
                   </div>
 

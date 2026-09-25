@@ -10,10 +10,12 @@ import './index.css';
 import { PublicOrderPage } from './components/public/PublicOrderPage';
 import { InstallAppPrompt } from './components/pwa/InstallAppPrompt';
 import { AdminPanel } from './components/admin/AdminPanel';
+import { PublicCatalogPage } from './components/public/PublicCatalogPage';
 
 function Root() {
   const { auth, loading } = useAuth();
   const publicMatch = window.location.pathname.match(/^\/pedido\/([^/]+)$/);
+  const catalogMatch = window.location.pathname.match(/^\/catalogo\/([^/]+)$/);
   const params = new URLSearchParams(window.location.search);
   const legal = params.get('legal');
 
@@ -21,6 +23,7 @@ function Root() {
     const isPrivatePage =
       Boolean(auth) ||
       Boolean(publicMatch) ||
+      Boolean(catalogMatch) ||
       ['auth', 'invite', 'reset', 'verify'].some((key) => params.has(key)) ||
       legal === 'terms' ||
       legal === 'privacy' ||
@@ -28,18 +31,20 @@ function Root() {
     const robots = document.querySelector('meta[name="robots"]');
     robots?.setAttribute('content', isPrivatePage ? 'noindex, nofollow' : 'index, follow');
 
-    if (publicMatch) document.title = 'Pedido | Confeiti';
+    if (catalogMatch) document.title = 'Catálogo | Confeiti';
+    else if (publicMatch) document.title = 'Pedido | Confeiti';
     else if (legal) document.title = 'Documentos legais | Confeiti';
     else if (params.has('auth')) document.title = 'Entrar | Confeiti';
     else if (auth) document.title = 'Painel | Confeiti';
     else document.title = 'Confeiti | Sistema de gestão para confeitaria';
-  }, [auth, legal, params, publicMatch]);
+  }, [auth, legal, params, publicMatch, catalogMatch]);
 
   if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
     return <AdminPanel />;
   }
 
   if (publicMatch) return <PublicOrderPage token={publicMatch[1]} />;
+  if (catalogMatch) return <PublicCatalogPage slug={decodeURIComponent(catalogMatch[1])} />;
   if (loading)
     return (
       <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center text-[#8D3157] font-semibold">
@@ -60,7 +65,8 @@ function Root() {
   );
 }
 
-const isAdminRoute = window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
+const isAdminRoute =
+  window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

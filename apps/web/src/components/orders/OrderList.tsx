@@ -130,7 +130,7 @@ export const OrderList: React.FC<OrderListProps> = ({
               const isPaid = totalPaid >= ord.totalCharged && ord.totalCharged > 0;
               const isOverdue =
                 !['cancelado', 'entregue'].includes(ord.status) &&
-                new Date(ord.deliveryDate).getTime() < Date.now();
+                Boolean(ord.deliveryDate && new Date(ord.deliveryDate).getTime() < Date.now());
 
               return (
                 <div
@@ -156,7 +156,9 @@ export const OrderList: React.FC<OrderListProps> = ({
                         <div className="flex items-center gap-1.5 text-xs text-[#7A6453]">
                           <Calendar className="w-3.5 h-3.5 text-[#96642F] shrink-0" />
                           <span className={isOverdue ? 'font-semibold text-red-700' : undefined}>
-                            {formatDateTime(ord.deliveryDate)}
+                            {ord.deliveryDate
+                              ? formatDateTime(ord.deliveryDate)
+                              : 'Entrega a definir'}
                           </span>
                           {isOverdue && <AlertTriangle className="h-3.5 w-3.5 text-red-600" />}
                         </div>

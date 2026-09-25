@@ -9,7 +9,7 @@ export const generateWhatsAppQuoteMessage = (order: Order, settings: AppSettings
   message += `------------------------------------\n`;
   message += `*Pedido:* ${order.orderNumber}\n`;
   message += `*Cliente:* ${order.clientName}\n`;
-  message += `*Data/Hora de Entrega:* ${formatDateTime(order.deliveryDate)}\n`;
+  message += `*Data/Hora de Entrega:* ${order.deliveryDate ? formatDateTime(order.deliveryDate) : 'A definir'}\n`;
   if (order.clientAddress) {
     message += `*Endereço:* ${order.clientAddress}\n`;
   }
@@ -70,7 +70,7 @@ export const generateWhatsAppStatusMessage = (order: Order, settings: AppSetting
   let message = `Olá, ${order.clientName}! 😊\n\n`;
   message += `Atualização da encomenda *#${order.orderNumber}* - ${settings.storeName}:\n`;
   message += `*Status:* ${statusMessage}\n`;
-  message += `*Entrega:* ${formatDateTime(order.deliveryDate)}\n`;
+  message += `*Entrega:* ${order.deliveryDate ? formatDateTime(order.deliveryDate) : 'A definir'}\n`;
   message += `*Total:* ${formatCurrency(order.totalCharged)}\n`;
 
   if (order.status !== 'cancelado' && order.notes) {
@@ -92,7 +92,7 @@ export const generateWhatsAppReminderMessage = (
   message += `Lembrete da encomenda *#${order.orderNumber}* - ${settings.storeName}:\n`;
 
   if (kind === 'delivery') {
-    message += `Sua entrega está agendada para *${formatDateTime(order.deliveryDate)}*.\n`;
+    message += `Sua entrega está agendada para *${order.deliveryDate ? formatDateTime(order.deliveryDate) : 'A definir'}*.\n`;
     message += 'Se precisar ajustar algum detalhe, avise a gente por aqui.\n';
   } else {
     message += `Ainda falta *${formatCurrency(remaining)}* para completar o pagamento.\n`;

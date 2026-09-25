@@ -123,7 +123,7 @@ export interface Order {
   clientAddress?: string;
   customerId?: string;
   shareToken?: string;
-  deliveryDate: string; // e.g. "2026-08-25T08:00"
+  deliveryDate: string | null; // e.g. "2026-08-25T08:00"
   status: OrderStatus;
   items: OrderProductItem[];
   materials: OrderMaterialItem[];
@@ -173,6 +173,8 @@ export interface AppSettings {
   automaticPaymentReminders?: boolean;
   deliveryReminderHours?: number;
   paymentReminderDays?: number;
+  publicCatalogEnabled?: boolean;
+  publicCatalogSlug?: string;
 }
 
 export interface DatabaseSchema {

@@ -9,7 +9,7 @@ export const generateWhatsAppQuoteMessage = (order: Order, settings: AppSettings
   message += `------------------------------------\n`;
   message += `*Pedido:* ${order.orderNumber}\n`;
   message += `*Cliente:* ${order.clientName}\n`;
-  message += `*Data/Hora de Entrega:* ${formatDateTime(order.deliveryDate)}\n`;
+  message += `*Data/Hora de Entrega:* ${order.deliveryDate ? formatDateTime(order.deliveryDate) : 'A definir'}\n`;
   if (order.clientAddress) {
     message += `*Endereço:* ${order.clientAddress}\n`;
   }

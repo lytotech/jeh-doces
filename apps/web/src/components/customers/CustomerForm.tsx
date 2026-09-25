@@ -28,7 +28,8 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
         .filter((order) => order.customerId === customer.id && order.status !== 'cancelado')
         .sort(
           (first, second) =>
-            new Date(second.deliveryDate).getTime() - new Date(first.deliveryDate).getTime(),
+            new Date(second.deliveryDate || 0).getTime() -
+            new Date(first.deliveryDate || 0).getTime(),
         )
     : [];
   const customerTotal = customerOrders.reduce((total, order) => total + order.totalCharged, 0);
@@ -169,7 +170,10 @@ export const CustomerForm: React.FC<{ customer?: Customer | null; onBack: () => 
                         Encomenda {order.orderNumber}
                       </p>
                       <p className="mt-1 flex items-center gap-1 text-[11px] text-[#7A6453]">
-                        <CalendarDays className="h-3 w-3" /> {formatDateTime(order.deliveryDate)}
+                        <CalendarDays className="h-3 w-3" />{' '}
+                        {order.deliveryDate
+                          ? formatDateTime(order.deliveryDate)
+                          : 'Entrega a definir'}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">

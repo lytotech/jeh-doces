@@ -52,6 +52,7 @@ export async function reconcileAutomaticReminders() {
       select: {
         id: true,
         deliveryDate: true,
+        createdAt: true,
         totalCharged: true,
         clientPhone: true,
         payments: { select: { amount: true } },
@@ -61,10 +62,15 @@ export async function reconcileAutomaticReminders() {
     for (const order of orders) {
       const remaining =
         order.totalCharged - order.payments.reduce((sum, payment) => sum + payment.amount, 0);
-      const deliveryDueAt = new Date(
-        order.deliveryDate.getTime() - setting.deliveryReminderHours * 60 * 60 * 1000,
-      );
-      if (setting.automaticDeliveryReminders && order.clientPhone && deliveryDueAt <= now) {
+      const deliveryDueAt = order.deliveryDate
+        ? new Date(order.deliveryDate.getTime() - setting.deliveryReminderHours * 60 * 60 * 1000)
+        : null;
+      if (
+        setting.automaticDeliveryReminders &&
+        order.clientPhone &&
+        deliveryDueAt &&
+        deliveryDueAt <= now
+      ) {
         await prisma.automaticReminder.upsert({
           where: { orderId_kind: { orderId: order.id, kind: 'delivery' } },
           create: {
@@ -77,7 +83,7 @@ export async function reconcileAutomaticReminders() {
         });
       }
       const paymentDueAt = new Date(
-        order.deliveryDate.getTime() - setting.paymentReminderDays * 24 * 60 * 60 * 1000,
+        order.createdAt.getTime() + setting.paymentReminderDays * 24 * 60 * 60 * 1000,
       );
       if (
         setting.automaticPaymentReminders &&
