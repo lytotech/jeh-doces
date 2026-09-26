@@ -419,6 +419,7 @@ model Order {
   clientPhone         String?
   clientAddress       String?
   shareToken           String?         @unique
+  publicSubmissionId   String?         @unique
 
   items               OrderItem[]
   materials           OrderMaterial[]
