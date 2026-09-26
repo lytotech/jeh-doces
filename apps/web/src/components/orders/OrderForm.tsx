@@ -165,6 +165,17 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [quickCustomerPhone, setQuickCustomerPhone] = useState('');
   const [quickCustomerAddress, setQuickCustomerAddress] = useState('');
 
+  const clearCustomerSelection = () => {
+    setCustomerId('');
+    setCustomerSearch('');
+    setClientName('');
+    setClientPhone('');
+    setClientAddress('');
+    setCustomerSuggestions([]);
+    setCustomerPickerOpen(false);
+    setFormError('');
+  };
+
   // Keep the order snapshot in sync when the selected customer is edited elsewhere.
   useEffect(() => {
     if (!customerId) return;
@@ -479,7 +490,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                       <div className="relative min-w-0 flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#A89484]" />
                         <input
-                          className="w-full min-w-0 pl-9 pr-3 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]"
+                          className="w-full min-w-0 pl-9 pr-10 py-3 bg-[#FCFAF8] border border-[#E5DACD] rounded-2xl text-xs font-semibold text-[#302116]"
                           value={customerSearch}
                           placeholder="Buscar por nome..."
                           onFocus={() => {
@@ -500,6 +511,18 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                             setCustomerPickerOpen(true);
                           }}
                         />
+                        {(customerId || customerSearch) && (
+                          <button
+                            type="button"
+                            aria-label="Remover cliente selecionado"
+                            title="Remover cliente"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={clearCustomerSelection}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#A89484] hover:bg-[#F7E5EA] hover:text-[#96315C]"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                       <button
                         type="button"
