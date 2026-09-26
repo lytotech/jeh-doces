@@ -34,12 +34,22 @@ const CatalogPicker: React.FC<{
   value: string;
   options: CatalogOption[];
   placeholder: string;
+  autoOpen?: boolean;
   onChange: (id: string) => void;
-}> = ({ value, options, placeholder, onChange }) => {
+}> = ({ value, options, placeholder, autoOpen = false, onChange }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const selected = options.find((option) => option.id === value);
   const [query, setQuery] = useState(selected?.name || '');
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
+  const [visibleCount, setVisibleCount] = useState(10);
+
+  useEffect(() => {
+    if (autoOpen) {
+      setQuery('');
+      setOpen(true);
+      setVisibleCount(10);
+    }
+  }, [autoOpen]);
 
   useEffect(() => {
     if (!open) setQuery(selected?.name || '');
@@ -69,6 +79,7 @@ const CatalogPicker: React.FC<{
           onFocus={() => setOpen(true)}
           onChange={(event) => {
             setQuery(event.target.value);
+            setVisibleCount(10);
             setOpen(true);
           }}
           className="w-full rounded-xl border border-[#DFCFC0] bg-white py-1.5 pl-8 pr-2.5 text-xs font-semibold text-[#302116] focus:outline-none"
@@ -77,23 +88,36 @@ const CatalogPicker: React.FC<{
       {open && (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#E5DACD] bg-white shadow-lg">
           {filteredOptions.length > 0 ? (
-            filteredOptions.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => {
-                  onChange(option.id);
-                  setQuery(option.name);
-                  setOpen(false);
-                }}
-                className="block w-full border-b border-[#F4EFEA] px-3 py-2 text-left last:border-0 hover:bg-[#F7E5EA]"
-              >
-                <span className="block truncate text-xs font-semibold text-[#302116]">
-                  {option.name}
-                </span>
-                <span className="block truncate text-[10px] text-[#7A6453]">{option.detail}</span>
-              </button>
-            ))
+            <>
+              {filteredOptions.slice(0, visibleCount).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.id);
+                    setQuery(option.name);
+                    setOpen(false);
+                  }}
+                  className="block w-full border-b border-[#F4EFEA] px-3 py-2 text-left last:border-0 hover:bg-[#F7E5EA]"
+                >
+                  <span className="block break-words text-xs font-semibold text-[#302116]">
+                    {option.name}
+                  </span>
+                  <span className="block break-words text-[10px] text-[#7A6453]">
+                    {option.detail}
+                  </span>
+                </button>
+              ))}
+              {filteredOptions.length > visibleCount && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((count) => count + 10)}
+                  className="w-full border-t border-[#F4EFEA] px-3 py-2 text-left text-xs font-semibold text-[#96315C] hover:bg-[#F7E5EA]"
+                >
+                  Carregar mais ({filteredOptions.length - visibleCount})
+                </button>
+              )}
+            </>
           ) : (
             <p className="px-3 py-2 text-xs text-[#8A7565]">Nenhum item encontrado.</p>
           )}
@@ -168,6 +192,8 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [newProductPickerId, setNewProductPickerId] = useState<string | null>(null);
+  const [newMaterialPickerId, setNewMaterialPickerId] = useState<string | null>(null);
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
   // Older orders do not persist the origin of a material. Treat their rows as
@@ -230,6 +256,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     };
     const nextItems = [...items, newItem];
     setItems(nextItems);
+    setNewProductPickerId(newItem.id);
     setOrderMaterials(syncAutomaticMaterials(nextItems, orderMaterials));
   };
 
@@ -286,6 +313,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       source: 'manual',
     };
     setOrderMaterials([...orderMaterials, newMat]);
+    setNewMaterialPickerId(newMat.id);
   };
 
   const handleUpdateMaterial = (
@@ -655,6 +683,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                           <CatalogPicker
                             value={item.productId}
                             placeholder="Buscar doce ou produto..."
+                            autoOpen={item.id === newProductPickerId}
                             options={orderedProducts.map((p) => ({
                               id: p.id,
                               name: p.name,
@@ -738,6 +767,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                         <CatalogPicker
                           value={mat.materialId}
                           placeholder="Buscar material ou embalagem..."
+                          autoOpen={mat.id === newMaterialPickerId}
                           options={orderedMaterials.map((m) => ({
                             id: m.id,
                             name: m.name,
