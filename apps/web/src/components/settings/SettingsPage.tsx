@@ -64,6 +64,19 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
   };
 
+  const saveCatalog = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await updateSettingsAction({
+        publicCatalogEnabled,
+        publicCatalogSlug: publicCatalogSlug.trim().toLowerCase(),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const exportBackup = async () => {
     if (exporting) return;
     setExporting(true);
@@ -206,6 +219,18 @@ export const SettingsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
               <Copy className="h-4 w-4" /> Copiar link
             </Button>
           </div>
+          <p className="mt-3 break-all text-xs text-[#8C7665]">
+            Link: {window.location.origin}/catalogo/{publicCatalogSlug.trim() || 'minha-loja'}
+          </p>
+          <Button
+            type="button"
+            fullWidth
+            className="mt-4"
+            disabled={saving || !publicCatalogSlug.trim()}
+            onClick={() => void saveCatalog()}
+          >
+            {saving ? 'Salvando catálogo…' : 'Salvar catálogo público'}
+          </Button>
         </Card>
         <Card className="border-[#E8DECF] bg-white p-5 md:p-6">
           <div className="mb-4">

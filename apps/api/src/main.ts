@@ -37,6 +37,7 @@ export async function createApplication() {
     reply.header('x-request-id', request.requestId);
   });
   fastify.addHook('onResponse', async (request: any, reply: any) => {
+    if ((request.routeOptions?.url || request.url) === '/api/health') return;
     const durationMs = Math.round(
       performance.now() - (request.requestStartedAt || performance.now()),
     );

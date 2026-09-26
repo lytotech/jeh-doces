@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   NotFoundException,
   Param,
   Post,
@@ -18,7 +19,7 @@ type CatalogOrderBody = {
 
 @Controller('api/public/catalog')
 export class PublicCatalogController {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
 
   @Get(':slug')
   async getCatalog(@Param('slug') slug: string) {
