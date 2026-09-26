@@ -41,13 +41,13 @@ const CatalogPicker: React.FC<{
   const selected = options.find((option) => option.id === value);
   const [query, setQuery] = useState(selected?.name || '');
   const [open, setOpen] = useState(autoOpen);
-  const [visibleCount, setVisibleCount] = useState(5);
+  const [visibleCount, setVisibleCount] = useState(10);
 
   useEffect(() => {
     if (autoOpen) {
       setQuery('');
       setOpen(true);
-      setVisibleCount(5);
+      setVisibleCount(10);
     }
   }, [autoOpen]);
 
@@ -79,7 +79,7 @@ const CatalogPicker: React.FC<{
           onFocus={() => setOpen(true)}
           onChange={(event) => {
             setQuery(event.target.value);
-            setVisibleCount(5);
+            setVisibleCount(10);
             setOpen(true);
           }}
           className="w-full rounded-xl border border-[#DFCFC0] bg-white py-1.5 pl-8 pr-2.5 text-xs font-semibold text-[#302116] focus:outline-none"
@@ -111,7 +111,7 @@ const CatalogPicker: React.FC<{
               {filteredOptions.length > visibleCount && (
                 <button
                   type="button"
-                  onClick={() => setVisibleCount((count) => count + 5)}
+                  onClick={() => setVisibleCount((count) => count + 10)}
                   className="w-full border-t border-[#F4EFEA] px-3 py-2 text-left text-xs font-semibold text-[#96315C] hover:bg-[#F7E5EA]"
                 >
                   Carregar mais ({filteredOptions.length - visibleCount})
