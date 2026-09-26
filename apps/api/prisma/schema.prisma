@@ -420,6 +420,7 @@ model Order {
   clientAddress       String?
   shareToken           String?         @unique
   publicSubmissionId   String?         @unique
+  publicCode           String?         @unique
 
   items               OrderItem[]
   materials           OrderMaterial[]
