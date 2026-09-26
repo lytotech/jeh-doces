@@ -496,6 +496,9 @@ export const api = {
     data: {
       customer: { name: string; phone: string };
       items: Array<{ productId: string; quantity: number }>;
+      submissionId: string;
+      captchaToken?: string;
+      website?: string;
       notes?: string;
       deliveryDate?: string;
     },

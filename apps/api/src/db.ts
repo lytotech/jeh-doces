@@ -618,6 +618,7 @@ class Database {
     data: {
       customer: { name: string; phone: string };
       items: Array<{ productId: string; quantity: number }>;
+      submissionId: string;
       notes?: string;
       deliveryDate?: string;
     },
@@ -629,6 +630,17 @@ class Database {
     if (!setting) return null;
     const companyId = setting.companyId;
     return prisma.$transaction(async (tx) => {
+      const existing = await tx.order.findUnique({
+        where: { publicSubmissionId: data.submissionId },
+        select: { id: true, orderNumber: true, totalCharged: true, createdAt: true },
+      });
+      if (existing)
+        return {
+          id: existing.id,
+          orderNumber: existing.orderNumber,
+          totalCharged: existing.totalCharged,
+          createdAt: existing.createdAt.toISOString(),
+        };
       const ids = [...new Set(data.items.map((item) => item.productId))];
       const products = await tx.product.findMany({ where: { companyId, id: { in: ids } } });
       if (products.length !== ids.length)
@@ -673,6 +685,7 @@ class Database {
           clientName: data.customer.name.trim(),
           clientPhone: customerPhone,
           customerId: savedCustomer.id,
+          publicSubmissionId: data.submissionId,
           deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
           status: 'orcamento',
           subtotal,

@@ -5,6 +5,31 @@ import { formatCurrency } from '../../services/costEngine';
 
 type Cart = Record<string, number>;
 
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        element: HTMLElement,
+        options: {
+          sitekey: string;
+          size?: string;
+          callback?: (token: string) => void;
+          'expired-callback'?: () => void;
+          'error-callback'?: () => void;
+        },
+      ) => string;
+      execute: (widgetId?: string) => void;
+      reset: (widgetId?: string) => void;
+    };
+  }
+}
+
+const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined;
+const createSubmissionId = () =>
+  typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
   const [catalog, setCatalog] = useState<PublicCatalog | null>(null);
   const [error, setError] = useState('');
@@ -17,6 +42,10 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
   const [notes, setNotes] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [sending, setSending] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaRef = React.useRef<HTMLDivElement>(null);
+  const captchaWidgetRef = React.useRef<string | undefined>(undefined);
+  const submissionIdRef = React.useRef(createSubmissionId());
   const [confirmation, setConfirmation] = useState<{ number: string; total: number } | null>(null);
 
   useEffect(() => {
@@ -25,6 +54,35 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
       .then(setCatalog)
       .catch(() => setError('Não encontramos esse catálogo ou ele está indisponível.'));
   }, [slug]);
+
+  useEffect(() => {
+    if (!turnstileSiteKey || !checkoutOpen || !captchaRef.current) return;
+    const render = () => {
+      if (!captchaRef.current || !window.turnstile || captchaWidgetRef.current) return;
+      captchaWidgetRef.current = window.turnstile.render(captchaRef.current, {
+        sitekey: turnstileSiteKey,
+        size: 'invisible',
+        callback: setCaptchaToken,
+        'expired-callback': () => setCaptchaToken(''),
+        'error-callback': () => setCaptchaToken(''),
+      });
+      window.turnstile.execute(captchaWidgetRef.current);
+    };
+    if (window.turnstile) render();
+    else {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.onload = render;
+      document.head.appendChild(script);
+    }
+    return () => {
+      if (captchaWidgetRef.current && window.turnstile) {
+        window.turnstile.reset(captchaWidgetRef.current);
+        captchaWidgetRef.current = undefined;
+      }
+    };
+  }, [checkoutOpen]);
 
   const products = useMemo(() => {
     if (!catalog) return [];
@@ -61,6 +119,9 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
       const result = await api.submitPublicCatalogOrder(slug, {
         customer: { name, phone },
         items: Object.entries(cart).map(([productId, quantity]) => ({ productId, quantity })),
+        submissionId: submissionIdRef.current,
+        captchaToken: captchaToken || undefined,
+        website: '',
         notes: notes.trim() || undefined,
         deliveryDate: deliveryDate || undefined,
       });
@@ -70,6 +131,8 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
       });
       setCart({});
       setCheckoutOpen(false);
+      submissionIdRef.current = createSubmissionId();
+      setCaptchaToken('');
     } catch {
       setError('Não foi possível enviar seu pedido. Confira os dados e tente novamente.');
     } finally {
@@ -217,6 +280,15 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
               </div>
             </div>
             <div className="mt-6 grid gap-4">
+              <input
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="absolute -left-[9999px] h-px w-px opacity-0"
+                name="website"
+                value=""
+                onChange={() => undefined}
+              />
               <label className="text-sm font-semibold">
                 Seu nome
                 <input
@@ -255,6 +327,7 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
                   onChange={(event) => setNotes(event.target.value)}
                 />
               </label>
+              {turnstileSiteKey && <div ref={captchaRef} aria-hidden="true" />}
               <button
                 disabled={sending}
                 className="rounded-xl bg-[#96315C] px-5 py-3 font-semibold text-white disabled:opacity-50"

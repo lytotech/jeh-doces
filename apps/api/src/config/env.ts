@@ -6,6 +6,8 @@ export const env = {
     apiPerMinute: Number(process.env.RATE_LIMIT_API_PER_MINUTE || 120),
     authPerWindow: Number(process.env.RATE_LIMIT_AUTH || 5),
     invitePerHour: Number(process.env.RATE_LIMIT_INVITE || 3),
+    publicCatalogPerWindow: Number(process.env.RATE_LIMIT_PUBLIC_CATALOG || 5),
+    publicCatalogPhonePerWindow: Number(process.env.RATE_LIMIT_PUBLIC_CATALOG_PHONE || 3),
   },
   corsOrigins: (
     process.env.CORS_ORIGINS ||
@@ -18,6 +20,7 @@ export const env = {
   mercadoPagoAccessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
   mercadoPagoWebhookUrl: process.env.MERCADOPAGO_WEBHOOK_URL || '',
   mercadoPagoWebhookSecret: process.env.MERCADOPAGO_WEBHOOK_SECRET || '',
+  turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY || '',
   otelEnabled: process.env.OTEL_ENABLED === 'true',
   otelMetricsUrl: process.env.OTEL_METRICS_URL || 'http://192.168.2.51:9090/api/v1/otlp/v1/metrics',
   otelTracesUrl: process.env.OTEL_TRACES_URL || 'http://192.168.2.51:4318/v1/traces',
