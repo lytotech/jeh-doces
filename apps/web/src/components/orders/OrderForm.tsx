@@ -11,7 +11,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { DateTimePicker } from '../ui/DateTimePicker';
 import { maskPhone } from '../../services/formatters';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
-import { Plus, UserPlus, Search, Trash2, Cookie, Package, User } from 'lucide-react';
+import { Plus, UserPlus, Search, Trash2, Cookie, Package, User, X } from 'lucide-react';
 import { sortByName } from '../../services/sorting';
 
 interface OrderFormProps {
@@ -82,8 +82,23 @@ const CatalogPicker: React.FC<{
             setVisibleCount(10);
             setOpen(true);
           }}
-          className="w-full rounded-xl border border-[#DFCFC0] bg-white py-1.5 pl-8 pr-2.5 text-xs font-semibold text-[#302116] focus:outline-none"
+          className="w-full rounded-xl border border-[#DFCFC0] bg-white py-1.5 pl-8 pr-8 text-xs font-semibold text-[#302116] focus:outline-none"
         />
+        {query && (
+          <button
+            type="button"
+            aria-label="Limpar busca"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              setQuery('');
+              setVisibleCount(10);
+              setOpen(true);
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-[#A89484] hover:bg-[#F7E5EA] hover:text-[#96315C]"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
       {open && (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-48 overflow-y-auto rounded-xl border border-[#E5DACD] bg-white shadow-lg">
