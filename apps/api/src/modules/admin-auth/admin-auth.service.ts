@@ -4,10 +4,11 @@ import {
   BadRequestException,
   Inject,
   Injectable,
+  NotFoundException,
   OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
-import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import { Prisma, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 
@@ -19,6 +20,15 @@ const normalize = (value: unknown) =>
   String(value ?? '')
     .trim()
     .toLowerCase();
+
+export function companyStatusData(body: Record<string, unknown>) {
+  if (typeof body.active !== 'boolean')
+    throw new BadRequestException('Informe o novo status da empresa.');
+  const reason = String(body.reason ?? '').trim();
+  if (reason.length < 3 || reason.length > 500)
+    throw new BadRequestException('Informe um motivo entre 3 e 500 caracteres.');
+  return { active: body.active, reason };
+}
 
 async function hashPassword(password: string) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -196,6 +206,163 @@ export class AdminAuthService implements OnModuleInit {
       },
       recentCompanies,
     };
+  }
+
+  async companies(query: Record<string, unknown>) {
+    const search = String(query.q ?? '').trim();
+    const status = String(query.status ?? 'all');
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Math.min(50, Math.max(10, Number(query.pageSize) || 10));
+    const where: Prisma.CompanyWhereInput = {};
+    if (search) where.name = { contains: search, mode: 'insensitive' };
+    if (status === 'active') where.deactivatedAt = null;
+    if (status === 'inactive') where.deactivatedAt = { not: null };
+
+    const companies = await this.prisma.client.company.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        deactivatedAt: true,
+        memberships: {
+          select: {
+            user: {
+              select: {
+                sessions: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+              },
+            },
+          },
+        },
+        _count: { select: { memberships: true, orders: true, products: true, customers: true } },
+        subscription: { select: { plan: true, status: true, currentPeriodEnd: true } },
+      },
+    });
+
+    const rows = companies.map(({ memberships, ...company }) => ({
+      ...company,
+      lastAccessAt: memberships.reduce<Date | null>((latest, membership) => {
+        const value = membership.user.sessions[0]?.createdAt ?? null;
+        return value && (!latest || value > latest) ? value : latest;
+      }, null),
+    }));
+    const sort = String(query.sort ?? 'createdAt');
+    rows.sort((left, right) => {
+      if (sort === 'name') return left.name.localeCompare(right.name, 'pt-BR');
+      if (sort === 'lastAccess') {
+        return (right.lastAccessAt?.getTime() ?? 0) - (left.lastAccessAt?.getTime() ?? 0);
+      }
+      return right.createdAt.getTime() - left.createdAt.getTime();
+    });
+
+    const total = rows.length;
+    const active = rows.filter((company) => !company.deactivatedAt).length;
+    const inactive = total - active;
+    const start = (page - 1) * pageSize;
+    return {
+      companies: rows.slice(start, start + pageSize),
+      pagination: { page, pageSize, total, pages: Math.ceil(total / pageSize) },
+      summary: { total, active, inactive },
+    };
+  }
+
+  async company(id: string) {
+    const company = await this.prisma.client.company.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+        deactivatedAt: true,
+        deletionRequestedAt: true,
+        deletionScheduledFor: true,
+        memberships: {
+          orderBy: { createdAt: 'asc' },
+          select: {
+            role: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                sessions: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            orders: true,
+            products: true,
+            customers: true,
+            ingredients: true,
+            materials: true,
+          },
+        },
+        subscription: {
+          select: { plan: true, status: true, currentPeriodEnd: true, createdAt: true },
+        },
+      },
+    });
+    if (!company) throw new NotFoundException('Empresa não encontrada.');
+    return {
+      ...company,
+      memberships: company.memberships.map(({ user, ...membership }) => ({
+        ...membership,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          lastAccessAt: user.sessions[0]?.createdAt ?? null,
+        },
+      })),
+    };
+  }
+
+  async companyAudit(id: string) {
+    const exists = await this.prisma.client.company.count({ where: { id } });
+    if (!exists) throw new NotFoundException('Empresa não encontrada.');
+    return this.prisma.client.adminAuditLog.findMany({
+      where: { companyId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+      select: {
+        id: true,
+        action: true,
+        reason: true,
+        createdAt: true,
+        adminUser: { select: { name: true, email: true } },
+      },
+    });
+  }
+
+  async updateCompanyStatus(
+    id: string,
+    body: Record<string, unknown>,
+    context: { adminUser: { id: string } },
+  ) {
+    const { active, reason } = companyStatusData(body);
+    const company = await this.prisma.client.company.findUnique({
+      where: { id },
+      select: { id: true, deactivatedAt: true },
+    });
+    if (!company) throw new NotFoundException('Empresa não encontrada.');
+    const action = active ? 'company_reactivated' : 'company_deactivated';
+    const updated = await this.prisma.client.$transaction(async (transaction) => {
+      const result = await transaction.company.update({
+        where: { id },
+        data: { deactivatedAt: active ? null : new Date() },
+        select: { id: true, name: true, deactivatedAt: true },
+      });
+      await transaction.adminAuditLog.create({
+        data: { adminUserId: context.adminUser.id, companyId: id, action, reason },
+      });
+      return result;
+    });
+    return { ...updated, active: !updated.deactivatedAt };
   }
 
   async pricing() {
