@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowRight,
   BarChart3,
@@ -21,6 +21,7 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { api, PlanPrices } from '../../services/api';
 
 const goToAuth = (mode: 'login' | 'register') => {
   window.location.href = `/?auth=${mode}`;
@@ -90,6 +91,18 @@ const features = [
 ];
 
 export function LandingPage() {
+  const [prices, setPrices] = useState<PlanPrices>({ monthly: 19.8, annual: 179.8 });
+
+  useEffect(() => {
+    void api
+      .getPlanPrices()
+      .then(setPrices)
+      .catch(() => undefined);
+  }, []);
+
+  const money = (value: number) =>
+    value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
   const [menuOpen, setMenuOpen] = React.useState(false);
 
   return (
@@ -211,7 +224,8 @@ export function LandingPage() {
                 <CheckCircle2 size={15} className="text-emerald-600" /> Dados separados por empresa
               </span>
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 size={15} className="text-emerald-600" /> Backup e restauração dos dados
+                <CheckCircle2 size={15} className="text-emerald-600" /> Backup e restauração dos
+                dados
               </span>
             </div>
           </div>
@@ -419,26 +433,64 @@ export function LandingPage() {
               <h3 className="mt-3 font-serif text-3xl font-bold text-[#3D2A1C]">R$ 0</h3>
               <p className="mt-1 text-sm text-[#7A6655]">Para começar a organizar</p>
               <ul className="mt-7 space-y-3 text-sm text-[#5F4D3D]">
-                {['Painel e encomendas', 'Produtos e receitas', 'Clientes e calendário', 'Ingredientes e estoque', 'Banner para assinar quando precisar'].map((item) => (
-                  <li key={item} className="flex items-center gap-2"><Check size={16} className="shrink-0 text-emerald-600" />{item}</li>
+                {[
+                  'Painel e encomendas',
+                  'Produtos e receitas',
+                  'Clientes e calendário',
+                  'Ingredientes e estoque',
+                  'Banner para assinar quando precisar',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check size={16} className="shrink-0 text-emerald-600" />
+                    {item}
+                  </li>
                 ))}
               </ul>
-              <button onClick={() => goToAuth('register')} className="mt-8 w-full rounded-2xl border border-[#D8C5B0] bg-white px-5 py-3.5 font-bold text-[#6B4930] transition hover:bg-[#F8F1E8]">Começar grátis</button>
+              <button
+                onClick={() => goToAuth('register')}
+                className="mt-8 w-full rounded-2xl border border-[#D8C5B0] bg-white px-5 py-3.5 font-bold text-[#6B4930] transition hover:bg-[#F8F1E8]"
+              >
+                Começar grátis
+              </button>
             </article>
             <article className="relative rounded-3xl border-2 border-[#8D3157] bg-[#8D3157] p-7 text-white shadow-xl shadow-[#8D3157]/15 sm:p-8">
-              <span className="absolute right-6 top-6 rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Completo</span>
-              <p className="text-sm font-bold uppercase tracking-wider text-[#F8DCE5]">Tudo liberado</p>
-              <div className="mt-3 flex items-end gap-2"><h3 className="font-serif text-3xl font-bold">R$ 19,80</h3><span className="pb-1 text-sm text-[#F8DCE5]">/mês</span></div>
-              <p className="mt-1 text-sm text-[#F8DCE5]">ou R$ 179,80/ano via Pix</p>
+              <span className="absolute right-6 top-6 rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                Completo
+              </span>
+              <p className="text-sm font-bold uppercase tracking-wider text-[#F8DCE5]">
+                Tudo liberado
+              </p>
+              <div className="mt-3 flex items-end gap-2">
+                <h3 className="font-serif text-3xl font-bold">{money(prices.monthly)}</h3>
+                <span className="pb-1 text-sm text-[#F8DCE5]">/mês</span>
+              </div>
+              <p className="mt-1 text-sm text-[#F8DCE5]">ou {money(prices.annual)}/ano via Pix</p>
               <ul className="mt-7 space-y-3 text-sm text-[#FFF3F6]">
-                {['Todos os recursos do Confeiti', 'Custos, margem e lucro', 'Busca e categorias persistentes', 'Duplicação de produtos', 'Links públicos e PDF', 'Backup, equipe e relatórios'].map((item) => (
-                  <li key={item} className="flex items-center gap-2"><Check size={16} className="shrink-0 text-[#F8C5D4]" />{item}</li>
+                {[
+                  'Todos os recursos do Confeiti',
+                  'Custos, margem e lucro',
+                  'Busca e categorias persistentes',
+                  'Duplicação de produtos',
+                  'Links públicos e PDF',
+                  'Backup, equipe e relatórios',
+                ].map((item) => (
+                  <li key={item} className="flex items-center gap-2">
+                    <Check size={16} className="shrink-0 text-[#F8C5D4]" />
+                    {item}
+                  </li>
                 ))}
               </ul>
-              <button onClick={() => goToAuth('register')} className="mt-8 w-full rounded-2xl bg-white px-5 py-3.5 font-bold text-[#7A2047] transition hover:-translate-y-0.5 hover:shadow-lg">Assinar Completo</button>
+              <button
+                onClick={() => goToAuth('register')}
+                className="mt-8 w-full rounded-2xl bg-white px-5 py-3.5 font-bold text-[#7A2047] transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                Assinar Completo
+              </button>
             </article>
           </div>
-          <p className="mt-6 text-center text-xs text-[#8A7565]">Pagamento mensal ou anual via Pix pelo Mercado Pago. Cancele quando quiser.</p>
+          <p className="mt-6 text-center text-xs text-[#8A7565]">
+            Pagamento mensal ou anual via Pix pelo Mercado Pago. Cancele quando quiser.
+          </p>
         </div>
       </section>
 

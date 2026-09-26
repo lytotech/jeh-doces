@@ -4,7 +4,7 @@ import { AppHeader } from '../layout/AppHeader';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { useApp } from '../../context/AppContext';
-import { api, BillingStatus, PixPayment } from '../../services/api';
+import { api, BillingStatus, PixPayment, PlanPrices } from '../../services/api';
 import { CancelSubscriptionDialog } from './CancelSubscriptionDialog';
 
 const basicFeatures = [
@@ -33,17 +33,22 @@ interface BillingPageProps {
 export const BillingPage: React.FC<BillingPageProps> = ({ onBack }) => {
   const { showToast } = useApp();
   const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [prices, setPrices] = useState<PlanPrices>({ monthly: 19.8, annual: 179.8 });
   const [pixPayment, setPixPayment] = useState<PixPayment | null>(null);
   const [loading, setLoading] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
 
-  const refresh = async () => setBilling(await api.getBilling());
+  const refresh = async () => {
+    const [status, planPrices] = await Promise.all([api.getBilling(), api.getPlanPrices()]);
+    setBilling(status);
+    setPrices(planPrices);
+  };
   useEffect(() => {
     void refresh().catch(() => showToast('Não foi possível carregar os dados do plano.', 'error'));
   }, []);
 
   const pendingPlan = billing?.pendingPlan === 'annual' ? 'annual' : 'monthly';
-  const pendingAmount = pendingPlan === 'annual' ? 179.8 : 19.8;
+  const pendingAmount = prices[pendingPlan];
   const activePlan =
     billing?.plan === 'annual'
       ? 'Plano Completo anual'
@@ -350,10 +355,10 @@ export const BillingPage: React.FC<BillingPageProps> = ({ onBack }) => {
               </p>
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
                 <Button size="sm" onClick={() => void createPix('monthly')} disabled={loading}>
-                  Pix mensal · R$ 19,80
+                  Pix mensal · {money(prices.monthly)}
                 </Button>
                 <Button size="sm" onClick={() => void createPix('annual')} disabled={loading}>
-                  Pix anual · R$ 179,80
+                  Pix anual · {money(prices.annual)}
                 </Button>
                 <Button
                   size="sm"

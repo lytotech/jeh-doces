@@ -92,6 +92,14 @@ model SubscriptionPayment {
   @@map("subscription_payments")
 }
 
+model BillingPrice {
+  id      String @id @default("default")
+  monthly Float  @default(19.8)
+  annual  Float  @default(179.8)
+
+  @@map("billing_prices")
+}
+
 model Expense {
   id          String   @id @default(cuid())
   companyId   String

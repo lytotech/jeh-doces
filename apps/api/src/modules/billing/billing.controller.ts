@@ -59,6 +59,11 @@ export class BillingController {
     return this.billing.getStatus(auth.companyId);
   }
 
+  @Get('pricing')
+  pricing() {
+    return this.billing.getPlanPrices();
+  }
+
   @UseGuards(AuthGuard)
   @UseInterceptors(CompanyContextInterceptor)
   @Post('sync')
