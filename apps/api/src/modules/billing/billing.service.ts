@@ -7,7 +7,8 @@ import { AuthContext } from '../../common/auth.types';
 import { hasCurrentPaidPeriod } from './plan-limits';
 import { billingProviderFailures } from '../../telemetry';
 
-const PRICES: Record<'monthly' | 'annual', number> = { monthly: 19.8, annual: 179.8 };
+export type PlanPrices = { monthly: number; annual: number };
+export const DEFAULT_PLAN_PRICES: PlanPrices = { monthly: 19.8, annual: 179.8 };
 
 export function isMercadoPagoSignatureValid(input: {
   signature: string | undefined;
@@ -44,9 +45,10 @@ export function isMercadoPagoSignatureValid(input: {
 export function isPaymentAmountValid(
   payment: { transaction_amount?: unknown; currency_id?: unknown },
   plan: 'monthly' | 'annual',
+  prices: PlanPrices = DEFAULT_PLAN_PRICES,
 ) {
   return (
-    Number(payment.transaction_amount) === PRICES[plan] &&
+    Number(payment.transaction_amount) === prices[plan] &&
     (!payment.currency_id || payment.currency_id === 'BRL')
   );
 }
@@ -84,6 +86,26 @@ export class BillingService {
       update: {},
       create: { companyId },
     });
+  }
+
+  async getPlanPrices(): Promise<PlanPrices> {
+    const prices = await prisma.billingPrice.upsert({
+      where: { id: 'default' },
+      update: {},
+      create: DEFAULT_PLAN_PRICES,
+    });
+    return { monthly: prices.monthly, annual: prices.annual };
+  }
+
+  async updatePlanPrices(monthly: number, annual: number): Promise<PlanPrices> {
+    if (![monthly, annual].every((value) => Number.isFinite(value) && value > 0 && value <= 100000))
+      throw new BadRequestException('Informe valores positivos para os dois planos.');
+    const prices = await prisma.billingPrice.upsert({
+      where: { id: 'default' },
+      update: { monthly, annual },
+      create: { id: 'default', monthly, annual },
+    });
+    return { monthly: prices.monthly, annual: prices.annual };
   }
 
   async getStatus(companyId: string) {
@@ -234,7 +256,7 @@ export class BillingService {
     return {
       id: String(payment.id),
       plan,
-      amount: PRICES[plan],
+      amount: payment.planPrice,
       status: payment.status,
       qrCode: payment.point_of_interaction?.transaction_data?.qr_code || null,
       qrCodeBase64: payment.point_of_interaction?.transaction_data?.qr_code_base64 || null,
@@ -250,6 +272,7 @@ export class BillingService {
       throw new BadRequestException('Mercado Pago ainda não está configurado.');
     }
     const plan = requestedPlan as 'monthly' | 'annual';
+    const prices = await this.getPlanPrices();
     const current = await this.ensureSubscription(auth.companyId);
     if (hasActivePaidPlan(current)) {
       throw new BadRequestException(
@@ -259,7 +282,7 @@ export class BillingService {
     if (current.pendingPaymentId && current.pendingPlan === plan) {
       const existing = await this.getPixPayment(current.pendingPaymentId);
       if (existing && !['cancelled', 'canceled', 'rejected'].includes(String(existing.status))) {
-        return this.mapPixPayment(existing, plan);
+        return this.mapPixPayment({ ...existing, planPrice: prices[plan] }, plan);
       }
     }
     const reference = `${auth.companyId}:${plan}:${randomUUID()}`;
@@ -271,7 +294,7 @@ export class BillingService {
         'X-Idempotency-Key': reference,
       },
       body: JSON.stringify({
-        transaction_amount: PRICES[plan],
+        transaction_amount: prices[plan],
         description: `Confeiti — assinatura ${plan === 'monthly' ? 'mensal' : 'anual'}`,
         payment_method_id: 'pix',
         payer: { email: auth.email },
@@ -290,12 +313,12 @@ export class BillingService {
       });
       await tx.subscriptionPayment.upsert({
         where: { mercadoPagoId: String(payment.id) },
-        update: { plan, amount: PRICES[plan], status: String(payment.status || 'pending') },
+        update: { plan, amount: prices[plan], status: String(payment.status || 'pending') },
         create: {
           subscriptionId: subscription.id,
           mercadoPagoId: String(payment.id),
           plan,
-          amount: PRICES[plan],
+          amount: prices[plan],
           status: String(payment.status || 'pending'),
         },
       });
@@ -311,7 +334,7 @@ export class BillingService {
       }
     });
     if (payment.status === 'approved') await this.processWebhook(String(payment.id));
-    return this.mapPixPayment(payment, plan);
+    return this.mapPixPayment({ ...payment, planPrice: prices[plan] }, plan);
   }
 
   async createRecurringSubscription(auth: AuthContext, requestedPlan: string) {
@@ -320,6 +343,7 @@ export class BillingService {
     if (!env.mercadoPagoAccessToken)
       throw new BadRequestException('Mercado Pago ainda não está configurado.');
     const plan = requestedPlan as 'monthly' | 'annual';
+    const prices = await this.getPlanPrices();
     const current = await this.ensureSubscription(auth.companyId);
     if (hasActivePaidPlan(current)) {
       throw new BadRequestException(
@@ -340,7 +364,7 @@ export class BillingService {
         auto_recurring: {
           frequency: plan === 'annual' ? 12 : 1,
           frequency_type: 'months',
-          transaction_amount: PRICES[plan],
+          transaction_amount: prices[plan],
           currency_id: 'BRL',
         },
         back_url: `${env.appUrl}/?billing=return`,
@@ -369,7 +393,7 @@ export class BillingService {
     return {
       id: String(subscription.id),
       plan,
-      amount: PRICES[plan],
+      amount: prices[plan],
       checkoutUrl: String(subscription.init_point),
     };
   }
@@ -420,9 +444,10 @@ export class BillingService {
     );
     if (!response.ok) return;
     const payment = (await response.json()) as any;
+    const prices = await this.getPlanPrices();
     const [companyId, plan] = String(payment.external_reference || '').split(':');
     if (!companyId || !['monthly', 'annual'].includes(plan)) return;
-    if (!isPaymentAmountValid(payment, plan as 'monthly' | 'annual')) {
+    if (!isPaymentAmountValid(payment, plan as 'monthly' | 'annual', prices)) {
       this.logger.warn(`Pagamento ${payment.id} rejeitado por valor ou moeda incompatível.`);
       return;
     }

@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, CheckCircle2, CircleOff, CreditCard, LogOut, Plus, ShieldCheck, TrendingUp, Users } from 'lucide-react';
+import {
+  Building2,
+  CheckCircle2,
+  CircleOff,
+  CreditCard,
+  LogOut,
+  Plus,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
 
 type AdminUser = {
   id: string;
@@ -30,17 +40,29 @@ type AdminDashboard = {
   }[];
 };
 
+type PlanPrices = { monthly: number; annual: number };
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   if (options?.body) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`/api/admin-auth${path}`, { ...options, credentials: 'include', headers });
+  const response = await fetch(`/api/admin-auth${path}`, {
+    ...options,
+    credentials: 'include',
+    headers,
+  });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
   return data;
 }
 
-const date = (value: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value)) : 'Nunca';
-const money = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+const date = (value: string | null) =>
+  value
+    ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(
+        new Date(value),
+      )
+    : 'Nunca';
+const money = (value: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 export function AdminPanel() {
   const [admin, setAdmin] = useState<{ id: string; name: string; email: string } | null>(null);
@@ -51,82 +73,407 @@ export function AdminPanel() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [busy, setBusy] = useState(false);
+  const [prices, setPrices] = useState<PlanPrices | null>(null);
+  const [pricingForm, setPricingForm] = useState({ monthly: '19.80', annual: '179.80' });
 
   const load = async () => {
     try {
       const me = await request<{ user: { id: string; name: string; email: string } }>('/me');
       setAdmin(me.user);
-      const [adminUsers, metrics] = await Promise.all([
+      const [adminUsers, metrics, planPrices] = await Promise.all([
         request<AdminUser[]>('/users'),
         request<AdminDashboard>('/dashboard'),
+        request<PlanPrices>('/pricing'),
       ]);
       setUsers(adminUsers);
       setDashboard(metrics);
+      setPrices(planPrices);
+      setPricingForm({ monthly: String(planPrices.monthly), annual: String(planPrices.annual) });
     } catch (err) {
       setAdmin(null);
       if (err instanceof Error && !err.message.includes('administrador')) setError(err.message);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   const submitLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setBusy(true); setError('');
-    try { await request('/login', { method: 'POST', body: JSON.stringify(form) }); setForm({ name: '', email: '', password: '' }); await load(); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível entrar.'); }
-    finally { setBusy(false); }
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await request('/login', { method: 'POST', body: JSON.stringify(form) });
+      setForm({ name: '', email: '', password: '' });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível entrar.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const createUser = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault(); setBusy(true); setError('');
-    try { await request<AdminUser>('/users', { method: 'POST', body: JSON.stringify(form) }); setForm({ name: '', email: '', password: '' }); setShowForm(false); await load(); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível criar o administrador.'); }
-    finally { setBusy(false); }
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      await request<AdminUser>('/users', { method: 'POST', body: JSON.stringify(form) });
+      setForm({ name: '', email: '', password: '' });
+      setShowForm(false);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível criar o administrador.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const toggle = async (user: AdminUser) => {
-    try { await request(`/users/${user.id}/status`, { method: 'PATCH', body: JSON.stringify({ active: !user.active }) }); await load(); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Não foi possível atualizar o usuário.'); }
+    try {
+      await request(`/users/${user.id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ active: !user.active }),
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível atualizar o usuário.');
+    }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center text-[#8D3157] font-semibold">Carregando painel…</div>;
-  if (!admin) return (
-    <main className="min-h-screen bg-[#FFF8F2] flex items-center justify-center px-5 py-10">
-      <form onSubmit={(event) => void submitLogin(event)} className="w-full max-w-md rounded-[2rem] border border-[#EADDE2] bg-white p-8 shadow-xl">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F7E5EA] text-[#8D3157]"><ShieldCheck size={28} /></div>
-        <p className="mt-5 text-center text-xs font-bold uppercase tracking-[.2em] text-[#8D3157]">Confeiti</p>
-        <h1 className="mt-2 text-center text-3xl font-bold text-[#2E2A3D]">Área administrativa</h1>
-        <p className="mt-2 text-center text-sm text-[#756878]">Acesso exclusivo para administradores da plataforma.</p>
-        <div className="mt-7 space-y-4">
-          <input required type="email" placeholder="E-mail administrativo" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full rounded-xl border border-[#EADDE2] px-4 py-3 text-sm" />
-          <input required type="password" placeholder="Senha" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full rounded-xl border border-[#EADDE2] px-4 py-3 text-sm" />
-          {error && <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-          <button disabled={busy} className="w-full rounded-xl bg-[#8D3157] px-4 py-3 font-bold text-white disabled:opacity-60">{busy ? 'Entrando…' : 'Entrar no painel'}</button>
+  const updatePricing = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    try {
+      const updated = await request<PlanPrices>('/pricing', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          monthly: Number(pricingForm.monthly),
+          annual: Number(pricingForm.annual),
+        }),
+      });
+      setPrices(updated);
+      setPricingForm({ monthly: String(updated.monthly), annual: String(updated.annual) });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível atualizar os valores.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="min-h-screen bg-[#FFF8F2] flex items-center justify-center text-[#8D3157] font-semibold">
+        Carregando painel…
+      </div>
+    );
+  if (!admin)
+    return (
+      <main className="min-h-screen bg-[#FFF8F2] flex items-center justify-center px-5 py-10">
+        <form
+          onSubmit={(event) => void submitLogin(event)}
+          className="w-full max-w-md rounded-[2rem] border border-[#EADDE2] bg-white p-8 shadow-xl"
+        >
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#F7E5EA] text-[#8D3157]">
+            <ShieldCheck size={28} />
+          </div>
+          <p className="mt-5 text-center text-xs font-bold uppercase tracking-[.2em] text-[#8D3157]">
+            Confeiti
+          </p>
+          <h1 className="mt-2 text-center text-3xl font-bold text-[#2E2A3D]">
+            Área administrativa
+          </h1>
+          <p className="mt-2 text-center text-sm text-[#756878]">
+            Acesso exclusivo para administradores da plataforma.
+          </p>
+          <div className="mt-7 space-y-4">
+            <input
+              required
+              type="email"
+              placeholder="E-mail administrativo"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="w-full rounded-xl border border-[#EADDE2] px-4 py-3 text-sm"
+            />
+            <input
+              required
+              type="password"
+              placeholder="Senha"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className="w-full rounded-xl border border-[#EADDE2] px-4 py-3 text-sm"
+            />
+            {error && <p className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+            <button
+              disabled={busy}
+              className="w-full rounded-xl bg-[#8D3157] px-4 py-3 font-bold text-white disabled:opacity-60"
+            >
+              {busy ? 'Entrando…' : 'Entrar no painel'}
+            </button>
+          </div>
+        </form>
+      </main>
+    );
+
+  return (
+    <main className="min-h-screen bg-[#FFF8F2] text-[#2E2A3D]">
+      <header className="border-b border-[#EADDE2] bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-[#8D3157]">Confeiti</p>
+            <h1 className="mt-1 text-2xl font-bold">Painel administrativo</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden text-right sm:block">
+              <p className="text-sm font-bold">{admin.name}</p>
+              <p className="text-xs text-[#756878]">{admin.email}</p>
+            </div>
+            <button
+              onClick={() =>
+                void request('/logout', { method: 'POST', body: '{}' }).then(() => setAdmin(null))
+              }
+              className="rounded-xl p-2 text-[#8D3157] hover:bg-[#F7E5EA]"
+              aria-label="Sair"
+            >
+              <LogOut size={19} />
+            </button>
+          </div>
         </div>
-      </form>
+      </header>
+      <div className="mx-auto max-w-6xl px-5 py-8">
+        {dashboard && (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-[#EADDE2] bg-white p-5">
+                <Building2 className="text-[#8D3157]" size={20} />
+                <p className="mt-4 text-3xl font-bold">{dashboard.kpis.companies}</p>
+                <p className="text-sm text-[#756878]">Empresas cadastradas</p>
+                <p className="mt-2 text-xs text-emerald-700">
+                  {dashboard.kpis.activeCompanies} ativas
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#EADDE2] bg-white p-5">
+                <CreditCard className="text-emerald-600" size={20} />
+                <p className="mt-4 text-3xl font-bold">{dashboard.kpis.paidCompanies}</p>
+                <p className="text-sm text-[#756878]">Empresas pagantes</p>
+                <p className="mt-2 text-xs text-[#756878]">
+                  {dashboard.kpis.paidUsers} usuários em planos pagos
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#EADDE2] bg-white p-5">
+                <Users className="text-[#8D3157]" size={20} />
+                <p className="mt-4 text-3xl font-bold">{dashboard.kpis.users}</p>
+                <p className="text-sm text-[#756878]">Usuários cadastrados</p>
+                <p className="mt-2 text-xs text-[#756878]">
+                  {users.filter((user) => user.active).length} administradores ativos
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#EADDE2] bg-white p-5">
+                <TrendingUp className="text-[#8D3157]" size={20} />
+                <p className="mt-4 text-2xl font-bold">{money(dashboard.kpis.revenue)}</p>
+                <p className="text-sm text-[#756878]">Volume em pedidos</p>
+                <p className="mt-2 text-xs text-[#756878]">
+                  {dashboard.kpis.orders} pedidos registrados
+                </p>
+              </div>
+            </div>
+            <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm">
+              <div className="border-b border-[#EADDE2] p-5">
+                <h2 className="text-lg font-bold">Empresas cadastradas</h2>
+                <p className="mt-1 text-sm text-[#756878]">Visão rápida da base mais recente.</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-left text-sm">
+                  <thead className="bg-[#FCFAF7] text-xs uppercase tracking-wide text-[#756878]">
+                    <tr>
+                      <th className="px-5 py-4">Empresa</th>
+                      <th className="px-5 py-4">Plano</th>
+                      <th className="px-5 py-4">Usuários</th>
+                      <th className="px-5 py-4">Pedidos</th>
+                      <th className="px-5 py-4">Cadastro</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EADDE2]">
+                    {dashboard.recentCompanies.map((company) => (
+                      <tr key={company.id}>
+                        <td className="px-5 py-4">
+                          <p className="font-semibold">{company.name}</p>
+                          <p
+                            className={`text-xs ${company.deactivatedAt ? 'text-rose-600' : 'text-emerald-700'}`}
+                          >
+                            {company.deactivatedAt ? 'Inativa' : 'Ativa'}
+                          </p>
+                        </td>
+                        <td className="px-5 py-4 capitalize text-[#756878]">
+                          {company.subscription?.plan === 'monthly'
+                            ? 'Mensal'
+                            : company.subscription?.plan === 'annual'
+                              ? 'Anual'
+                              : 'Básico'}
+                        </td>
+                        <td className="px-5 py-4 text-[#756878]">{company._count.memberships}</td>
+                        <td className="px-5 py-4 text-[#756878]">{company._count.orders}</td>
+                        <td className="px-5 py-4 text-[#756878]">{date(company.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        )}
+        {prices && (
+          <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm">
+            <div className="border-b border-[#EADDE2] p-5">
+              <h2 className="text-lg font-bold">Valores dos planos</h2>
+              <p className="mt-1 text-sm text-[#756878]">
+                Os novos valores serão usados no Pix, nas assinaturas automáticas e no site.
+              </p>
+            </div>
+            <form
+              onSubmit={(event) => void updatePricing(event)}
+              className="grid gap-4 p-5 sm:grid-cols-3 sm:items-end"
+            >
+              <label className="text-sm font-semibold">
+                Mensal (R$)
+                <input
+                  required
+                  min="0.01"
+                  max="100000"
+                  step="0.01"
+                  type="number"
+                  value={pricingForm.monthly}
+                  onChange={(event) =>
+                    setPricingForm({ ...pricingForm, monthly: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-xl border border-[#EADDE2] px-3 py-2.5 font-normal"
+                />
+              </label>
+              <label className="text-sm font-semibold">
+                Anual (R$)
+                <input
+                  required
+                  min="0.01"
+                  max="100000"
+                  step="0.01"
+                  type="number"
+                  value={pricingForm.annual}
+                  onChange={(event) =>
+                    setPricingForm({ ...pricingForm, annual: event.target.value })
+                  }
+                  className="mt-2 w-full rounded-xl border border-[#EADDE2] px-3 py-2.5 font-normal"
+                />
+              </label>
+              <button
+                disabled={busy}
+                className="rounded-xl bg-[#8D3157] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60"
+              >
+                {busy ? 'Salvando…' : 'Salvar valores'}
+              </button>
+            </form>
+          </section>
+        )}
+        <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EADDE2] p-5">
+            <div>
+              <h2 className="text-lg font-bold">Usuários administradores</h2>
+              <p className="mt-1 text-sm text-[#756878]">Contas que podem entrar nesta área.</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowForm(!showForm);
+                setError('');
+              }}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#8D3157] px-4 py-2.5 text-sm font-bold text-white"
+            >
+              <Plus size={17} /> Novo administrador
+            </button>
+          </div>
+          {showForm && (
+            <form
+              onSubmit={(event) => void createUser(event)}
+              className="grid gap-3 border-b border-[#EADDE2] bg-[#FCFAF7] p-5 sm:grid-cols-4"
+            >
+              <input
+                required
+                placeholder="Nome completo"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm"
+              />
+              <input
+                required
+                type="email"
+                placeholder="E-mail"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm"
+              />
+              <input
+                required
+                minLength={8}
+                type="password"
+                placeholder="Senha (mín. 8)"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm"
+              />
+              <button
+                disabled={busy}
+                className="rounded-xl bg-[#63304B] px-3 py-2.5 text-sm font-bold text-white"
+              >
+                Criar conta
+              </button>
+            </form>
+          )}
+          {error && <p className="m-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-left text-sm">
+              <thead className="bg-[#FCFAF7] text-xs uppercase tracking-wide text-[#756878]">
+                <tr>
+                  <th className="px-5 py-4">Administrador</th>
+                  <th className="px-5 py-4">Status</th>
+                  <th className="px-5 py-4">Último acesso</th>
+                  <th className="px-5 py-4">Cadastro</th>
+                  <th className="px-5 py-4 text-right">Ação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#EADDE2]">
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td className="px-5 py-4">
+                      <p className="font-semibold">{user.name}</p>
+                      <p className="text-xs text-[#756878]">{user.email}</p>
+                    </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${user.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}
+                      >
+                        {user.active ? <CheckCircle2 size={13} /> : <CircleOff size={13} />}
+                        {user.active ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 text-[#756878]">{date(user.lastLoginAt)}</td>
+                    <td className="px-5 py-4 text-[#756878]">{date(user.createdAt)}</td>
+                    <td className="px-5 py-4 text-right">
+                      <button
+                        onClick={() => void toggle(user)}
+                        className="text-xs font-bold text-[#8D3157] hover:underline"
+                      >
+                        {user.active ? 'Desativar' : 'Ativar'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </main>
   );
-
-  return <main className="min-h-screen bg-[#FFF8F2] text-[#2E2A3D]">
-    <header className="border-b border-[#EADDE2] bg-white"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-      <div><p className="text-xs font-bold uppercase tracking-[.2em] text-[#8D3157]">Confeiti</p><h1 className="mt-1 text-2xl font-bold">Painel administrativo</h1></div>
-      <div className="flex items-center gap-4"><div className="hidden text-right sm:block"><p className="text-sm font-bold">{admin.name}</p><p className="text-xs text-[#756878]">{admin.email}</p></div><button onClick={() => void request('/logout', { method: 'POST', body: '{}' }).then(() => setAdmin(null))} className="rounded-xl p-2 text-[#8D3157] hover:bg-[#F7E5EA]" aria-label="Sair"><LogOut size={19} /></button></div>
-    </div></header>
-    <div className="mx-auto max-w-6xl px-5 py-8">
-      {dashboard && <>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><Building2 className="text-[#8D3157]" size={20} /><p className="mt-4 text-3xl font-bold">{dashboard.kpis.companies}</p><p className="text-sm text-[#756878]">Empresas cadastradas</p><p className="mt-2 text-xs text-emerald-700">{dashboard.kpis.activeCompanies} ativas</p></div>
-          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><CreditCard className="text-emerald-600" size={20} /><p className="mt-4 text-3xl font-bold">{dashboard.kpis.paidCompanies}</p><p className="text-sm text-[#756878]">Empresas pagantes</p><p className="mt-2 text-xs text-[#756878]">{dashboard.kpis.paidUsers} usuários em planos pagos</p></div>
-          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><Users className="text-[#8D3157]" size={20} /><p className="mt-4 text-3xl font-bold">{dashboard.kpis.users}</p><p className="text-sm text-[#756878]">Usuários cadastrados</p><p className="mt-2 text-xs text-[#756878]">{users.filter((user) => user.active).length} administradores ativos</p></div>
-          <div className="rounded-2xl border border-[#EADDE2] bg-white p-5"><TrendingUp className="text-[#8D3157]" size={20} /><p className="mt-4 text-2xl font-bold">{money(dashboard.kpis.revenue)}</p><p className="text-sm text-[#756878]">Volume em pedidos</p><p className="mt-2 text-xs text-[#756878]">{dashboard.kpis.orders} pedidos registrados</p></div>
-        </div>
-        <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm"><div className="border-b border-[#EADDE2] p-5"><h2 className="text-lg font-bold">Empresas cadastradas</h2><p className="mt-1 text-sm text-[#756878]">Visão rápida da base mais recente.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-[#FCFAF7] text-xs uppercase tracking-wide text-[#756878]"><tr><th className="px-5 py-4">Empresa</th><th className="px-5 py-4">Plano</th><th className="px-5 py-4">Usuários</th><th className="px-5 py-4">Pedidos</th><th className="px-5 py-4">Cadastro</th></tr></thead><tbody className="divide-y divide-[#EADDE2]">{dashboard.recentCompanies.map((company) => <tr key={company.id}><td className="px-5 py-4"><p className="font-semibold">{company.name}</p><p className={`text-xs ${company.deactivatedAt ? 'text-rose-600' : 'text-emerald-700'}`}>{company.deactivatedAt ? 'Inativa' : 'Ativa'}</p></td><td className="px-5 py-4 capitalize text-[#756878]">{company.subscription?.plan === 'monthly' ? 'Mensal' : company.subscription?.plan === 'annual' ? 'Anual' : 'Básico'}</td><td className="px-5 py-4 text-[#756878]">{company._count.memberships}</td><td className="px-5 py-4 text-[#756878]">{company._count.orders}</td><td className="px-5 py-4 text-[#756878]">{date(company.createdAt)}</td></tr>)}</tbody></table></div></section>
-      </>}
-      <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#EADDE2] p-5"><div><h2 className="text-lg font-bold">Usuários administradores</h2><p className="mt-1 text-sm text-[#756878]">Contas que podem entrar nesta área.</p></div><button onClick={() => { setShowForm(!showForm); setError(''); }} className="inline-flex items-center gap-2 rounded-xl bg-[#8D3157] px-4 py-2.5 text-sm font-bold text-white"><Plus size={17} /> Novo administrador</button></div>
-        {showForm && <form onSubmit={(event) => void createUser(event)} className="grid gap-3 border-b border-[#EADDE2] bg-[#FCFAF7] p-5 sm:grid-cols-4"><input required placeholder="Nome completo" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm" /><input required type="email" placeholder="E-mail" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm" /><input required minLength={8} type="password" placeholder="Senha (mín. 8)" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="rounded-xl border border-[#EADDE2] px-3 py-2.5 text-sm" /><button disabled={busy} className="rounded-xl bg-[#63304B] px-3 py-2.5 text-sm font-bold text-white">Criar conta</button></form>}
-        {error && <p className="m-5 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-        <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-[#FCFAF7] text-xs uppercase tracking-wide text-[#756878]"><tr><th className="px-5 py-4">Administrador</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Último acesso</th><th className="px-5 py-4">Cadastro</th><th className="px-5 py-4 text-right">Ação</th></tr></thead><tbody className="divide-y divide-[#EADDE2]">{users.map((user) => <tr key={user.id}><td className="px-5 py-4"><p className="font-semibold">{user.name}</p><p className="text-xs text-[#756878]">{user.email}</p></td><td className="px-5 py-4"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${user.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{user.active ? <CheckCircle2 size={13} /> : <CircleOff size={13} />}{user.active ? 'Ativo' : 'Inativo'}</span></td><td className="px-5 py-4 text-[#756878]">{date(user.lastLoginAt)}</td><td className="px-5 py-4 text-[#756878]">{date(user.createdAt)}</td><td className="px-5 py-4 text-right"><button onClick={() => void toggle(user)} className="text-xs font-bold text-[#8D3157] hover:underline">{user.active ? 'Desativar' : 'Ativar'}</button></td></tr>)}</tbody></table></div>
-      </section>
-    </div>
-  </main>;
 }

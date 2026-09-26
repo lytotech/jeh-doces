@@ -74,6 +74,11 @@ export interface BillingStatus {
   }[];
 }
 
+export interface PlanPrices {
+  monthly: number;
+  annual: number;
+}
+
 export interface PixPayment {
   id: string;
   plan: 'monthly' | 'annual';
@@ -213,6 +218,9 @@ async function requestOnce<T>(endpoint: string, options?: RequestInit): Promise<
 }
 
 export const api = {
+  async getPlanPrices(): Promise<PlanPrices> {
+    return request<PlanPrices>('/billing/pricing');
+  },
   async getBilling(): Promise<BillingStatus> {
     return request<BillingStatus>('/billing');
   },

@@ -14,6 +14,10 @@ const auth = {
   sessionId: 'session-1',
 } as const;
 
+(prisma as any).billingPrice = {
+  upsert: async () => ({ monthly: 19.8, annual: 179.8 }),
+};
+
 function subscription(overrides: Record<string, unknown> = {}) {
   return {
     id: 'subscription-1',

@@ -198,6 +198,28 @@ export class AdminAuthService implements OnModuleInit {
     };
   }
 
+  async pricing() {
+    const prices = await this.prisma.client.billingPrice.upsert({
+      where: { id: 'default' },
+      update: {},
+      create: { id: 'default', monthly: 19.8, annual: 179.8 },
+    });
+    return { monthly: prices.monthly, annual: prices.annual };
+  }
+
+  async updatePricing(body: Record<string, unknown>) {
+    const monthly = Number(body.monthly);
+    const annual = Number(body.annual);
+    if (![monthly, annual].every((value) => Number.isFinite(value) && value > 0 && value <= 100000))
+      throw new BadRequestException('Informe valores positivos para os dois planos.');
+    const prices = await this.prisma.client.billingPrice.upsert({
+      where: { id: 'default' },
+      update: { monthly, annual },
+      create: { id: 'default', monthly, annual },
+    });
+    return { monthly: prices.monthly, annual: prices.annual };
+  }
+
   async createUser(body: Record<string, unknown>) {
     const name = String(body.name ?? '').trim();
     const email = normalize(body.email);
