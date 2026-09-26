@@ -34,6 +34,7 @@ model Company {
   cashOpenings  CashOpeningBalance[]
   catalogCategories CatalogCategory[]
   subscription Subscription?
+  adminAuditLogs AdminAuditLog[]
   deletionRequestedAt DateTime?
   deletionScheduledFor DateTime?
   deactivatedAt DateTime?
@@ -179,6 +180,7 @@ model AdminUser {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   sessions     AdminSession[]
+  auditLogs    AdminAuditLog[]
 
   @@map("admin_users")
 }
@@ -193,6 +195,21 @@ model AdminSession {
 
   @@index([adminUserId])
   @@map("admin_sessions")
+}
+
+model AdminAuditLog {
+  id          String     @id @default(cuid())
+  adminUserId String
+  adminUser   AdminUser  @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  action      String
+  reason      String
+  createdAt   DateTime   @default(now())
+
+  @@index([companyId, createdAt])
+  @@index([adminUserId, createdAt])
+  @@map("admin_audit_logs")
 }
 
 model EmailVerificationToken {

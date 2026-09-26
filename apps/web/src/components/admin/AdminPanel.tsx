@@ -10,6 +10,7 @@ import {
   TrendingUp,
   Users,
 } from 'lucide-react';
+import { AdminCompanies } from './AdminCompanies';
 
 type AdminUser = {
   id: string;
@@ -281,49 +282,7 @@ export function AdminPanel() {
                 </p>
               </div>
             </div>
-            <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white shadow-sm">
-              <div className="border-b border-[#EADDE2] p-5">
-                <h2 className="text-lg font-bold">Empresas cadastradas</h2>
-                <p className="mt-1 text-sm text-[#756878]">Visão rápida da base mais recente.</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
-                  <thead className="bg-[#FCFAF7] text-xs uppercase tracking-wide text-[#756878]">
-                    <tr>
-                      <th className="px-5 py-4">Empresa</th>
-                      <th className="px-5 py-4">Plano</th>
-                      <th className="px-5 py-4">Usuários</th>
-                      <th className="px-5 py-4">Pedidos</th>
-                      <th className="px-5 py-4">Cadastro</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#EADDE2]">
-                    {dashboard.recentCompanies.map((company) => (
-                      <tr key={company.id}>
-                        <td className="px-5 py-4">
-                          <p className="font-semibold">{company.name}</p>
-                          <p
-                            className={`text-xs ${company.deactivatedAt ? 'text-rose-600' : 'text-emerald-700'}`}
-                          >
-                            {company.deactivatedAt ? 'Inativa' : 'Ativa'}
-                          </p>
-                        </td>
-                        <td className="px-5 py-4 capitalize text-[#756878]">
-                          {company.subscription?.plan === 'monthly'
-                            ? 'Mensal'
-                            : company.subscription?.plan === 'annual'
-                              ? 'Anual'
-                              : 'Básico'}
-                        </td>
-                        <td className="px-5 py-4 text-[#756878]">{company._count.memberships}</td>
-                        <td className="px-5 py-4 text-[#756878]">{company._count.orders}</td>
-                        <td className="px-5 py-4 text-[#756878]">{date(company.createdAt)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
+            <AdminCompanies />
           </>
         )}
         {prices && (

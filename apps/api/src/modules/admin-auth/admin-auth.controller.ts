@@ -8,6 +8,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -47,6 +48,22 @@ export class AdminAuthController {
   }
   @UseGuards(AdminAuthGuard) @Get('dashboard') dashboard() {
     return this.service.dashboard();
+  }
+  @UseGuards(AdminAuthGuard) @Get('companies') companies(@Query() query: Record<string, unknown>) {
+    return this.service.companies(query);
+  }
+  @UseGuards(AdminAuthGuard) @Get('companies/:id') company(@Param('id') id: string) {
+    return this.service.company(id);
+  }
+  @UseGuards(AdminAuthGuard) @Get('companies/:id/audit') companyAudit(@Param('id') id: string) {
+    return this.service.companyAudit(id);
+  }
+  @UseGuards(AdminAuthGuard) @Patch('companies/:id/status') updateCompanyStatus(
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+    @Req() request: FastifyRequest & { adminAuth?: any },
+  ) {
+    return this.service.updateCompanyStatus(id, body, request.adminAuth);
   }
   @UseGuards(AdminAuthGuard) @Get('pricing') pricing() {
     return this.service.pricing();
