@@ -13,6 +13,7 @@ O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/) e [S
 - Painel administrativo passa a permitir a configuração dos preços dos planos.
 - Cobranças Pix e assinaturas automáticas passam a usar os preços configurados.
 - Corrigidos os fluxos de autenticação e administração da plataforma.
+- Atualizadas dependências do NestJS, Fastify e Multer para corrigir vulnerabilidades conhecidas.
 
 ## [1.0.65] - 2026-09-06
 

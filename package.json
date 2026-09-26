@@ -12,7 +12,12 @@
   ],
   "overrides": {
     "deepmerge-ts": "8.0.0",
-    "qs": "6.16.0"
+    "qs": "6.16.0",
+    "fastify": "5.12.5",
+    "multer": "2.4.0",
+    "@nestjs/common": "11.2.6",
+    "@nestjs/core": "11.2.6",
+    "@nestjs/platform-express": "11.2.6"
   },
   "scripts": {
     "dev": "concurrently -n \"API,WEB\" -c \"blue,green\" \"npm run dev -w @jeh-doces/api\" \"npm run dev -w @jeh-doces/web -- --host\"",
