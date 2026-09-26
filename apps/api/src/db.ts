@@ -244,7 +244,7 @@ class Database {
       await prisma.ingredient.findMany({
         where: { companyId: this.companyId() },
         include: ingredientInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { name: 'asc' },
       })
     ).map(mapIngredient);
   }

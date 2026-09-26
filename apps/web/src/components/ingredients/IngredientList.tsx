@@ -6,6 +6,7 @@ import { TagBadge } from '../ui/Badge';
 import { formatCurrency, formatDecimal } from '../../services/costEngine';
 import { Plus, Search, Cookie, Sparkles, ChevronRight } from 'lucide-react';
 import { Ingredient } from '../../types';
+import { sortByName } from '../../services/sorting';
 
 interface IngredientListProps {
   onSelectIngredient: (ingredient: Ingredient) => void;
@@ -19,8 +20,8 @@ export const IngredientList: React.FC<IngredientListProps> = ({
   const { ingredients } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filtered = ingredients.filter((ing) =>
-    ing.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filtered = sortByName(
+    ingredients.filter((ing) => ing.name.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
   return (
