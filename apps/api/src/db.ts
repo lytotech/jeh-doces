@@ -24,6 +24,12 @@ import { assertCanCreate } from './modules/billing/plan-limits';
 
 export { prisma, runForCompany };
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
+const publicCodeAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+const createPublicCode = () =>
+  Array.from(randomBytes(8), (byte) => publicCodeAlphabet[byte % publicCodeAlphabet.length]).join(
+    '',
+  );
 
 export function validateBackupData(data: unknown): data is DatabaseSchema {
   if (!data || typeof data !== 'object') return false;
@@ -244,7 +250,7 @@ class Database {
       await prisma.ingredient.findMany({
         where: { companyId: this.companyId() },
         include: ingredientInclude,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { name: 'asc' },
       })
     ).map(mapIngredient);
   }
@@ -632,12 +638,19 @@ class Database {
     return prisma.$transaction(async (tx) => {
       const existing = await tx.order.findUnique({
         where: { publicSubmissionId: data.submissionId },
-        select: { id: true, orderNumber: true, totalCharged: true, createdAt: true },
+        select: {
+          id: true,
+          orderNumber: true,
+          publicCode: true,
+          totalCharged: true,
+          createdAt: true,
+        },
       });
       if (existing)
         return {
           id: existing.id,
           orderNumber: existing.orderNumber,
+          publicCode: existing.publicCode,
           totalCharged: existing.totalCharged,
           createdAt: existing.createdAt.toISOString(),
         };
@@ -678,6 +691,8 @@ class Database {
         'ordersPerMonth',
         await tx.order.count({ where: { companyId, createdAt: { gte: start } } }),
       );
+      let publicCode = createPublicCode();
+      while (await tx.order.count({ where: { publicCode } })) publicCode = createPublicCode();
       const order = await tx.order.create({
         data: {
           companyId,
@@ -686,6 +701,7 @@ class Database {
           clientPhone: customerPhone,
           customerId: savedCustomer.id,
           publicSubmissionId: data.submissionId,
+          publicCode,
           deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : null,
           status: 'orcamento',
           subtotal,
@@ -700,6 +716,7 @@ class Database {
       return {
         id: order.id,
         orderNumber: order.orderNumber,
+        publicCode: order.publicCode,
         totalCharged: order.totalCharged,
         createdAt: order.createdAt.toISOString(),
       };

@@ -64,11 +64,13 @@ const STATUS_MESSAGES: Record<Order['status'], string> = {
   cancelado: 'Sua encomenda foi cancelada. Se precisar, estamos à disposição para ajudar.',
 };
 
+const publicOrderReference = (orderNumber: string): string => orderNumber.replace(/^#+/, '');
+
 /** Creates a short, reusable customer update for the order's current status. */
 export const generateWhatsAppStatusMessage = (order: Order, settings: AppSettings): string => {
   const statusMessage = STATUS_MESSAGES[order.status];
-  let message = `Olá, ${order.clientName}! 😊\n\n`;
-  message += `Atualização da encomenda *#${order.orderNumber}* - ${settings.storeName}:\n`;
+  let message = `Olá, ${order.clientName}! \u{1F60A}\n\n`;
+  message += `Atualização da encomenda *#${publicOrderReference(order.orderNumber)}* - ${settings.storeName}:\n`;
   message += `*Status:* ${statusMessage}\n`;
   message += `*Entrega:* ${order.deliveryDate ? formatDateTime(order.deliveryDate) : 'A definir'}\n`;
   message += `*Total:* ${formatCurrency(order.totalCharged)}\n`;
@@ -77,7 +79,7 @@ export const generateWhatsAppStatusMessage = (order: Order, settings: AppSetting
     message += `\nObservação: ${order.notes}\n`;
   }
 
-  message += `\nSe tiver qualquer dúvida, é só responder por aqui! ✨`;
+  message += `\nSe tiver qualquer dúvida, é só responder por aqui! \u{2728}`;
   return message;
 };
 
@@ -88,8 +90,8 @@ export const generateWhatsAppReminderMessage = (
 ): string => {
   const totalPaid = (order.payments || []).reduce((sum, payment) => sum + payment.amount, 0);
   const remaining = Math.max(0, order.totalCharged - totalPaid);
-  let message = `Olá, ${order.clientName}! 😊\n\n`;
-  message += `Lembrete da encomenda *#${order.orderNumber}* - ${settings.storeName}:\n`;
+  let message = `Olá, ${order.clientName}! \u{1F60A}\n\n`;
+  message += `Lembrete da encomenda *#${publicOrderReference(order.orderNumber)}* - ${settings.storeName}:\n`;
 
   if (kind === 'delivery') {
     message += `Sua entrega está agendada para *${order.deliveryDate ? formatDateTime(order.deliveryDate) : 'A definir'}*.\n`;
@@ -99,7 +101,7 @@ export const generateWhatsAppReminderMessage = (
     if (settings.pixKey) message += `Chave Pix: *${settings.pixKey}*\n`;
   }
 
-  message += '\nObrigada pela preferência! ✨';
+  message += '\nObrigada pela preferência! \u{2728}';
   return message;
 };
 

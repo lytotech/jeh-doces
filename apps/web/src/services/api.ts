@@ -50,6 +50,7 @@ export interface PublicCatalog {
 export interface PublicCatalogOrderResult {
   id: string;
   orderNumber: string;
+  publicCode: string | null;
   totalCharged: number;
   createdAt: string;
 }

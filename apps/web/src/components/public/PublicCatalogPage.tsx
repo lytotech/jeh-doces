@@ -126,7 +126,7 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
         deliveryDate: deliveryDate || undefined,
       });
       setConfirmation({
-        number: result.orderNumber.replace(/^#+/, ''),
+        number: (result.publicCode || result.orderNumber).replace(/^#+/, ''),
         total: result.totalCharged,
       });
       setCart({});
