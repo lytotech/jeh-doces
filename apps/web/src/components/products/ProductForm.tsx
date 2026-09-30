@@ -114,7 +114,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
     if (!name.trim() || saving) return;
     setSaving(true);
     try {
-      await saveProductAction({
+      const saved = await saveProductAction({
         id: product?.id,
         name: name.trim(),
         category: category.trim() || 'Doces',
@@ -126,7 +126,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ product, onBack }) => 
         ingredients: recipeIngredients,
         materials: recipeMaterials,
       });
-      onBack();
+      if (saved) onBack();
     } finally {
       setSaving(false);
     }

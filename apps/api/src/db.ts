@@ -498,67 +498,76 @@ class Database {
     return row ? mapProduct(row) : null;
   }
   async saveProduct(data: Partial<Product>) {
-    const relations = {
-      ingredients: {
-        deleteMany: {},
-        create: (data.ingredients ?? []).map(({ ingredientId, quantity }) => ({
-          ingredientId,
-          quantity,
-        })),
-      },
-      materials: {
-        deleteMany: {},
-        create: (data.materials ?? []).map(({ materialId, quantity }) => ({
-          materialId,
-          quantity,
-        })),
-      },
-    };
     const companyId = this.companyId();
-    const category = data.category?.trim() || 'Geral';
-    if (!data.id || !(await prisma.product.count({ where: { id: data.id, companyId } })))
-      await assertCanCreate(
-        companyId,
-        'products',
-        await prisma.product.count({ where: { companyId } }),
-      );
-    await prisma.catalogCategory.upsert({
-      where: { companyId_type_name: { companyId, type: 'product', name: category } },
-      create: { companyId, type: 'product', name: category },
-      update: {},
-    });
-    const ingredientIds = [...new Set((data.ingredients ?? []).map((item) => item.ingredientId))];
-    const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
-    if (
-      ingredientIds.length &&
-      (await prisma.ingredient.count({ where: { id: { in: ingredientIds }, companyId } })) !==
-        ingredientIds.length
-    )
-      throw new Error('Ingrediente relacionado inválido para esta empresa.');
-    if (
-      materialIds.length &&
-      (await prisma.material.count({ where: { id: { in: materialIds }, companyId } })) !==
-        materialIds.length
-    )
-      throw new Error('Material relacionado inválido para esta empresa.');
-    const row =
-      data.id && (await prisma.product.count({ where: { id: data.id, companyId } }))
-        ? await prisma.product.update({
-            where: { id: data.id },
-            data: { ...productFields(data), ...relations },
+    return prisma.$transaction(async (tx) => {
+      const existing = data.id
+        ? await tx.product.findFirst({ where: { id: data.id, companyId } })
+        : null;
+
+      if (!existing) {
+        await assertCanCreate(
+          companyId,
+          'products',
+          await tx.product.count({ where: { companyId } }),
+        );
+      }
+
+      const category = data.category?.trim() || 'Geral';
+      await tx.catalogCategory.upsert({
+        where: { companyId_type_name: { companyId, type: 'product', name: category } },
+        create: { companyId, type: 'product', name: category },
+        update: {},
+      });
+
+      const ingredientIds = [...new Set((data.ingredients ?? []).map((item) => item.ingredientId))];
+      const materialIds = [...new Set((data.materials ?? []).map((item) => item.materialId))];
+      if (
+        ingredientIds.length &&
+        (await tx.ingredient.count({ where: { id: { in: ingredientIds }, companyId } })) !==
+          ingredientIds.length
+      )
+        throw new Error('Ingrediente relacionado inválido para esta empresa.');
+      if (
+        materialIds.length &&
+        (await tx.material.count({ where: { id: { in: materialIds }, companyId } })) !==
+          materialIds.length
+      )
+        throw new Error('Material relacionado inválido para esta empresa.');
+
+      const relations = {
+        ingredients: {
+          deleteMany: {},
+          create: (data.ingredients ?? []).map(({ ingredientId, quantity }) => ({
+            ingredientId,
+            quantity,
+          })),
+        },
+        materials: {
+          deleteMany: {},
+          create: (data.materials ?? []).map(({ materialId, quantity }) => ({
+            materialId,
+            quantity,
+          })),
+        },
+      };
+      const row = existing
+        ? await tx.product.update({
+            where: { id: existing.id },
+            data: { ...productFields({ ...data, category }), ...relations },
             include: productInclude,
           })
-        : await prisma.product.create({
+        : await tx.product.create({
             data: {
               ...(data.id ? { id: data.id } : {}),
               companyId,
-              ...productFields(data),
+              ...productFields({ ...data, category }),
               ingredients: { create: relations.ingredients.create },
               materials: { create: relations.materials.create },
             },
             include: productInclude,
           });
-    return mapProduct(row);
+      return mapProduct(row);
+    });
   }
   async deleteProduct(id: string) {
     return (
