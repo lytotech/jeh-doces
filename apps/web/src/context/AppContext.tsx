@@ -65,7 +65,7 @@ interface AppContextType {
   adjustMaterialStockAction: (id: string, newStock: number, reason?: string) => Promise<void>;
 
   // Product Actions
-  saveProductAction: (prod: Partial<Product>) => Promise<void>;
+  saveProductAction: (prod: Partial<Product>) => Promise<boolean>;
   deleteProductAction: (id: string) => Promise<void>;
 
   // Order Actions
@@ -281,7 +281,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // === Product Handlers ===
-  const saveProductAction = async (data: Partial<Product>) => {
+  const saveProductAction = async (data: Partial<Product>): Promise<boolean> => {
     try {
       const saved = await api.saveProduct(data);
       setProducts((prev) => {
@@ -292,9 +292,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return [saved, ...prev];
       });
       showToast('Produto salvo com sucesso!');
+      return true;
     } catch (e) {
       console.error(e);
-      showToast('Erro ao salvar produto.', 'error');
+      let message = 'Erro ao salvar produto.';
+      if (e instanceof Error && e.message) {
+        const apiMessage = e.message.match(/^API Error \d+: (.*)$/)?.[1];
+        if (apiMessage) {
+          try {
+            const parsed = JSON.parse(apiMessage) as { message?: string };
+            message = parsed.message || message;
+          } catch {
+            message = apiMessage;
+          }
+        }
+      }
+      showToast(message, 'error');
+      return false;
     }
   };
 
