@@ -11,6 +11,7 @@ import {
   LogOut,
   Settings as SettingsIcon,
   CreditCard,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -43,6 +44,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
   }, [settingsOpen]);
 
   const navItems = [
+    { id: 'funnel', label: 'Funil', icon: TrendingUp },
     {
       id: 'orders',
       label: 'Encomendas',

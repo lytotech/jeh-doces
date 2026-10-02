@@ -31,6 +31,7 @@ import { DashboardView } from './components/dashboard/DashboardView';
 import { CustomerList } from './components/customers/CustomerList';
 import { CustomerForm } from './components/customers/CustomerForm';
 import { CalendarView } from './components/calendar/CalendarView';
+import { FunnelView } from './components/funnel/FunnelView';
 
 export const App: React.FC = () => {
   const { auth } = useAuth();
@@ -195,6 +196,18 @@ export const App: React.FC = () => {
             onNewOrder={() => {
               setActiveTab('orders');
               setIsCreatingNewOrder(true);
+            }}
+            onOpenSettings={() => setActiveTab('settings')}
+          />
+        );
+      }
+
+      case 'funnel': {
+        return (
+          <FunnelView
+            onSelectOrder={(ord) => {
+              setActiveTab('orders');
+              setSelectedOrderId(ord.id);
             }}
             onOpenSettings={() => setActiveTab('settings')}
           />
