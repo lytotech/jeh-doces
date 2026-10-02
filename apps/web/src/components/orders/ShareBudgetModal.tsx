@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Order } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { api } from '../../services/api';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { generateWhatsAppQuoteMessage, getWhatsAppUrl } from '../../services/whatsappExporter';
@@ -16,6 +17,7 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({ order, isOpe
   const { settings, showToast } = useApp();
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const quoteText = generateWhatsAppQuoteMessage(order, settings);
   const whatsappLink = getWhatsAppUrl(order.clientPhone, quoteText);
@@ -27,8 +29,22 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({ order, isOpe
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPdf = async () => {
+    if (downloadingPdf) return;
+    setDownloadingPdf(true);
+    try {
+      const { blob, filename } = await api.downloadOrderPdf(order.id);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast('Não foi possível gerar o PDF.', 'error');
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const handleCreateLink = async () => {
@@ -58,61 +74,6 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({ order, isOpe
       maxWidth="lg"
     >
       <div className="space-y-4">
-        <article className="print-quote" aria-hidden="true">
-          <header className="print-quote-header">
-            <h1>{settings.storeName || 'Confeiti'}</h1>
-            <p>Orçamento da sua encomenda</p>
-            <p>
-              Entrega:{' '}
-              {order.deliveryDate
-                ? new Date(order.deliveryDate).toLocaleString('pt-BR')
-                : 'A definir'}
-            </p>
-          </header>
-          <section className="print-quote-section">
-            <h2>Dados do cliente</h2>
-            <p>{order.clientName}</p>
-            {order.clientPhone && <p>{order.clientPhone}</p>}
-            {order.clientAddress && <p>{order.clientAddress}</p>}
-          </section>
-          <section className="print-quote-section">
-            <h2>Itens</h2>
-            {order.items.map((item) => (
-              <div className="print-quote-row" key={item.id}>
-                <span>{item.productName}</span>
-                <span>
-                  {item.quantity}×{' '}
-                  {item.unitPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}{' '}
-                  &nbsp;{' '}
-                  {item.totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </span>
-              </div>
-            ))}
-          </section>
-          <section className="print-quote-totals">
-            <div>
-              <span>Subtotal</span>
-              <strong>
-                {order.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </strong>
-            </div>
-            {order.discount > 0 && (
-              <div>
-                <span>Desconto</span>
-                <strong>
-                  - {order.discount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </strong>
-              </div>
-            )}
-            <div className="print-quote-total">
-              <span>Total cobrado</span>
-              <strong>
-                {order.totalCharged.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-              </strong>
-            </div>
-          </section>
-          <footer>Gerado por {settings.storeName || 'Confeiti'}</footer>
-        </article>
         {/* Preview Container */}
         <div className="bg-[#FAF6F0] p-4 rounded-2xl border border-[#DFCFC0] max-h-72 overflow-y-auto font-mono text-xs text-[#3D2C1E] whitespace-pre-wrap leading-relaxed shadow-inner">
           {quoteText}
@@ -134,8 +95,12 @@ export const ShareBudgetModal: React.FC<ShareBudgetModalProps> = ({ order, isOpe
             {copied ? 'Copiado!' : 'Copiar Texto'}
           </Button>
 
-          <Button variant="secondary" onClick={handlePrint}>
-            <Printer className="w-4 h-4" /> Imprimir / PDF
+          <Button
+            variant="secondary"
+            onClick={() => void handleDownloadPdf()}
+            disabled={downloadingPdf}
+          >
+            <Printer className="w-4 h-4" /> {downloadingPdf ? 'Gerando…' : 'Baixar PDF'}
           </Button>
         </div>
         <div className="border-t border-[#E5DACD] pt-3 space-y-2">
