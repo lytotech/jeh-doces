@@ -252,6 +252,12 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex flex-row">
+      <a
+        href="#main-content"
+        className="sr-only z-[100] rounded-lg bg-white px-4 py-3 text-sm font-bold text-[#72203F] focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        Pular para o conteúdo principal
+      </a>
       {/* Sidebar on desktop */}
       <Sidebar
         onOpenSettings={() => setActiveTab('settings')}
@@ -260,7 +266,11 @@ export const App: React.FC = () => {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#FAF7F2] min-h-screen relative">
-        <main className="flex-1 w-full pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 w-full pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8"
+        >
           {renderContent()}
         </main>
       </div>
