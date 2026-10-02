@@ -222,10 +222,14 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [newMaterialPickerId, setNewMaterialPickerId] = useState<string | null>(null);
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
-  // Older orders do not persist the origin of a material. Treat their rows as
-  // manual so editing an existing order never silently removes user data.
+  // Older orders do not persist the origin of a material. Keep the legacy
+  // automatic ID when available; syncAutomaticMaterials also infers automatic
+  // quantities for rows created after the IDs stopped being persisted.
   const [orderMaterials, setOrderMaterials] = useState<EditableOrderMaterial[]>(
-    (order?.materials || []).map((material) => ({ ...material, source: 'manual' })),
+    (order?.materials || []).map((material) => ({
+      ...material,
+      source: material.id.startsWith('auto-') ? 'automatic' : 'manual',
+    })),
   );
 
   const syncAutomaticMaterials = (
@@ -245,20 +249,51 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       });
     });
 
-    const manualMaterials = currentMaterials.filter((material) => material.source === 'manual');
+    const manualMaterials: EditableOrderMaterial[] = [];
     const automaticMaterials: EditableOrderMaterial[] = [];
+
+    // Reuse quantities already present in the order before creating new
+    // automatic rows. This is important for older orders whose API response
+    // no longer contains the origin of each material.
+    const remainingAutomatic = new Map(automaticByMaterial);
+    currentMaterials.forEach((material) => {
+      const remaining = remainingAutomatic.get(material.materialId) || 0;
+      const automaticQuantity = Math.min(Math.max(material.quantity, 0), remaining);
+
+      if (automaticQuantity > 0) {
+        automaticMaterials.push({
+          ...material,
+          id: `auto-${material.materialId}`,
+          quantity: automaticQuantity,
+          totalCost: automaticQuantity * material.unitCost,
+          source: 'automatic',
+        });
+        remainingAutomatic.set(material.materialId, remaining - automaticQuantity);
+      }
+
+      const manualQuantity = material.quantity - automaticQuantity;
+      if (manualQuantity > 0) {
+        manualMaterials.push({
+          ...material,
+          quantity: manualQuantity,
+          totalCost: manualQuantity * material.unitCost,
+          source: 'manual',
+        });
+      }
+    });
 
     automaticByMaterial.forEach((quantity, materialId) => {
       const material = materials.find((candidate) => candidate.id === materialId);
-      if (!material || quantity <= 0) return;
+      const quantityToAdd = remainingAutomatic.get(materialId) || 0;
+      if (!material || quantityToAdd <= 0) return;
 
       automaticMaterials.push({
         id: `auto-${material.id}`,
         materialId: material.id,
         materialName: material.name,
-        quantity,
+        quantity: quantityToAdd,
         unitCost: material.unitCost,
-        totalCost: quantity * material.unitCost,
+        totalCost: quantityToAdd * material.unitCost,
         source: 'automatic',
       });
     });

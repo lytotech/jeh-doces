@@ -936,11 +936,43 @@ class Database {
           ).orderNumber
         : data.orderNumber || `#${(await tx.order.count({ where: { companyId } })) + 1001}`;
       const relations = {
-        items: { deleteMany: {}, create: (data.items ?? []).map((item) => ({ ...item })) },
-        materials: { deleteMany: {}, create: (data.materials ?? []).map((item) => ({ ...item })) },
+        // Relation IDs are database-owned. The web form uses temporary IDs for
+        // React keys (and automatic materials use deterministic IDs), so
+        // persisting them can collide with rows from this or another order.
+        items: {
+          deleteMany: {},
+          create: (data.items ?? []).map(
+            ({ productId, productName, quantity, unitPrice, totalPrice, unitCost, totalCost }) => ({
+              productId,
+              productName,
+              quantity,
+              unitPrice,
+              totalPrice,
+              unitCost,
+              totalCost,
+            }),
+          ),
+        },
+        materials: {
+          deleteMany: {},
+          create: (data.materials ?? []).map(
+            ({ materialId, materialName, quantity, unitCost, totalCost }) => ({
+              materialId,
+              materialName,
+              quantity,
+              unitCost,
+              totalCost,
+            }),
+          ),
+        },
         payments: {
           deleteMany: {},
-          create: (data.payments ?? []).map((item) => ({ ...item, paidAt: new Date(item.paidAt) })),
+          create: (data.payments ?? []).map(({ amount, method, paidAt, notes }) => ({
+            amount,
+            method,
+            paidAt: new Date(paidAt),
+            notes,
+          })),
         },
       };
       const row = exists
