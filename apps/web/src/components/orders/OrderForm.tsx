@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Order, OrderProductItem, OrderMaterialItem, OrderStatus } from '../../types';
+import { Order, OrderProductItem, OrderStatus } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
 import { AppHeader } from '../layout/AppHeader';
@@ -13,16 +13,18 @@ import { maskPhone } from '../../services/formatters';
 import { formatCurrency, formatDecimal, ORDER_STATUS_MAP } from '../../services/costEngine';
 import { Plus, UserPlus, Search, Trash2, Cookie, Package, User, X } from 'lucide-react';
 import { sortByName } from '../../services/sorting';
+import {
+  EditableOrderMaterial,
+  inferOrderMaterials,
+  parseNonNegativeQuantity,
+  syncOrderMaterials,
+} from '../../services/orderMaterials';
 
 interface OrderFormProps {
   order?: Order | null;
   onBack: () => void;
   onSaved: (orderId: string) => void;
 }
-
-type EditableOrderMaterial = OrderMaterialItem & {
-  source: 'automatic' | 'manual' | 'legacy';
-};
 
 type CatalogOption = {
   id: string;
@@ -222,174 +224,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
   const [newMaterialPickerId, setNewMaterialPickerId] = useState<string | null>(null);
 
   const [items, setItems] = useState<OrderProductItem[]>(order?.items || []);
-  const initialOrderMaterials = useMemo(() => {
-    const automaticByMaterial = new Map<string, number>();
-    (order?.items || []).forEach((item) => {
-      const product = products.find((candidate) => candidate.id === item.productId);
-      product?.materials.forEach((productMaterial) => {
-        automaticByMaterial.set(
-          productMaterial.materialId,
-          (automaticByMaterial.get(productMaterial.materialId) || 0) +
-            productMaterial.quantity * item.quantity,
-        );
-      });
-    });
-
-    const inferredMaterials: EditableOrderMaterial[] = [];
-    const remainingAutomatic = new Map(automaticByMaterial);
-    (order?.materials || []).forEach((material) => {
-      if (material.isAutomatic !== undefined || material.id.startsWith('auto-')) {
-        inferredMaterials.push({
-          ...material,
-          source: material.isAutomatic === false ? 'manual' : 'automatic',
-        });
-        return;
-      }
-
-      const automaticQuantity = Math.min(
-        Math.max(material.quantity, 0),
-        remainingAutomatic.get(material.materialId) || 0,
-      );
-      if (automaticQuantity > 0) {
-        inferredMaterials.push({
-          ...material,
-          id: `auto-${material.materialId}`,
-          quantity: automaticQuantity,
-          totalCost: automaticQuantity * material.unitCost,
-          isAutomatic: true,
-          source: 'automatic',
-        });
-        remainingAutomatic.set(
-          material.materialId,
-          (remainingAutomatic.get(material.materialId) || 0) - automaticQuantity,
-        );
-      }
-
-      const manualQuantity = material.quantity - automaticQuantity;
-      if (manualQuantity > 0) {
-        inferredMaterials.push({
-          ...material,
-          quantity: manualQuantity,
-          totalCost: manualQuantity * material.unitCost,
-          isAutomatic: false,
-          source: 'manual',
-        });
-      }
-    });
-    return inferredMaterials;
-  }, [order?.items, order?.materials, products]);
+  const initialOrderMaterials = useMemo(
+    () => inferOrderMaterials(order?.items || [], order?.materials || [], products),
+    [order?.items, order?.materials, products],
+  );
 
   const [orderMaterials, setOrderMaterials] =
     useState<EditableOrderMaterial[]>(initialOrderMaterials);
-
-  const syncAutomaticMaterials = (
-    nextItems: OrderProductItem[],
-    currentMaterials: EditableOrderMaterial[],
-  ): EditableOrderMaterial[] => {
-    const automaticByMaterial = new Map<string, number>();
-
-    nextItems.forEach((item) => {
-      const product = products.find((candidate) => candidate.id === item.productId);
-      product?.materials.forEach((productMaterial) => {
-        automaticByMaterial.set(
-          productMaterial.materialId,
-          (automaticByMaterial.get(productMaterial.materialId) || 0) +
-            productMaterial.quantity * item.quantity,
-        );
-      });
-    });
-
-    const manualMaterials = new Map<string, EditableOrderMaterial>();
-    const automaticMaterials = new Map<string, EditableOrderMaterial>();
-
-    const addManualMaterial = (material: EditableOrderMaterial, quantity: number) => {
-      if (quantity <= 0) return;
-      const existing = manualMaterials.get(material.materialId);
-      if (existing) {
-        existing.quantity += quantity;
-        existing.totalCost += material.totalCost;
-        return;
-      }
-      manualMaterials.set(material.materialId, {
-        ...material,
-        quantity,
-        totalCost: material.totalCost,
-        isAutomatic: false,
-        source: 'manual',
-      });
-    };
-
-    const addAutomaticMaterial = (material: EditableOrderMaterial, quantity: number) => {
-      if (quantity <= 0) return;
-      const existing = automaticMaterials.get(material.materialId);
-      if (existing) {
-        existing.quantity += quantity;
-        existing.totalCost = existing.quantity * existing.unitCost;
-        return;
-      }
-      automaticMaterials.set(material.materialId, {
-        ...material,
-        id: `auto-${material.materialId}`,
-        quantity,
-        totalCost: quantity * material.unitCost,
-        isAutomatic: true,
-        source: 'automatic',
-      });
-    };
-
-    // Reuse quantities already present in the order before creating new
-    // automatic rows. This is important for older orders whose API response
-    // no longer contains the origin of each material.
-    const remainingAutomatic = new Map(automaticByMaterial);
-    currentMaterials.forEach((material) => {
-      if (material.source === 'manual') {
-        addManualMaterial(material, Math.max(material.quantity, 0));
-        return;
-      }
-
-      const remaining = remainingAutomatic.get(material.materialId) || 0;
-      const automaticQuantity = Math.min(Math.max(material.quantity, 0), remaining);
-      addAutomaticMaterial(material, automaticQuantity);
-      remainingAutomatic.set(material.materialId, remaining - automaticQuantity);
-
-      // Legacy rows may contain a manual excess mixed with the recipe amount.
-      const manualQuantity = material.quantity - automaticQuantity;
-      if (material.source === 'legacy' && manualQuantity > 0) {
-        addManualMaterial(
-          {
-            ...material,
-            quantity: manualQuantity,
-            totalCost: manualQuantity * material.unitCost,
-            isAutomatic: false,
-            source: 'manual',
-          },
-          manualQuantity,
-        );
-      }
-    });
-
-    automaticByMaterial.forEach((quantity, materialId) => {
-      const material = materials.find((candidate) => candidate.id === materialId);
-      const quantityToAdd = remainingAutomatic.get(materialId) || 0;
-      if (!material || quantityToAdd <= 0) return;
-
-      addAutomaticMaterial(
-        {
-          id: `auto-${material.id}`,
-          materialId: material.id,
-          materialName: material.name,
-          quantity: quantityToAdd,
-          unitCost: material.unitCost,
-          totalCost: quantityToAdd * material.unitCost,
-          isAutomatic: true,
-          source: 'automatic',
-        },
-        quantityToAdd,
-      );
-    });
-
-    return [...manualMaterials.values(), ...automaticMaterials.values()];
-  };
 
   // Add Product Item
   const handleAddProduct = () => {
@@ -408,7 +249,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     const nextItems = [...items, newItem];
     setItems(nextItems);
     setNewProductPickerId(newItem.id);
-    setOrderMaterials(syncAutomaticMaterials(nextItems, orderMaterials));
+    setOrderMaterials(syncOrderMaterials(nextItems, orderMaterials, products, materials));
   };
 
   const handleUpdateProduct = (
@@ -430,7 +271,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
         current.totalCost = current.quantity * p.calculatedCost;
       }
     } else if (field === 'quantity') {
-      const qty = Math.max(0, parseFloat(String(val).replace(',', '.')) || 0);
+      const qty = parseNonNegativeQuantity(val);
       current.quantity = qty;
       current.totalPrice = qty * current.unitPrice;
       current.totalCost = qty * current.unitCost;
@@ -441,13 +282,13 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     }
 
     setItems(updated);
-    setOrderMaterials(syncAutomaticMaterials(updated, orderMaterials));
+    setOrderMaterials(syncOrderMaterials(updated, orderMaterials, products, materials));
   };
 
   const handleRemoveProduct = (index: number) => {
     const updated = items.filter((_, i) => i !== index);
     setItems(updated);
-    setOrderMaterials(syncAutomaticMaterials(updated, orderMaterials));
+    setOrderMaterials(syncOrderMaterials(updated, orderMaterials, products, materials));
   };
 
   // Add Material Item
@@ -464,7 +305,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       isAutomatic: false,
       source: 'manual',
     };
-    setOrderMaterials(syncAutomaticMaterials(items, [...orderMaterials, newMat]));
+    setOrderMaterials(syncOrderMaterials(items, [...orderMaterials, newMat], products, materials));
     setNewMaterialPickerId(newMat.id);
   };
 
@@ -485,7 +326,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
         current.totalCost = current.quantity * m.unitCost;
       }
     } else if (field === 'quantity') {
-      const qty = Math.max(0, parseFloat(String(val).replace(',', '.')) || 0);
+      const qty = parseNonNegativeQuantity(val);
       current.quantity = qty;
       current.totalCost = qty * current.unitCost;
     } else if (field === 'unitCost') {
@@ -494,7 +335,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       current.totalCost = current.quantity * cost;
     }
 
-    setOrderMaterials(syncAutomaticMaterials(items, updated));
+    setOrderMaterials(syncOrderMaterials(items, updated, products, materials));
   };
 
   const handleRemoveMaterial = (index: number) => {

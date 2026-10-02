@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:order-materials": "tsx --tsconfig tsconfig.json --test src/services/orderMaterials.test.ts"
   },
   "dependencies": {
     "@jeh-doces/shared": "*",
