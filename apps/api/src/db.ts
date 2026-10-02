@@ -170,7 +170,10 @@ function mapOrder(row: OrderRow): Order {
     deliveryDate: row.deliveryDate ? iso(row.deliveryDate) : null,
     status: row.status as OrderStatus,
     items: row.items.map(({ orderId: _, ...item }) => item),
-    materials: row.materials.map(({ orderId: _, ...item }) => item),
+    materials: row.materials.map(({ orderId: _, isAutomatic, ...item }) => ({
+      ...item,
+      isAutomatic: isAutomatic ?? undefined,
+    })),
     subtotal: row.subtotal,
     discount: row.discount,
     totalCharged: row.totalCharged,
@@ -871,7 +874,8 @@ class Database {
     const productMaterials = productIds.length
       ? await tx.productMaterial.findMany({ where: { productId: { in: productIds } } })
       : [];
-    const deductions = calculateMaterialDeductions(order.items, order.materials, productMaterials);
+    const manualMaterials = order.materials.filter((material) => material.isAutomatic !== true);
+    const deductions = calculateMaterialDeductions(order.items, manualMaterials, productMaterials);
     for (const [materialId, quantity] of deductions) {
       const material = await tx.material.findUnique({ where: { id: materialId } });
       if (material?.trackStock) {
@@ -956,12 +960,13 @@ class Database {
         materials: {
           deleteMany: {},
           create: (data.materials ?? []).map(
-            ({ materialId, materialName, quantity, unitCost, totalCost }) => ({
+            ({ materialId, materialName, quantity, unitCost, totalCost, isAutomatic }) => ({
               materialId,
               materialName,
               quantity,
               unitCost,
               totalCost,
+              isAutomatic: isAutomatic ?? false,
             }),
           ),
         },
