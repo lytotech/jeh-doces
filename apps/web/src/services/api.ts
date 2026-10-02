@@ -496,6 +496,19 @@ export const api = {
     });
   },
 
+  async downloadOrderPdf(id: string): Promise<{ blob: Blob; filename: string }> {
+    const response = await fetch(`${API_BASE}/orders/${encodeURIComponent(id)}/pdf`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`API Error ${response.status}: ${errText}`);
+    }
+    const disposition = response.headers.get('Content-Disposition') || '';
+    const filename = disposition.match(/filename="?([^";]+)"?/i)?.[1] || `orcamento-${id}.pdf`;
+    return { blob: await response.blob(), filename };
+  },
+
   async getPublicCatalog(slug: string): Promise<PublicCatalog> {
     return request<PublicCatalog>(`/public/catalog/${encodeURIComponent(slug)}`);
   },

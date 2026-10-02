@@ -10,6 +10,7 @@ import {
   Post,
   Put,
   NotFoundException,
+  StreamableFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -20,6 +21,7 @@ import { isCompletePlan } from '../billing/plan-limits';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { AuthContext } from '../../common/auth.types';
 import type { OrderStatus } from '@jeh-doces/shared';
+import { OrderPdfService } from './order-pdf.service';
 
 const orderStatuses = new Set([
   'orcamento',
@@ -42,7 +44,10 @@ const paymentMethods = new Set([
 @UseGuards(AuthGuard)
 @UseInterceptors(CompanyContextInterceptor)
 export class OrdersController {
-  constructor(@Inject(DatabaseService) private readonly database: DatabaseService) {}
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+    private readonly orderPdf: OrderPdfService,
+  ) {}
   @Get() getAll() {
     return this.database.database.getOrders();
   }
@@ -51,6 +56,16 @@ export class OrdersController {
   }
   @Put(':id') update(@Param('id') id: string, @Body() body: any) {
     return this.database.database.saveOrder({ ...body, id });
+  }
+  @Get(':id/pdf') async pdf(@Param('id') id: string) {
+    const order = await this.database.database.getOrder(id);
+    if (!order) throw new NotFoundException('Order not found');
+    const content = await this.orderPdf.generate(order, await this.database.database.getSettings());
+    const safeNumber = order.orderNumber.replace(/[^a-zA-Z0-9-_]/g, '-') || order.id;
+    return new StreamableFile(content, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="orcamento-${safeNumber}.pdf"`,
+    });
   }
   @Delete(':id') delete(@Param('id') id: string) {
     return this.database.database.deleteOrder(id).then((success) => ({ success }));

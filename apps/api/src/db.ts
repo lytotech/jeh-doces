@@ -587,6 +587,13 @@ class Database {
       })
     ).map(mapOrder);
   }
+  async getOrder(id: string) {
+    const row = await prisma.order.findFirst({
+      where: { id, companyId: this.companyId() },
+      include: orderInclude,
+    });
+    return row ? mapOrder(row) : null;
+  }
   async createOrderShareLink(id: string) {
     const row = await prisma.order.findFirst({ where: { id, companyId: this.companyId() } });
     if (!row) return null;
