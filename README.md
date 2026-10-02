@@ -140,3 +140,10 @@ apontando para o endpoint OTLP HTTP do Tempo. A coleta fica desativada por padr�
 `APP_URL` também determina se o cookie de sessão será marcado como `Secure`:
 use uma URL `https://` no acesso público e a URL HTTP da LAN apenas durante a
 validação interna.
+
+## Atualização da aplicação
+
+O frontend publica automaticamente `version.json` durante o build, usando a
+versão definida em `apps/web/src/version.ts`. O navegador consulta esse
+manifesto ao abrir o sistema e ao voltar para a aba. Quando encontra uma versão
+mais nova, exibe um aviso para que a pessoa confirme o recarregamento.
