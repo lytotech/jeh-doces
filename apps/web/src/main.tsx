@@ -11,6 +11,7 @@ import { PublicOrderPage } from './components/public/PublicOrderPage';
 import { InstallAppPrompt } from './components/pwa/InstallAppPrompt';
 import { AdminPanel } from './components/admin/AdminPanel';
 import { PublicCatalogPage } from './components/public/PublicCatalogPage';
+import { AppUpdateNotice } from './components/pwa/AppUpdateNotice';
 
 function Root() {
   const { auth, loading } = useAuth();
@@ -71,10 +72,14 @@ const isAdminRoute =
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     {isAdminRoute ? (
-      <AdminPanel />
+      <>
+        <AdminPanel />
+        <AppUpdateNotice />
+      </>
     ) : (
       <AuthProvider>
         <Root />
+        <AppUpdateNotice />
       </AuthProvider>
     )}
   </React.StrictMode>,
@@ -82,6 +87,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('/sw.js').catch(() => undefined),
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((registration) => registration.update())
+      .catch(() => undefined),
   );
 }
