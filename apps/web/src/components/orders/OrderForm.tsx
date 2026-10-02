@@ -299,8 +299,25 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       });
     });
 
-    const manualMaterials: EditableOrderMaterial[] = [];
+    const manualMaterials = new Map<string, EditableOrderMaterial>();
     const automaticMaterials = new Map<string, EditableOrderMaterial>();
+
+    const addManualMaterial = (material: EditableOrderMaterial, quantity: number) => {
+      if (quantity <= 0) return;
+      const existing = manualMaterials.get(material.materialId);
+      if (existing) {
+        existing.quantity += quantity;
+        existing.totalCost += material.totalCost;
+        return;
+      }
+      manualMaterials.set(material.materialId, {
+        ...material,
+        quantity,
+        totalCost: material.totalCost,
+        isAutomatic: false,
+        source: 'manual',
+      });
+    };
 
     const addAutomaticMaterial = (material: EditableOrderMaterial, quantity: number) => {
       if (quantity <= 0) return;
@@ -326,7 +343,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
     const remainingAutomatic = new Map(automaticByMaterial);
     currentMaterials.forEach((material) => {
       if (material.source === 'manual') {
-        manualMaterials.push({ ...material, isAutomatic: false, source: 'manual' });
+        addManualMaterial(material, Math.max(material.quantity, 0));
         return;
       }
 
@@ -338,13 +355,16 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       // Legacy rows may contain a manual excess mixed with the recipe amount.
       const manualQuantity = material.quantity - automaticQuantity;
       if (material.source === 'legacy' && manualQuantity > 0) {
-        manualMaterials.push({
-          ...material,
-          quantity: manualQuantity,
-          totalCost: manualQuantity * material.unitCost,
-          isAutomatic: false,
-          source: 'manual',
-        });
+        addManualMaterial(
+          {
+            ...material,
+            quantity: manualQuantity,
+            totalCost: manualQuantity * material.unitCost,
+            isAutomatic: false,
+            source: 'manual',
+          },
+          manualQuantity,
+        );
       }
     });
 
@@ -368,7 +388,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       );
     });
 
-    return [...manualMaterials, ...automaticMaterials.values()];
+    return [...manualMaterials.values(), ...automaticMaterials.values()];
   };
 
   // Add Product Item
@@ -410,7 +430,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
         current.totalCost = current.quantity * p.calculatedCost;
       }
     } else if (field === 'quantity') {
-      const qty = parseFloat(String(val).replace(',', '.')) || 0;
+      const qty = Math.max(0, parseFloat(String(val).replace(',', '.')) || 0);
       current.quantity = qty;
       current.totalPrice = qty * current.unitPrice;
       current.totalCost = qty * current.unitCost;
@@ -444,7 +464,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       isAutomatic: false,
       source: 'manual',
     };
-    setOrderMaterials([...orderMaterials, newMat]);
+    setOrderMaterials(syncAutomaticMaterials(items, [...orderMaterials, newMat]));
     setNewMaterialPickerId(newMat.id);
   };
 
@@ -465,7 +485,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
         current.totalCost = current.quantity * m.unitCost;
       }
     } else if (field === 'quantity') {
-      const qty = parseFloat(String(val).replace(',', '.')) || 0;
+      const qty = Math.max(0, parseFloat(String(val).replace(',', '.')) || 0);
       current.quantity = qty;
       current.totalCost = qty * current.unitCost;
     } else if (field === 'unitCost') {
@@ -474,7 +494,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       current.totalCost = current.quantity * cost;
     }
 
-    setOrderMaterials(updated);
+    setOrderMaterials(syncAutomaticMaterials(items, updated));
   };
 
   const handleRemoveMaterial = (index: number) => {
@@ -850,6 +870,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                             <input
                               type="number"
                               step="any"
+                              min="0"
                               className="w-full px-2 py-1 bg-white border border-[#DFCFC0] rounded-lg font-bold text-center"
                               value={item.quantity}
                               onChange={(e) =>
@@ -924,6 +945,7 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
                           <input
                             type="number"
                             step="any"
+                            min="0"
                             className="w-14 px-1.5 py-1 text-xs font-bold text-center bg-white border border-[#DFCFC0] rounded-lg"
                             value={mat.quantity}
                             onChange={(e) =>
