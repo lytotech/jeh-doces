@@ -102,6 +102,8 @@ export interface OrderMaterialItem {
   quantity: number;
   unitCost: number;
   totalCost: number;
+  /** True for materials generated from a product recipe; absent for legacy rows. */
+  isAutomatic?: boolean;
 }
 
 export type PaymentMethod =
