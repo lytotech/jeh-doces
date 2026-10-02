@@ -11,6 +11,7 @@ import {
   LogOut,
   CalendarDays,
   CreditCard,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { APP_VERSION } from '../../version';
@@ -25,6 +26,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
   const { auth, logout, switchCompany } = useAuth();
 
   const navItems = [
+    { id: 'funnel', label: 'Funil de vendas', icon: TrendingUp, badge: 'Pipeline' },
     {
       id: 'orders',
       label: 'Encomendas',
@@ -180,7 +182,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
           <span>Configurações & Backup</span>
         </button>
         <button
-          onClick={() => { setActiveTab('billing'); setSelectedOrderId(null); }}
+          onClick={() => {
+            setActiveTab('billing');
+            setSelectedOrderId(null);
+          }}
           className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold text-[#72203F] bg-[#F5E5EC] hover:bg-[#EBD2DD] transition-colors"
         >
           <CreditCard className="w-4 h-4" />
