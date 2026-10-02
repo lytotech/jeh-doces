@@ -46,7 +46,7 @@ const paymentMethods = new Set([
 export class OrdersController {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
-    private readonly orderPdf: OrderPdfService,
+    @Inject(OrderPdfService) private readonly orderPdf: OrderPdfService,
   ) {}
   @Get() getAll() {
     return this.database.database.getOrders();
