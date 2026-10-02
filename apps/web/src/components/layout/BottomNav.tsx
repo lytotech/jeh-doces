@@ -25,6 +25,9 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
   const { logout } = useAuth();
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const settingsRef = useRef<HTMLElement>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  const settingsMenuRef = useRef<HTMLDivElement>(null);
+  const menuWasOpen = useRef(false);
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -41,6 +44,19 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
       document.removeEventListener('mousedown', closeOnOutsideClick);
       document.removeEventListener('keydown', closeOnEscape);
     };
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!settingsOpen) {
+      if (menuWasOpen.current) settingsButtonRef.current?.focus();
+      menuWasOpen.current = false;
+      return;
+    }
+    menuWasOpen.current = true;
+    const frame = window.requestAnimationFrame(() => {
+      settingsMenuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [settingsOpen]);
 
   const navItems = [
@@ -84,6 +100,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
   return (
     <nav
       ref={settingsRef}
+      aria-label="Navegação principal"
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8DECF] shadow-lg pb-[env(safe-area-inset-bottom)]"
     >
       <div className="max-w-3xl mx-auto flex items-center justify-around py-1.5 px-1 overflow-x-auto">
@@ -94,6 +111,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
             <button
               key={item.id}
               onClick={() => handleTabClick(item.id)}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-2xl transition-all duration-200 min-w-[64px] ${
                 isActive
                   ? 'text-[#96642F] font-semibold scale-105'
@@ -113,6 +131,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
         })}
         <button
           type="button"
+          ref={settingsButtonRef}
           onClick={() => setSettingsOpen((open) => !open)}
           className={`flex min-w-[64px] flex-col items-center justify-center rounded-2xl px-3 py-1.5 transition-all duration-200 ${
             settingsOpen ? 'font-semibold text-[#96642F]' : 'text-[#8C7665] hover:text-[#5C4533]'
@@ -120,6 +139,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
           aria-label="Configurações"
           aria-expanded={settingsOpen}
           aria-haspopup="menu"
+          aria-controls="mobile-settings-menu"
         >
           <div
             className={`rounded-xl p-1 transition-colors ${
@@ -134,6 +154,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenTeam
 
       {settingsOpen && (
         <div
+          ref={settingsMenuRef}
+          id="mobile-settings-menu"
           role="menu"
           className="absolute bottom-[calc(100%+0.5rem)] right-2 min-w-56 rounded-2xl border border-[#E5DACD] bg-white p-2 shadow-xl"
         >

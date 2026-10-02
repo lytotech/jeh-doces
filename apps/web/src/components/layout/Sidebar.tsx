@@ -69,7 +69,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
   };
 
   return (
-    <aside className="hidden md:flex flex-col w-64 lg:w-72 bg-[#FAF5EE] border-r border-[#E8DECF] shrink-0 h-screen sticky top-0 select-none">
+    <aside
+      aria-label="Navegação principal"
+      className="hidden md:flex flex-col w-64 lg:w-72 bg-[#FAF5EE] border-r border-[#E8DECF] shrink-0 h-screen sticky top-0 select-none"
+    >
       {/* Brand Header */}
       <div className="p-6 border-b border-[#E8DECFC] bg-[#B57E44] text-white">
         <div className="flex items-center gap-3">
@@ -90,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+      <nav aria-label="Seções do aplicativo" className="flex-1 p-4 space-y-1.5 overflow-y-auto">
         <div className="px-3 pb-2 text-[11px] font-bold text-[#8C7665] uppercase tracking-wider">
           Menu Principal
         </div>
@@ -102,6 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ onOpenSettings, onOpenTeam }) 
             <button
               key={item.id}
               onClick={() => handleTabClick(item.id)}
+              aria-current={isActive ? 'page' : undefined}
               className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-sm font-semibold transition-all duration-200 group ${
                 isActive
                   ? 'bg-[#72203F] text-white shadow-sm'
