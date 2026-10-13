@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test:sales-funnel": "tsx --tsconfig tsconfig.json --test src/services/salesFunnel.test.ts",
-    "test:whatsapp": "tsx --tsconfig tsconfig.json --test src/services/whatsappExporter.test.ts"
+    "test:whatsapp": "tsx --tsconfig tsconfig.json --test src/services/whatsappExporter.test.ts",
+    "test:public-order": "tsx --tsconfig tsconfig.json --test src/services/publicOrderErrors.test.ts"
   },
   "dependencies": {
     "@jeh-doces/shared": "*",
