@@ -21,13 +21,6 @@ export const generateWhatsAppQuoteMessage = (order: Order, settings: AppSettings
     message += `   ${item.quantity}x de ${formatCurrency(item.unitPrice)} = *${formatCurrency(item.totalPrice)}*\n`;
   });
 
-  if (order.materials && order.materials.length > 0) {
-    message += `\n🎀 *EMBALAGENS & MATERIAIS INCLUSOS:*\n`;
-    order.materials.forEach((mat) => {
-      message += `- ${mat.materialName} (${mat.quantity} un)\n`;
-    });
-  }
-
   message += `\n------------------------------------\n`;
   message += `*Subtotal:* ${formatCurrency(order.subtotal)}\n`;
   if (order.discount > 0) {
