@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import {
+  BarChart3,
   Building2,
   CheckCircle2,
   CircleOff,
   CreditCard,
+  CircleAlert,
+  CalendarClock,
   LogOut,
   Plus,
+  Receipt,
   ShieldCheck,
   TrendingUp,
   Users,
@@ -43,6 +47,26 @@ type AdminDashboard = {
 
 type PlanPrices = { monthly: number; annual: number };
 
+type AdminFinancialDashboard = {
+  summary: {
+    receivedRevenue: number;
+    currentMonthRevenue: number;
+    approvedPayments: number;
+    paidCompanies: number;
+    pendingSubscriptions: number;
+    overdueSubscriptions: number;
+  };
+  planDistribution: { monthly: number; annual: number };
+  monthlyRevenue: { month: string; revenue: number; payments: number }[];
+  expiringSubscriptions: {
+    companyId: string;
+    companyName: string;
+    plan: string;
+    amount: number;
+    currentPeriodEnd: string;
+  }[];
+};
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = new Headers(options?.headers);
   if (options?.body) headers.set('Content-Type', 'application/json');
@@ -64,11 +88,20 @@ const date = (value: string | null) =>
     : 'Nunca';
 const money = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+const month = (value: string) => {
+  const [year, monthNumber] = value.split('-').map(Number);
+  return new Intl.DateTimeFormat('pt-BR', { month: 'short' })
+    .format(new Date(year, monthNumber - 1, 1))
+    .replace('.', '');
+};
+const planLabel = (plan: string) => (plan === 'annual' ? 'Anual' : 'Mensal');
 
 export function AdminPanel() {
   const [admin, setAdmin] = useState<{ id: string; name: string; email: string } | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
+  const [financial, setFinancial] = useState<AdminFinancialDashboard | null>(null);
+  const [financialError, setFinancialError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -90,6 +123,16 @@ export function AdminPanel() {
       setDashboard(metrics);
       setPrices(planPrices);
       setPricingForm({ monthly: String(planPrices.monthly), annual: String(planPrices.annual) });
+      try {
+        setFinancial(await request<AdminFinancialDashboard>('/financial-dashboard'));
+        setFinancialError('');
+      } catch (financialLoadError) {
+        setFinancialError(
+          financialLoadError instanceof Error
+            ? financialLoadError.message
+            : 'Não foi possível carregar os dados financeiros.',
+        );
+      }
     } catch (err) {
       setAdmin(null);
       if (err instanceof Error && !err.message.includes('administrador')) setError(err.message);
@@ -282,6 +325,134 @@ export function AdminPanel() {
                 </p>
               </div>
             </div>
+            <section className="mt-8 rounded-2xl border border-[#EADDE2] bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[.16em] text-[#8D3157]">
+                    Financeiro e assinaturas
+                  </p>
+                  <h2 className="mt-1 text-xl font-bold">Receita recebida nos últimos 12 meses</h2>
+                  <p className="mt-1 text-sm text-[#756878]">
+                    Considera somente pagamentos aprovados e não estornados.
+                  </p>
+                </div>
+                <BarChart3 className="text-[#8D3157]" size={22} />
+              </div>
+              {financialError && (
+                <p className="mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">
+                  {financialError}
+                </p>
+              )}
+              {financial && (
+                <>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl bg-[#FCFAF7] p-4">
+                      <Receipt className="text-[#8D3157]" size={18} />
+                      <p className="mt-3 text-xs text-[#756878]">Receita recebida</p>
+                      <p className="mt-1 text-xl font-bold">
+                        {money(financial.summary.receivedRevenue)}
+                      </p>
+                      <p className="mt-1 text-xs text-[#756878]">
+                        {financial.summary.approvedPayments} pagamentos aprovados
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-[#FCFAF7] p-4">
+                      <TrendingUp className="text-emerald-600" size={18} />
+                      <p className="mt-3 text-xs text-[#756878]">Receita deste mês</p>
+                      <p className="mt-1 text-xl font-bold">
+                        {money(financial.summary.currentMonthRevenue)}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-[#FCFAF7] p-4">
+                      <CreditCard className="text-emerald-600" size={18} />
+                      <p className="mt-3 text-xs text-[#756878]">Empresas pagantes</p>
+                      <p className="mt-1 text-xl font-bold">{financial.summary.paidCompanies}</p>
+                      <p className="mt-1 text-xs text-[#756878]">
+                        {financial.planDistribution.monthly} mensais ·{' '}
+                        {financial.planDistribution.annual} anuais
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-[#FCFAF7] p-4">
+                      <CircleAlert className="text-amber-600" size={18} />
+                      <p className="mt-3 text-xs text-[#756878]">Atenção na cobrança</p>
+                      <p className="mt-1 text-xl font-bold">
+                        {financial.summary.pendingSubscriptions +
+                          financial.summary.overdueSubscriptions}
+                      </p>
+                      <p className="mt-1 text-xs text-[#756878]">
+                        {financial.summary.pendingSubscriptions} pendentes ·{' '}
+                        {financial.summary.overdueSubscriptions} vencidas
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-5 grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+                    <div className="rounded-xl border border-[#EADDE2] p-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold">Receita por mês</h3>
+                        <span className="text-xs text-[#756878]">12 meses</span>
+                      </div>
+                      <div className="mt-5 flex h-44 items-end gap-2 sm:gap-3">
+                        {financial.monthlyRevenue.map((item) => {
+                          const max = Math.max(
+                            ...financial.monthlyRevenue.map((entry) => entry.revenue),
+                            1,
+                          );
+                          const height = item.revenue ? Math.max(8, (item.revenue / max) * 100) : 3;
+                          return (
+                            <div
+                              key={item.month}
+                              className="flex min-w-0 flex-1 flex-col items-center gap-2"
+                            >
+                              <span className="max-w-full truncate text-[10px] text-[#756878]">
+                                {item.revenue ? money(item.revenue) : '—'}
+                              </span>
+                              <div className="flex h-28 w-full items-end rounded-lg bg-[#FCFAF7]">
+                                <div
+                                  className="w-full rounded-lg bg-[#B04770]"
+                                  style={{ height: `${height}%` }}
+                                  title={`${item.payments} pagamentos`}
+                                />
+                              </div>
+                              <span className="text-[10px] capitalize text-[#756878]">
+                                {month(item.month)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-[#EADDE2] p-4">
+                      <h3 className="font-bold">Próximos vencimentos</h3>
+                      <p className="mt-1 text-xs text-[#756878]">
+                        Assinaturas nos próximos 30 dias.
+                      </p>
+                      <div className="mt-4 space-y-3">
+                        {financial.expiringSubscriptions.length ? (
+                          financial.expiringSubscriptions.map((subscription) => (
+                            <div
+                              key={subscription.companyId}
+                              className="flex items-center justify-between gap-3 text-sm"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate font-semibold">{subscription.companyName}</p>
+                                <p className="text-xs text-[#756878]">
+                                  {planLabel(subscription.plan)} · {money(subscription.amount)}
+                                </p>
+                              </div>
+                              <span className="inline-flex shrink-0 items-center gap-1 text-xs text-[#756878]">
+                                <CalendarClock size={13} /> {date(subscription.currentPeriodEnd)}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-[#756878]">Nenhum vencimento próximo.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </section>
             <AdminCompanies />
           </>
         )}

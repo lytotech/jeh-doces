@@ -21,6 +21,118 @@ const normalize = (value: unknown) =>
     .trim()
     .toLowerCase();
 
+const paidSubscriptionStatuses = new Set<SubscriptionStatus>([
+  SubscriptionStatus.active,
+  SubscriptionStatus.pending,
+  SubscriptionStatus.canceled,
+]);
+
+type FinancialPayment = {
+  amount: number;
+  plan: SubscriptionPlan;
+  status: string;
+  paidAt: Date | null;
+  refundedAt: Date | null;
+};
+
+type FinancialSubscription = {
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  currentPeriodEnd: Date | null;
+  company: { id: string; name: string; deactivatedAt: Date | null };
+};
+
+export function buildFinancialDashboard(
+  payments: FinancialPayment[],
+  subscriptions: FinancialSubscription[],
+  prices: { monthly: number; annual: number },
+  now = new Date(),
+) {
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const periodStart = new Date(currentMonthStart);
+  periodStart.setMonth(periodStart.getMonth() - 11);
+  const periodEnd = new Date(currentMonthStart);
+  periodEnd.setMonth(periodEnd.getMonth() + 1);
+  const monthKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  const months = Array.from({ length: 12 }, (_, index) => {
+    const date = new Date(periodStart);
+    date.setMonth(periodStart.getMonth() + index);
+    return { month: monthKey(date), revenue: 0, payments: 0 };
+  });
+  const monthMap = new Map(months.map((item) => [item.month, item]));
+  let receivedRevenue = 0;
+  let approvedPayments = 0;
+
+  for (const payment of payments) {
+    if (
+      payment.status !== 'approved' ||
+      !payment.paidAt ||
+      payment.refundedAt ||
+      payment.paidAt < periodStart ||
+      payment.paidAt >= periodEnd
+    )
+      continue;
+    const month = monthMap.get(monthKey(payment.paidAt));
+    if (!month) continue;
+    month.revenue += payment.amount;
+    month.payments += 1;
+    receivedRevenue += payment.amount;
+    approvedPayments += 1;
+  }
+
+  const currentPaidSubscriptions = subscriptions.filter(
+    (subscription) =>
+      subscription.plan !== SubscriptionPlan.basic &&
+      paidSubscriptionStatuses.has(subscription.status) &&
+      !!subscription.currentPeriodEnd &&
+      subscription.currentPeriodEnd > now &&
+      !subscription.company.deactivatedAt,
+  );
+  const expiringUntil = new Date(now);
+  expiringUntil.setDate(expiringUntil.getDate() + 30);
+  const expiringSubscriptions = currentPaidSubscriptions
+    .filter(
+      (subscription) =>
+        !!subscription.currentPeriodEnd && subscription.currentPeriodEnd <= expiringUntil,
+    )
+    .sort((left, right) => left.currentPeriodEnd!.getTime() - right.currentPeriodEnd!.getTime())
+    .slice(0, 8)
+    .map((subscription) => ({
+      companyId: subscription.company.id,
+      companyName: subscription.company.name,
+      plan: subscription.plan,
+      amount: subscription.plan === SubscriptionPlan.annual ? prices.annual : prices.monthly,
+      currentPeriodEnd: subscription.currentPeriodEnd!.toISOString(),
+    }));
+
+  return {
+    period: { from: periodStart.toISOString(), to: periodEnd.toISOString(), months: 12 },
+    summary: {
+      receivedRevenue,
+      currentMonthRevenue: months[11].revenue,
+      approvedPayments,
+      paidCompanies: currentPaidSubscriptions.length,
+      pendingSubscriptions: subscriptions.filter(
+        (subscription) => subscription.status === SubscriptionStatus.pending,
+      ).length,
+      overdueSubscriptions: subscriptions.filter(
+        (subscription) => subscription.status === SubscriptionStatus.past_due,
+      ).length,
+    },
+    planDistribution: {
+      monthly: currentPaidSubscriptions.filter(
+        (subscription) => subscription.plan === SubscriptionPlan.monthly,
+      ).length,
+      annual: currentPaidSubscriptions.filter(
+        (subscription) => subscription.plan === SubscriptionPlan.annual,
+      ).length,
+    },
+    monthlyRevenue: months,
+    expiringSubscriptions,
+  };
+}
+
 export function companyStatusData(body: Record<string, unknown>) {
   if (typeof body.active !== 'boolean')
     throw new BadRequestException('Informe o novo status da empresa.');
@@ -206,6 +318,36 @@ export class AdminAuthService implements OnModuleInit {
       },
       recentCompanies,
     };
+  }
+
+  async financialDashboard() {
+    const now = new Date();
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    periodStart.setMonth(periodStart.getMonth() - 11);
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const paidPlans: SubscriptionPlan[] = [SubscriptionPlan.monthly, SubscriptionPlan.annual];
+    const [payments, subscriptions, prices] = await Promise.all([
+      this.prisma.client.subscriptionPayment.findMany({
+        where: { paidAt: { gte: periodStart, lt: periodEnd } },
+        select: { amount: true, plan: true, status: true, paidAt: true, refundedAt: true },
+      }),
+      this.prisma.client.subscription.findMany({
+        where: { plan: { in: paidPlans } },
+        select: {
+          plan: true,
+          status: true,
+          currentPeriodEnd: true,
+          company: { select: { id: true, name: true, deactivatedAt: true } },
+        },
+      }),
+      this.prisma.client.billingPrice.upsert({
+        where: { id: 'default' },
+        update: {},
+        create: { id: 'default', monthly: 19.8, annual: 179.8 },
+        select: { monthly: true, annual: true },
+      }),
+    ]);
+    return buildFinancialDashboard(payments, subscriptions, prices, now);
   }
 
   async companies(query: Record<string, unknown>) {
