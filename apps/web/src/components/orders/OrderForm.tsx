@@ -464,7 +464,10 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       isAutomatic: false,
       source: 'manual',
     };
-    setOrderMaterials(syncAutomaticMaterials(items, [...orderMaterials, newMat]));
+    // Adding a manual material must not recalculate recipe materials. Users
+    // may have intentionally removed the automatic rows and use one package
+    // for the whole order instead.
+    setOrderMaterials([...orderMaterials, newMat]);
     setNewMaterialPickerId(newMat.id);
   };
 
@@ -494,7 +497,9 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
       current.totalCost = current.quantity * cost;
     }
 
-    setOrderMaterials(syncAutomaticMaterials(items, updated));
+    // Editing a manual material should preserve the current material list;
+    // automatic rows are synchronized only when products change.
+    setOrderMaterials(updated);
   };
 
   const handleRemoveMaterial = (index: number) => {
