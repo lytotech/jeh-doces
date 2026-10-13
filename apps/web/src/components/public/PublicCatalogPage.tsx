@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Minus, Plus, ShoppingBag } from 'lucide-react';
 import { api, PublicCatalog } from '../../services/api';
 import { formatCurrency } from '../../services/costEngine';
+import { getPublicOrderErrorMessage } from '../../services/publicOrderErrors';
 
 type Cart = Record<string, number>;
 
@@ -42,7 +43,11 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
   const [notes, setNotes] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [sending, setSending] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaStatus, setCaptchaStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>(
+    'idle',
+  );
   const captchaRef = React.useRef<HTMLDivElement>(null);
   const captchaWidgetRef = React.useRef<string | undefined>(undefined);
   const submissionIdRef = React.useRef(createSubmissionId());
@@ -57,14 +62,26 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
 
   useEffect(() => {
     if (!turnstileSiteKey || !checkoutOpen || !captchaRef.current) return;
+    setCaptchaStatus('loading');
+    setCaptchaToken('');
     const render = () => {
       if (!captchaRef.current || !window.turnstile || captchaWidgetRef.current) return;
       captchaWidgetRef.current = window.turnstile.render(captchaRef.current, {
         sitekey: turnstileSiteKey,
         size: 'invisible',
-        callback: setCaptchaToken,
-        'expired-callback': () => setCaptchaToken(''),
-        'error-callback': () => setCaptchaToken(''),
+        callback: (token) => {
+          setCaptchaToken(token);
+          setCaptchaStatus('ready');
+        },
+        'expired-callback': () => {
+          setCaptchaToken('');
+          setCaptchaStatus('loading');
+          if (captchaWidgetRef.current) window.turnstile?.execute(captchaWidgetRef.current);
+        },
+        'error-callback': () => {
+          setCaptchaToken('');
+          setCaptchaStatus('error');
+        },
       });
       window.turnstile.execute(captchaWidgetRef.current);
     };
@@ -74,6 +91,7 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
       script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.onload = render;
+      script.onerror = () => setCaptchaStatus('error');
       document.head.appendChild(script);
     }
     return () => {
@@ -83,6 +101,18 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
       }
     };
   }, [checkoutOpen]);
+
+  const executeCaptcha = () => {
+    if (!captchaWidgetRef.current || !window.turnstile) {
+      setCaptchaStatus('error');
+      return false;
+    }
+    setCaptchaToken('');
+    setCaptchaStatus('loading');
+    window.turnstile.reset(captchaWidgetRef.current);
+    window.turnstile.execute(captchaWidgetRef.current);
+    return true;
+  };
 
   const products = useMemo(() => {
     if (!catalog) return [];
@@ -114,6 +144,16 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!itemCount || sending) return;
+    setSubmitError('');
+    if (turnstileSiteKey && !captchaToken) {
+      setSubmitError(
+        captchaStatus === 'error'
+          ? 'Não foi possível carregar a validação de segurança. Recarregue a página e tente novamente.'
+          : 'Aguarde a validação de segurança e toque em enviar novamente.',
+      );
+      if (captchaStatus !== 'error') executeCaptcha();
+      return;
+    }
     setSending(true);
     try {
       const result = await api.submitPublicCatalogOrder(slug, {
@@ -133,8 +173,11 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
       setCheckoutOpen(false);
       submissionIdRef.current = createSubmissionId();
       setCaptchaToken('');
-    } catch {
-      setError('Não foi possível enviar seu pedido. Confira os dados e tente novamente.');
+    } catch (error) {
+      setSubmitError(getPublicOrderErrorMessage(error));
+      if (turnstileSiteKey && error instanceof Error && error.message.includes('validar o envio')) {
+        executeCaptcha();
+      }
     } finally {
       setSending(false);
     }
@@ -328,6 +371,10 @@ export const PublicCatalogPage: React.FC<{ slug: string }> = ({ slug }) => {
                 />
               </label>
               {turnstileSiteKey && <div ref={captchaRef} aria-hidden="true" />}
+              {turnstileSiteKey && captchaStatus === 'loading' && (
+                <p className="text-xs text-[#7A6453]">Validando a segurança do envio…</p>
+              )}
+              {submitError && <p className="text-sm text-[#B42318]">{submitError}</p>}
               <button
                 disabled={sending}
                 className="rounded-xl bg-[#96315C] px-5 py-3 font-semibold text-white disabled:opacity-50"
