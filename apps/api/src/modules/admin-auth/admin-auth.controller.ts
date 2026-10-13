@@ -49,6 +49,9 @@ export class AdminAuthController {
   @UseGuards(AdminAuthGuard) @Get('dashboard') dashboard() {
     return this.service.dashboard();
   }
+  @UseGuards(AdminAuthGuard) @Get('financial-dashboard') financialDashboard() {
+    return this.service.financialDashboard();
+  }
   @UseGuards(AdminAuthGuard) @Get('companies') companies(@Query() query: Record<string, unknown>) {
     return this.service.companies(query);
   }
