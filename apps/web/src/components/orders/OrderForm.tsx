@@ -516,7 +516,12 @@ export const OrderForm: React.FC<OrderFormProps> = ({ order, onBack, onSaved }) 
 
   const estimatedCost = useMemo(() => {
     const prodCost = items.reduce((sum, item) => sum + item.totalCost, 0);
-    const matCost = orderMaterials.reduce((sum, mat) => sum + mat.totalCost, 0);
+    // Product costs already include the materials from their recipe. Automatic
+    // material rows are kept here for stock control, so only manually added
+    // materials should be added to the order cost.
+    const matCost = orderMaterials
+      .filter((mat) => mat.isAutomatic !== true)
+      .reduce((sum, mat) => sum + mat.totalCost, 0);
     return prodCost + matCost;
   }, [items, orderMaterials]);
 
