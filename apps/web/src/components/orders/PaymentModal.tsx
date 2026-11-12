@@ -27,9 +27,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const remaining = Math.max(0, totalCharged - totalAlreadyPaid);
   const [amount, setAmount] = useState(remaining > 0 ? remaining.toFixed(2) : '0.00');
   const [method, setMethod] = useState<PaymentMethod>('pix');
-  const [paidAt, setPaidAt] = useState(
-    new Date().toISOString().slice(0, 16), // format for datetime-local
-  );
+  const [paidAt, setPaidAt] = useState(() => {
+    const now = new Date();
+    return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  });
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
