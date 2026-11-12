@@ -224,7 +224,7 @@ export class FinanceController {
       orderBy: [{ occurredAt: 'desc' }, { createdAt: 'desc' }],
     });
     const movementStart = opening && opening.occurredAt > start ? opening.occurredAt : start;
-    const [expenses, orders] = await Promise.all([
+    const [expenses, orders, receipts] = await Promise.all([
       prisma.expense.findMany({
         where: { companyId, occurredAt: { gte: movementStart, lte: end } },
         select: { amount: true },
@@ -235,25 +235,32 @@ export class FinanceController {
           totalCharged: true,
           estimatedProfit: true,
           payments: {
-            where: { paidAt: { gte: movementStart, lte: end } },
+            where: { paidAt: { lte: end } },
             select: { amount: true },
           },
         },
       }),
+      prisma.payment.aggregate({
+        where: {
+          paidAt: { gte: movementStart, lte: end },
+          order: { companyId, status: { not: 'cancelado' } },
+        },
+        _sum: { amount: true },
+      }),
     ]);
     const expensesTotal = expenses.reduce((sum, item) => sum + item.amount, 0);
     const salesTotal = orders.reduce((sum, order) => sum + order.totalCharged, 0);
-    const receivedTotal = orders.reduce(
-      (sum, order) =>
-        sum + order.payments.reduce((paymentSum, payment) => paymentSum + payment.amount, 0),
-      0,
-    );
+    const receivedTotal = receipts._sum.amount ?? 0;
+    const receivableTotal = orders.reduce((sum, order) => {
+      const paid = order.payments.reduce((total, payment) => total + payment.amount, 0);
+      return sum + Math.max(0, order.totalCharged - paid);
+    }, 0);
     return {
       from: start.toISOString(),
       to: end.toISOString(),
       salesTotal,
       receivedTotal,
-      receivableTotal: Math.max(0, salesTotal - receivedTotal),
+      receivableTotal,
       openingBalance: opening?.amount ?? 0,
       expensesTotal,
       netCash: calculateNetCash(opening?.amount ?? 0, receivedTotal, expensesTotal),

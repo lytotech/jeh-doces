@@ -6,8 +6,10 @@ import {
   calculateNetCash,
   cashOpeningData,
   expenseData,
+  FinanceController,
   range,
 } from './finance.controller';
+import { prisma, runForCompany } from '../../infrastructure/database/client';
 
 test('normaliza um lançamento financeiro válido', () => {
   const data = expenseData({
@@ -100,3 +102,83 @@ test('consolida relatório operacional sem misturar clientes ou produtos', () =>
   });
   assert.deepEqual(report.materialConsumption[0], { name: 'Caixa', quantity: 3, cost: 15 });
 });
+
+test(
+  'caixa contabiliza pagamentos antes, no dia e depois da entrega de pedidos antigos',
+  {
+    skip: !process.env.FINANCE_TEST_DATABASE,
+  },
+  async () => {
+    const company = await prisma.company.create({ data: { name: 'Finance regression' } });
+    const other = await prisma.company.create({ data: { name: 'Other company' } });
+    const createOrder = (
+      orderNumber: string,
+      companyId: string,
+      deliveryDate: string,
+      paidAt: string,
+      amount: number,
+      status: 'orcamento' | 'cancelado' = 'orcamento',
+      createdAt = '2026-10-01T12:00:00Z',
+      totalCharged = amount,
+    ) =>
+      prisma.order.create({
+        data: {
+          companyId,
+          orderNumber,
+          deliveryDate: new Date(deliveryDate),
+          createdAt: new Date(createdAt),
+          status,
+          totalCharged,
+          payments: { create: { paidAt: new Date(paidAt), amount, method: 'pix' } },
+        },
+      });
+    try {
+      for (const day of ['10', '12', '14']) {
+        await createOrder(
+          `#${day}`,
+          company.id,
+          `2026-11-${day}T12:00:00Z`,
+          '2026-11-12T12:00:00Z',
+          10,
+        );
+      }
+      await createOrder(
+        '#cancel',
+        company.id,
+        '2026-11-10T12:00:00Z',
+        '2026-11-12T12:00:00Z',
+        50,
+        'cancelado',
+      );
+      await createOrder('#other', other.id, '2026-11-10T12:00:00Z', '2026-11-12T12:00:00Z', 90);
+      await createOrder('#future', company.id, '2026-11-10T12:00:00Z', '2026-11-20T12:00:00Z', 80);
+      await createOrder(
+        '#current',
+        company.id,
+        '2026-11-10T12:00:00Z',
+        '2026-11-09T12:00:00Z',
+        50,
+        'orcamento',
+        '2026-11-01T12:00:00Z',
+        200,
+      );
+      await prisma.cashOpeningBalance.create({
+        data: {
+          companyId: company.id,
+          amount: 100,
+          occurredAt: new Date('2026-11-10T00:00:00Z'),
+        },
+      });
+      const summary = await runForCompany(company.id, () =>
+        new FinanceController().summary('2026-11-01T00:00:00Z', '2026-11-12T23:59:59Z'),
+      );
+      assert.equal(summary.receivedTotal, 30);
+      assert.equal(summary.netCash, 130);
+      assert.equal(summary.salesTotal, 200);
+      assert.equal(summary.receivableTotal, 150);
+    } finally {
+      await prisma.company.deleteMany({ where: { id: { in: [company.id, other.id] } } });
+      await prisma.$disconnect();
+    }
+  },
+);
