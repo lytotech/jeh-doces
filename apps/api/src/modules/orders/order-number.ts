@@ -1,18 +1,25 @@
 import type { Prisma } from '@prisma/client';
+import { randomInt } from 'node:crypto';
 
-// Hold the company row lock until the order transaction commits. Both creation
-// paths must acquire it before reading orders or allocating a number.
+const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+export const createOrderCode = () =>
+  '#' + Array.from({ length: 6 }, () => alphabet[randomInt(alphabet.length)]).join('');
+
+// Keep allocation and insertion serialized per company, including the public
+// catalog, so even a random collision cannot reach the unique constraint.
 export async function lockOrderCreation(tx: Prisma.TransactionClient, companyId: string) {
   await tx.$queryRaw`SELECT id FROM companies WHERE id = ${companyId} FOR UPDATE`;
 }
 
 export async function nextOrderNumber(tx: Prisma.TransactionClient, companyId: string) {
-  const [result] = await tx.$queryRaw<Array<{ next: string }>>`
-    SELECT (GREATEST(COALESCE(MAX(
-      CASE WHEN "orderNumber" ~ '^#[0-9]+$'
-        THEN SUBSTRING("orderNumber" FROM 2)::numeric END
-    ), 1000), 1000) + 1)::text AS next
-    FROM orders WHERE "companyId" = ${companyId}
-  `;
-  return `#${result.next}`;
+  let code = createOrderCode();
+  while (
+    await tx.order.findUnique({
+      where: { companyId_orderNumber: { companyId, orderNumber: code } },
+      select: { id: true },
+    })
+  )
+    code = createOrderCode();
+  return code;
 }
