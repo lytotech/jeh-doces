@@ -21,6 +21,7 @@ import {
 } from '@jeh-doces/shared';
 import { getCompanyId, prisma, runForCompany } from './infrastructure/database/client';
 import { assertCanCreate } from './modules/billing/plan-limits';
+import { lockOrderCreation, nextOrderNumber } from './modules/orders/order-number';
 
 export { prisma, runForCompany };
 const activeStatuses: OrderStatus[] = ['confirmado', 'produzindo', 'pronto', 'entregue'];
@@ -655,6 +656,7 @@ class Database {
     if (!setting) return null;
     const companyId = setting.companyId;
     return prisma.$transaction(async (tx) => {
+      await lockOrderCreation(tx, companyId);
       const existing = await tx.order.findUnique({
         where: { publicSubmissionId: data.submissionId },
         select: {
@@ -715,7 +717,7 @@ class Database {
       const order = await tx.order.create({
         data: {
           companyId,
-          orderNumber: `#${(await tx.order.count({ where: { companyId } })) + 1001}`,
+          orderNumber: await nextOrderNumber(tx, companyId),
           clientName: data.customer.name.trim(),
           clientPhone: customerPhone,
           customerId: savedCustomer.id,
@@ -911,6 +913,7 @@ class Database {
   async saveOrder(data: Partial<Order>) {
     return prisma.$transaction(async (tx) => {
       const companyId = this.companyId();
+      await lockOrderCreation(tx, companyId);
       const customerId = data.customerId;
       if (customerId && !(await tx.customer.count({ where: { id: customerId, companyId } })))
         throw new Error('Cliente relacionado inválido para esta empresa.');
@@ -945,7 +948,7 @@ class Database {
               select: { orderNumber: true },
             })
           ).orderNumber
-        : data.orderNumber || `#${(await tx.order.count({ where: { companyId } })) + 1001}`;
+        : data.orderNumber || (await nextOrderNumber(tx, companyId));
       const relations = {
         // Relation IDs are database-owned. The web form uses temporary IDs for
         // React keys (and automatic materials use deterministic IDs), so
