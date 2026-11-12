@@ -948,7 +948,7 @@ class Database {
               select: { orderNumber: true },
             })
           ).orderNumber
-        : data.orderNumber || (await nextOrderNumber(tx, companyId));
+        : await nextOrderNumber(tx, companyId);
       const relations = {
         // Relation IDs are database-owned. The web form uses temporary IDs for
         // React keys (and automatic materials use deterministic IDs), so
