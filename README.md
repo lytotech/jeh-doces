@@ -13,6 +13,7 @@ jeh-doces/
 │   └── api/                     # Backend REST API (NestJS + Fastify + TypeScript)
 ├── packages/
 │   └── shared/                  # Tipos TypeScript, Fórmulas de Custos e Seed Data
+├── mobile/                      # App Flutter para Android e iOS
 └── data/                        # Persistência de dados em disco
 ```
 
@@ -85,6 +86,18 @@ jeh-doces/
    ```bash
    npm start
    ```
+
+## App mobile
+
+O projeto Flutter fica em [`mobile/`](mobile/README.md), com dependências,
+projetos nativos Android/iOS e testes próprios. Ele utiliza a mesma API do site.
+Consulte o README do app para configurar o SDK e a URL da API.
+
+```bash
+cd mobile
+flutter pub get
+flutter run --dart-define=API_URL=https://confeiti.com.br/api
+```
 
 ## Banco de dados
 

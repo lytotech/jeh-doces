@@ -11,6 +11,7 @@ export default tseslint.config(
       '**/*.tsbuildinfo',
       'apps/web/public/**',
       'confeiti-assets-png-v2/**',
+      'mobile/**',
     ],
   },
   eslint.configs.recommended,
